@@ -17,7 +17,7 @@
         public const string AzureToGoogleOrchestrator = "AzureToGoogleOrchestrator";
         public const string AzureToGooglePrepareList = "AzureToGooglePrepareList";
         public const string CopyBlobsToGoogleOrchestrator = "CopyBlobsToGoogleOrchestrator";
+        public const string CopyBlobsToGoogleSubOrchestrator = "CopyBlobsToGoogleSubOrchestrator";
         public const string CopyBlobToGoogle = "CopyBlobToGoogle";
     }
-
 }

@@ -20,24 +20,31 @@
 
 # Google token
     // https://medium.com/automationmaster/getting-google-oauth-access-token-using-google-apis-18b2ba11a11a
-    //1: https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/photoslibrary&response_type=code&access_type=offline&redirect_uri=http://localhost:4200&client_id=994937085571-c3hodle0mbu7aq82dtp36bint621khjh.apps.googleusercontent.com
-    //2: http://localhost:4200/?code=4%2F0AX4XfWi4THbsnlcFfJu2FcEsGHxCpTpLMfGuG3FiyApynfOHNFD3-Q_YIQqScRLzyGi3ZA&scope=https:%2F%2Fwww.googleapis.com%2Fauth%2Fphotoslibrary
-    //3: POST https://accounts.google.com/o/oauth2/token
-    // {
-    // 	"client_id":"",
-    // 	"client_secret":"",
-    // 	"code": "",
-    // 	"redirect_uri": "http://localhost:4200",
-    // 	"grant_type":"authorization_code"
-    // }
-    // {
-    //   "access_token": "ya29.a0ARrd...",
-    //   "expires_in": 3599,
-    //   "refresh_token": "1//04zKthVH...",
-    //   "scope": "https://www.googleapis.com/auth/photoslibrary",
-    //   "token_type": "Bearer"
-    // }
-
+    1: 
+    https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/photoslibrary&response_type=code&access_type=offline&redirect_uri=http://localhost:7071/api/google/token&client_id=994937085571-c3hodle0mbu7aq82dtp36bint621khjh.apps.googleusercontent.com
+    2: 
+    http://localhost:4200/?code=4%2F0AX4XfWi4THbsnlcFfJu2FcEsGHxCpTpLMfGuG3FiyApynfOHNFD3-Q_YIQqScRLzyGi3ZA&scope=https:%2F%2Fwww.googleapis.com%2Fauth%2Fphotoslibrary
+    3: 
+    POST https://accounts.google.com/o/oauth2/token
+    ```
+    {
+    	"client_id":"",
+    	"client_secret":"",
+    	"code": "",
+    	"redirect_uri": "http://localhost:4200",
+    	"grant_type":"authorization_code"
+    }
+    ```
+    4:
+    ```
+    {
+      "access_token": "ya29.a0ARrd...",
+      "expires_in": 3599,
+      "refresh_token": "1//04zKthVH...",
+      "scope": "https://www.googleapis.com/auth/photoslibrary",
+      "token_type": "Bearer"
+    }
+    ```
 
 # Library scopes
 "https://www.googleapis.com/auth/photoslibrary", // See, upload and organise items in your Google Photos library (sesitive)

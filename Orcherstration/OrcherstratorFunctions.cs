@@ -30,7 +30,7 @@ namespace AdaFile
 
             var requestExpanded = new FilesCopyRequestExpanded(request, listExpanded);
 
-            log.LogInformation("Fannig-Out CopyBlobToGoogle");
+            log.LogInformation($"Calling {Constants.CopyBlobsToGoogleOrchestrator} ...");
             var copyBlobToGoogleTasksResults = await context.CallSubOrchestratorAsync<List<NewMediaItemResultRoot>>(
                Constants.CopyBlobsToGoogleOrchestrator, requestExpanded.ExpandedItemsList).ConfigureAwait(false);
 
@@ -47,16 +47,19 @@ namespace AdaFile
 
         [FunctionName(Constants.CopyBlobsToGoogleOrchestrator)]
         public static async Task<List<NewMediaItemResultRoot>> CopyBlobToGoogleOrchestrator(
-            [OrchestrationTrigger] IDurableOrchestrationContext context)
+            [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
         {
+            log = context.CreateReplaySafeLogger(log);
             var filesCopyItemsExpanded = context.GetInput<List<ItemExpanded>>();
 
             var tasks = new List<Task<NewMediaItemResultRoot>>();
+            log.LogInformation("Fannig-Out CopyBlobToGoogle");
             foreach (var image in filesCopyItemsExpanded)
             {
                 var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyBlobToGoogle, image);
                 tasks.Add(task);
             }
+            log.LogInformation("Fannig-In CopyBlobToGoogle");
             var list = await Task.WhenAll(tasks).ConfigureAwait(false);
             return list.ToList();
         }

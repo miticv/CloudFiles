@@ -23,7 +23,7 @@ namespace Ada.File
         // azure/file/item?path=2011 PhotoShoot Feng/Feng-2.jpg
         [FunctionName(Constants.azureFileGetItem)]
         public static async Task<IActionResult> GetItem(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "azure/file/item")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "azure/file/item")] HttpRequest req,
             ILogger log)
         {
             string path = req.Query["path"];
@@ -31,7 +31,7 @@ namespace Ada.File
             {
                 return new BadRequestObjectResult("You must include `path` in the query parameter");
             }
-            var connectionString = Environment.GetEnvironmentVariable("AzureStorage");
+            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
             var containerName = Environment.GetEnvironmentVariable("AzureContainer");
             var azureUtility = new AzureUtility(connectionString, containerName);
             log.LogInformation($"{Constants.azureFileGetItem} function processing a request for path=`{path}`.");
@@ -42,11 +42,11 @@ namespace Ada.File
             {
                 if (ex.Status == StatusCodes.Status404NotFound)
                 {
-                    log.LogWarning(ex, $"{Constants.azureFileGetItem} function processing a request for path=`{path}`.");
+                    log.LogWarning(ex, $"{Constants.azureFileGetItem} function not found for path=`{path}`.");
                     return new NotFoundObjectResult(ErrorUtility.FormatErrorMessage("The specified blob does not exist."));
                 }
                 else {
-                    log.LogError(ex, $"{Constants.azureFileGetItem} function processing a request for path=`{path}`.");
+                    log.LogError(ex, $"{Constants.azureFileGetItem} function error for path=`{path}`.");
                     return new StatusCodeResult(StatusCodes.Status500InternalServerError);
                 }
             }
@@ -55,7 +55,7 @@ namespace Ada.File
         // azure/file/list?path=2011 PhotoShoot Feng
         [FunctionName(Constants.azureFileList)]
         public static async Task<IActionResult> List(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "azure/file/list")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "azure/file/list")] HttpRequest req,
             ILogger log)
         {
             string path = req.Query["path"];
@@ -68,7 +68,7 @@ namespace Ada.File
             }
             int? pagesize = trypagesize == 0 ? 5000 : trypagesize;
 
-            var connectionString = Environment.GetEnvironmentVariable("AzureStorage");
+            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
             var containerName = Environment.GetEnvironmentVariable("AzureContainer");
             var azureUtility = new AzureUtility(connectionString, containerName);
             log.LogInformation($"{Constants.azureFileList} function processing a request for path=`{path}` and pagesize of {pagesize}.");
@@ -79,7 +79,7 @@ namespace Ada.File
 
         [FunctionName(Constants.googleToken)]
         public static async Task<IActionResult> GoogleToken(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "google/token")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/token")] HttpRequest req,
             ILogger log)
         {
             var clientId = Environment.GetEnvironmentVariable("GooglePhotoClientId");
@@ -92,13 +92,21 @@ namespace Ada.File
                 return new BadRequestObjectResult("Please include `code` in the query parameter: ?code=yourauthcode");
             }
             log.LogInformation($"{Constants.googleToken} function processing a request for UiRedirectUrl=`{uiRedirectUrl}`.");
-            var result = await GoogleUtility.GetGoogleAccessTokenAsync(clientId, clientSecret, WebUtility.UrlDecode(code), uiRedirectUrl).ConfigureAwait(false);
-            return new OkObjectResult(result);
+            try
+            {
+                var result = await GoogleUtility.GetGoogleAccessTokenAsync(clientId, clientSecret, WebUtility.UrlDecode(code), uiRedirectUrl).ConfigureAwait(false);
+                return new OkObjectResult(result);
+            }
+            catch (Exception ex) {
+                log.LogError(ex, $"{Constants.googleToken} function error.");
+                throw;
+                // return new ObjectResult(ex.Message) { StatusCode = StatusCodes.Status500InternalServerError };
+            }
         }
 
         [FunctionName(Constants.googleAlbumList)]
         public static async Task<IActionResult> GoogleAlbumList(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "google/album/list")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/album/list")] HttpRequest req,
             ILogger log)
         {
             var success = req.Headers.TryGetValue("Authorization", out StringValues values);
@@ -130,7 +138,7 @@ namespace Ada.File
 
         [FunctionName(Constants.googleAlbumAdd)]
         public static async Task<IActionResult> GoogleAlbumAdd(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "google/album")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "google/album")] HttpRequest req,
             ILogger log)
         {
             var success = req.Headers.TryGetValue("Authorization", out StringValues values);
@@ -140,7 +148,7 @@ namespace Ada.File
             }
             var accessToken = values.FirstOrDefault()?.Replace("Bearer ", "").Replace("bearer ", "");
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
             var data = JsonConvert.DeserializeObject<AlbumCreate>(requestBody);
             if (data?.Title == null)
             {
@@ -148,7 +156,7 @@ namespace Ada.File
             }
 
             log.LogInformation($"{Constants.googleAlbumAdd} function processing {nameof(GoogleUtility.AddAlbumAsync)}.");
-            var created = await GoogleUtility.AddAlbumAsync(accessToken, data.Title);
+            var created = await GoogleUtility.AddAlbumAsync(accessToken, data.Title).ConfigureAwait(false);
             return new OkObjectResult(created);
         }
     }

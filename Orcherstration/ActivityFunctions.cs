@@ -14,22 +14,27 @@ namespace AdaFile
     public static class ActivityFunctions
     {
         [FunctionName(Constants.AzureToGooglePrepareList)]
-        public static async Task<List<Item>> AzureToGooglePrepareList([ActivityTrigger] List<Item> request, ILogger log)
+        public static async Task<List<Item>> AzureToGooglePrepareList(
+            [ActivityTrigger] List<Item> request,
+            ILogger log)
         {
-            var connectionString = Environment.GetEnvironmentVariable("AzureStorage");
+            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
             var containerName = Environment.GetEnvironmentVariable("AzureContainer");
             var azureUtility = new AzureUtility(connectionString, containerName);
 
             log.LogInformation("Getting full list of images...");
             return await azureUtility.SelectionToHierarchicalDeepListingAsync(request).ConfigureAwait(false);
+            // return new List<Item>() { new Item("2011 PhotoShoot Feng/Feng-37.jpg") };
         }
 
         [FunctionName(Constants.CopyBlobToGoogle)]
-        public static async Task<NewMediaItemResultRoot> CopyBlobToGoogle([ActivityTrigger] ItemExpanded imageItem, ILogger log)
+        public static async Task<NewMediaItemResultRoot> CopyBlobToGoogle(
+            [ActivityTrigger] ItemExpanded imageItem,
+             ILogger log)
         {
             log.LogInformation($"Copy image {imageItem.ItemPath}.");
 
-            var connectionString = Environment.GetEnvironmentVariable("AzureStorage");
+            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
             var containerName = Environment.GetEnvironmentVariable("AzureContainer");
             var azureUtility = new AzureUtility(connectionString, containerName);
 
@@ -42,6 +47,8 @@ namespace AdaFile
             imageItem.UploadToken = await GoogleUtility.CopyBytesToGooglePhotosAsync(memoryStream, imageItem.AccessToken, blobData.ContentType).ConfigureAwait(false);
 
             return await GoogleUtility.SaveMediaItemsToGooglePhotosAsync(imageItem).ConfigureAwait(false);
+            // await Task.Delay(5000).ConfigureAwait(false);
+            // return new NewMediaItemResultRoot() { NewMediaItemResults = new List<NewMediaItemResult>() };
         }
     }
 }

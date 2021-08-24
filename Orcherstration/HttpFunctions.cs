@@ -13,6 +13,7 @@ namespace AdaFile
 {
     public static class HttpFunctions
     {
+        // append this to statusQueryGetUri: &showHistory=true&showHistoryOutput=true
         [FunctionName(Constants.ProcessAzureToGoogleStart)]
         public static async Task<IActionResult> AzureToGoogleStarter(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "process/AzureToGoogle/start")] HttpRequest req,

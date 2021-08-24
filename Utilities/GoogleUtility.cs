@@ -4,7 +4,9 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -78,8 +80,10 @@ namespace AdaFile.Utilities
         public static async Task<GoogleTokenResponse> GetGoogleAccessTokenAsync(string clientId, string clientSecret, string code, string redirectUrl)
         {
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-
+            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            }
             var content = new GoogleTokenRequest
             {
                 ClientId = clientId,
@@ -107,9 +111,11 @@ namespace AdaFile.Utilities
         public static async Task<AlbumListResponse> ListAlbumsAsync(string accessToken, string nextPageToken)
         {
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-            client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            }
             var nextPage = string.IsNullOrEmpty(nextPageToken) ? "" : $"pageToken={nextPageToken}&";
             var getUrl = $"https://photoslibrary.googleapis.com/v1/albums?{nextPage}pageSize=50&excludeNonAppCreatedData=false"; // ORDER Of query items matter!!!!!
 
@@ -129,9 +135,11 @@ namespace AdaFile.Utilities
         public static async Task<AlbumCreateResponse> AddAlbumAsync(string accessToken, string title)
         {
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-            client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            }
             var body = new AlbumCreateRequest() { Album = new AlbumCreate() { Title = title } };
             var serializedBody = JsonConvert.SerializeObject(body);
 

@@ -1,6 +1,5 @@
 ﻿using AdaFile.Models;
 using AdaFile.Models.Google;
-using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -14,21 +13,6 @@ namespace AdaFile.Utilities
     // https://console.cloud.google.com/apis/credentials?project=mindful-span-318701
     public static class GoogleUtility
     {
-        private static async Task<string> GetServiceAccessTokenFromJSONKeyAsync(string jsonKeyFilePath)
-        {
-            var scopes = new string[] {
-                "https://www.googleapis.com/auth/userinfo.profile",
-                "https://www.googleapis.com/auth/photoslibrary" };
-
-            using var stream = new FileStream(jsonKeyFilePath, FileMode.Open, FileAccess.Read);
-            return (await GoogleCredential
-                .FromStream(stream) // Loads key file
-                .CreateScoped(scopes) // Gathers scopes requested
-                .UnderlyingCredential // Gets the credentials
-                .GetAccessTokenForRequestAsync()) // Gets the Access Token
-                .Trim(new char[] { '.' });
-        }
-
         public static async Task<string> CopyBytesToGooglePhotosAsync(MemoryStream blobDataStream, string accessToken, string contentType)
         {
             blobDataStream.Position = 0;

@@ -3,8 +3,7 @@
 
 # Azure Functions localsettings file
 local.settings.json
-service_account.json
-client_secret.json
+
 
 # User-specific files
 *.suo

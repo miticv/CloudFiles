@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"debug.internalConsoleOptions": "neverOpen",
+		"files.exclude": {
+			"**/bin": true,
+			"**/obj": true
+		}
+	}
+}

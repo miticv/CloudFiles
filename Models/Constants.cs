@@ -15,6 +15,7 @@
 
         // automation
         public const string AzureToGoogleOrchestrator = "AzureToGoogleOrchestrator";
+        public const string AzureToGoogleCollectList = "AzureToGoogleCollectList";
         public const string AzureToGooglePrepareList = "AzureToGooglePrepareList";
         public const string CopyBlobsToGoogleOrchestrator = "CopyBlobsToGoogleOrchestrator";
         public const string CopyBlobsToGoogleSubOrchestrator = "CopyBlobsToGoogleSubOrchestrator";

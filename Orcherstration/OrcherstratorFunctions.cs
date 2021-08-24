@@ -28,7 +28,9 @@ namespace AdaFile
             var listExpanded = await context.CallActivityAsync<List<Item>>(
                 Constants.AzureToGooglePrepareList, request.SelectedItemsList).ConfigureAwait(false);
 
-            var requestExpanded = new FilesCopyRequestExpanded(request, listExpanded);
+            log.LogInformation("Preparing collected list ...");
+            var requestExpanded = await context.CallActivityAsync<FilesCopyRequestExpanded>(
+                Constants.AzureToGooglePrepareList, (request, listExpanded));
 
             log.LogInformation($"Calling {Constants.CopyBlobsToGoogleOrchestrator} ...");
             var copyBlobToGoogleTasksResults = await context.CallSubOrchestratorAsync<List<NewMediaItemResultRoot>>(

@@ -13,8 +13,8 @@ namespace AdaFile
 {
     public static class ActivityFunctions
     {
-        [FunctionName(Constants.AzureToGooglePrepareList)]
-        public static async Task<List<Item>> AzureToGooglePrepareList(
+        [FunctionName(Constants.AzureToGoogleCollectList)]
+        public static async Task<List<Item>> AzureToGoogleCollectList(
             [ActivityTrigger] List<Item> request,
             ILogger log)
         {
@@ -24,7 +24,15 @@ namespace AdaFile
 
             log.LogInformation("Getting full list of images...");
             return await azureUtility.SelectionToHierarchicalDeepListingAsync(request).ConfigureAwait(false);
-            // return new List<Item>() { new Item("2011 PhotoShoot Feng/Feng-37.jpg") };
+        }
+
+        [FunctionName(Constants.AzureToGooglePrepareList)]
+        public static FilesCopyRequestExpanded AzureToGooglePrepareList(
+            [ActivityTrigger] IDurableActivityContext inputs,
+            ILogger log)
+        {
+            var (request, listExpanded) = inputs.GetInput<(FilesCopyRequest, List<Item>)>();
+            return new FilesCopyRequestExpanded(request, listExpanded);
         }
 
         [FunctionName(Constants.CopyBlobToGoogle)]
@@ -47,8 +55,8 @@ namespace AdaFile
             imageItem.UploadToken = await GoogleUtility.CopyBytesToGooglePhotosAsync(memoryStream, imageItem.AccessToken, blobData.ContentType).ConfigureAwait(false);
 
             return await GoogleUtility.SaveMediaItemsToGooglePhotosAsync(imageItem).ConfigureAwait(false);
-            // await Task.Delay(5000).ConfigureAwait(false);
-            // return new NewMediaItemResultRoot() { NewMediaItemResults = new List<NewMediaItemResult>() };
+            //await Task.Delay(5000).ConfigureAwait(false);
+            //return new NewMediaItemResultRoot() { NewMediaItemResults = new List<NewMediaItemResult>() { new NewMediaItemResult() { UploadToken="**", Status = new Status() { Message = "success" },  MediaItem = new MediaItem() { Id="*" } } } };
         }
     }
 }

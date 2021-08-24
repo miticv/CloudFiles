@@ -1,0 +1,5 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/e7feae5d-2e46-470e-a5b3-5eb025fd598e/resourceGroups/blobStorage/providers/Microsoft.Web/sites/ada-photo",
+    "appService.deploySubpath": "dist/fuse",
+    "angular.enable-strict-mode-prompt": false
+}

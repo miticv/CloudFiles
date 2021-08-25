@@ -38,7 +38,8 @@
                                 "glob": "_redirects",
                                 "input": "src",
                                 "output": "/"
-                            }
+                            },
+                            "src/silent-renew.html"
                         ],
                         "stylePreprocessorOptions": {
                             "includePaths": [
@@ -95,7 +96,10 @@
                             "browserTarget": "fuse:build:production"
                         },
                         "development": {
-                            "browserTarget": "fuse:build:development"
+                            "browserTarget": "fuse:build:development",
+                            "ssl": true,
+                            "sslKey": "./cert/server.key",
+                            "sslCert": "./cert/server.crt"
                         }
                     },
                     "defaultConfiguration": "development"
@@ -139,7 +143,7 @@
     },
     "defaultProject": "fuse",
     "cli": {
-      "analytics": false,
+        "analytics": false,
         "defaultCollection": "@angular-eslint/schematics"
     }
 }

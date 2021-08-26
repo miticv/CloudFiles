@@ -12,7 +12,6 @@ import { MessagesModule } from 'app/layout/common/messages/messages.module';
 import { NotificationsModule } from 'app/layout/common/notifications/notifications.module';
 import { SearchModule } from 'app/layout/common/search/search.module';
 import { ShortcutsModule } from 'app/layout/common/shortcuts/shortcuts.module';
-import { UserModule } from 'app/layout/common/user/user.module';
 import { SharedModule } from 'app/shared/shared.module';
 import { FuturisticLayoutComponent } from 'app/layout/layouts/vertical/futuristic/futuristic.component';
 
@@ -20,7 +19,7 @@ import { FuturisticLayoutComponent } from 'app/layout/layouts/vertical/futuristi
     declarations: [
         FuturisticLayoutComponent
     ],
-    imports     : [
+    imports: [
         HttpClientModule,
         RouterModule,
         MatButtonModule,
@@ -34,13 +33,11 @@ import { FuturisticLayoutComponent } from 'app/layout/layouts/vertical/futuristi
         NotificationsModule,
         SearchModule,
         ShortcutsModule,
-        UserModule,
         SharedModule
     ],
-    exports     : [
+    exports: [
         FuturisticLayoutComponent
     ]
 })
-export class FuturisticLayoutModule
-{
+export class FuturisticLayoutModule {
 }

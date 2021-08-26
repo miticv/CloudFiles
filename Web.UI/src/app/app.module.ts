@@ -12,8 +12,8 @@ import { mockApiServices } from 'app/mock-api';
 import { LayoutModule } from 'app/layout/layout.module';
 import { AppComponent } from 'app/app.component';
 import { appRoutes } from 'app/app.routing';
-import { AuthConfigModule } from './auth/auth-config.module';
-import { AutoLoginComponent } from './auth/auto-login/auto-login.component';
+import { AuthConfigModule } from './core/auth/auth-config.module';
+import { AutoLoginComponent } from './core/auth/auto-login/auto-login.component';
 
 const routerConfig: ExtraOptions = {
     preloadingStrategy: PreloadAllModules,
@@ -42,8 +42,8 @@ const routerConfig: ExtraOptions = {
         LayoutModule,
 
         // 3rd party modules that require global configuration via forRoot
-        MarkdownModule.forRoot({}),
-        AuthConfigModule
+        MarkdownModule.forRoot({})
+
     ],
     bootstrap: [
         AppComponent

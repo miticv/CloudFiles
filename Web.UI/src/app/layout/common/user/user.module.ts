@@ -10,17 +10,16 @@ import { SharedModule } from 'app/shared/shared.module';
     declarations: [
         UserComponent
     ],
-    imports     : [
+    imports: [
         MatButtonModule,
         MatDividerModule,
         MatIconModule,
         MatMenuModule,
         SharedModule
     ],
-    exports     : [
+    exports: [
         UserComponent
     ]
 })
-export class UserModule
-{
+export class UserModule {
 }

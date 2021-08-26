@@ -1,5 +1,5 @@
-﻿using AdaFile.Models;
-using AdaFile.Models.Google;
+﻿using CloudFiles.Models;
+using CloudFiles.Models.Google;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,22 +10,23 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AdaFile.Utilities
+namespace CloudFiles.Utilities
 {
     // https://console.cloud.google.com/apis/credentials?project=mindful-span-318701
+    // it needs this scope: https://www.googleapis.com/auth/photoslibrary
     public static class GoogleUtility
     {
         public static async Task<string> CopyBytesToGooglePhotosAsync(MemoryStream blobDataStream, string accessToken, string contentType)
         {
             blobDataStream.Position = 0;
 
-            using HttpClient client = new HttpClient();
+            using HttpClient client = new();
             byte[] imageData = blobDataStream.ToArray();
 
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
             client.DefaultRequestHeaders.Add("x-goog-upload-content-type", contentType);
             client.DefaultRequestHeaders.Add("x-goog-upload-protocol", "raw");
-            ByteArrayContent fileContent = new ByteArrayContent(blobDataStream.ToArray()); //  --data '/9j/4SU2RXhpZgAA...
+            ByteArrayContent fileContent = new(blobDataStream.ToArray()); //  --data '/9j/4SU2RXhpZgAA...
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
 
             HttpResponseMessage response = await client.PostAsync("https://photoslibrary.googleapis.com/v1/uploads", fileContent).ConfigureAwait(false);
@@ -41,19 +42,19 @@ namespace AdaFile.Utilities
             }
         }
 
-        public static async Task<NewMediaItemResultRoot> SaveMediaItemsToGooglePhotosAsync(ItemExpanded item)
+        public static async Task<NewMediaItemResultRoot> SaveMediaItemsToGooglePhotosAsync(ItemPrepared item)
         {
-            using HttpClient client = new HttpClient();
+            using HttpClient client = new();
 
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", item.AccessToken);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", item.AccessToken);
             client.DefaultRequestHeaders.Add("Content-Type", "application/json");
 
-            NewMediaItemRoot body = new NewMediaItemRoot
+            NewMediaItemRoot body = new()
             {
                 AlbumId = item.AlbumId,
                 NewMediaItems = new List<NewMediaItem>()
             };
-            SimpleMediaItem simpleItem = new SimpleMediaItem
+            SimpleMediaItem simpleItem = new()
             {
                 FileName = item.ItemFilename,
                 UploadToken = item.UploadToken
@@ -76,37 +77,36 @@ namespace AdaFile.Utilities
             }
         }
 
-        // it needs this scope: https://www.googleapis.com/auth/photoslibrary
-        public static async Task<GoogleTokenResponse> GetGoogleAccessTokenAsync(string clientId, string clientSecret, string code, string redirectUrl)
-        {
-            using var client = new HttpClient();
-            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
-            {
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            }
-            var content = new GoogleTokenRequest
-            {
-                ClientId = clientId,
-                ClientSecret = clientSecret,
-                Code = code,
-                GrantType = "authorization_code",
-                RedirectUri = redirectUrl
-            };
-            var serializedBody = JsonConvert.SerializeObject(content);
+        //private static async Task<GoogleTokenResponse> GetGoogleAccessTokenAsync(string clientId, string clientSecret, string code, string redirectUrl)
+        //{
+        //    using var client = new HttpClient();
+        //    if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+        //    {
+        //        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //    }
+        //    var content = new GoogleTokenRequest
+        //    {
+        //        ClientId = clientId,
+        //        ClientSecret = clientSecret,
+        //        Code = code,
+        //        GrantType = "authorization_code",
+        //        RedirectUri = redirectUrl
+        //    };
+        //    var serializedBody = JsonConvert.SerializeObject(content);
 
-            var response = await client.PostAsync("https://accounts.google.com/o/oauth2/token",
-                new StringContent(serializedBody, Encoding.UTF8, "application/json")).ConfigureAwait(false);
-            var result = response.Content.ReadAsStringAsync().Result;
+        //    var response = await client.PostAsync("https://accounts.google.com/o/oauth2/token",
+        //        new StringContent(serializedBody, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+        //    var result = response.Content.ReadAsStringAsync().Result;
 
-            if (response.IsSuccessStatusCode)
-            {
-                return JsonConvert.DeserializeObject<GoogleTokenResponse>(result);
-            }
-            else
-            {
-                throw new InvalidOperationException(result);
-            }
-        }
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        return JsonConvert.DeserializeObject<GoogleTokenResponse>(result);
+        //    }
+        //    else
+        //    {
+        //        throw new InvalidOperationException(result);
+        //    }
+        //}
 
         public static async Task<AlbumListResponse> ListAlbumsAsync(string accessToken, string nextPageToken)
         {

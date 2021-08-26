@@ -1,21 +1,29 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
-using AdaFile.Models;
-using AdaFile.Models.Google;
+using CloudFiles.Models;
+using CloudFiles.Models.Google;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 
-namespace AdaFile
+namespace CloudFiles
 {
+    /** Orcherstrator functions must be Deterministic
+     * https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-code-constraints
+     * - No Dates/Times, Guids, Random numbers
+     * - No I/O input/output bindings
+     * - No network calls to external systems
+     * - No async operations (other than calling tasks)
+     * - No to: .ConfigureAwait(false)
+     * - No reading environment variables
+     * - No infinite loops
+     **/
+
+    [SuppressMessage("Readability", "RCS1090", Justification = "Orcherstrators must not have .ConfigureAwait(false)")]
     public static class OrcherstratorFunctions
     {
-        // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-overview?tabs=csharp
-        // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-diagnostics?tabs=csharp
-        // https://github.com/Azure/azure-functions-durable-extension/releases
-        // &showHistory=true&showHistoryOutput=true
-
         [FunctionName(Constants.AzureToGoogleOrchestrator)]
         public static async Task<object> AzureToGoogleOrchestrator(
                [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
@@ -24,46 +32,50 @@ namespace AdaFile
 
             var request = context.GetInput<FilesCopyRequest>();
 
-            log.LogInformation("Collecting full list of files...");
-            var listExpanded = await context.CallActivityAsync<List<Item>>(
-                Constants.AzureToGooglePrepareList, request.SelectedItemsList).ConfigureAwait(false);
+            log.LogInformation($"{Constants.AzureToGoogleOrchestrator}: Preparing request...");
+            var preparedRequest = await context.CallActivityAsync<ItemsPrepared>(
+                Constants.AzureToGooglePrepareList, request);
 
-            log.LogInformation("Preparing collected list ...");
-            var requestExpanded = await context.CallActivityAsync<FilesCopyRequestExpanded>(
-                Constants.AzureToGooglePrepareList, (request, listExpanded));
-
-            log.LogInformation($"Calling {Constants.CopyBlobsToGoogleOrchestrator} ...");
-            var copyBlobToGoogleTasksResults = await context.CallSubOrchestratorAsync<List<NewMediaItemResultRoot>>(
-               Constants.CopyBlobsToGoogleOrchestrator, requestExpanded.ExpandedItemsList).ConfigureAwait(false);
+            log.LogInformation($"{Constants.AzureToGoogleOrchestrator}: FanOut request to {Constants.CopyBlobsToGoogleOrchestrator} ...");
+            var results = await context.CallSubOrchestratorAsync<NewMediaItemResultRoot>(
+               Constants.CopyBlobsToGoogleOrchestrator, preparedRequest);
 
             //var copyBlobToGoogleTasksResults = await context.CallActivityWithRetryAsync<List<NewMediaItemResultRoot>>
             //    (Constants.CopyBlobsToGoogleOrchestrator, new RetryOptions(System.TimeSpan.FromSeconds(5), 4)
-            //    { Handle = ex => ex is TaskCanceledException }, requestExpanded.ExpandedItemsList).ConfigureAwait(false);
+            //    { Handle = ex => ex is TaskCanceledException }, requestExpanded.ExpandedItemsList);
 
             return new {
                 request,
-                requestFlat = requestExpanded.ExpandedItemsList,
-                copyTasksResults = copyBlobToGoogleTasksResults
+                preparedRequest.ListItemsPrepared,
+                results.NewMediaItemResults
             };
         }
 
         [FunctionName(Constants.CopyBlobsToGoogleOrchestrator)]
-        public static async Task<List<NewMediaItemResultRoot>> CopyBlobToGoogleOrchestrator(
+        public static async Task<NewMediaItemResultRoot> CopyBlobsToGoogleOrchestrator(
             [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
         {
             log = context.CreateReplaySafeLogger(log);
-            var filesCopyItemsExpanded = context.GetInput<List<ItemExpanded>>();
+            var filesCopyItemsPrepared = context.GetInput<ItemsPrepared>();
 
             var tasks = new List<Task<NewMediaItemResultRoot>>();
-            log.LogInformation("Fannig-Out CopyBlobToGoogle");
-            foreach (var image in filesCopyItemsExpanded)
+            log.LogInformation("Fan-Out CopyBlobToGoogle");
+            foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
             {
-                var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyBlobToGoogle, image);
+                var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyBlobToGoogle, item);
                 tasks.Add(task);
             }
-            log.LogInformation("Fannig-In CopyBlobToGoogle");
-            var list = await Task.WhenAll(tasks).ConfigureAwait(false);
-            return list.ToList();
+            log.LogInformation("Fan-In CopyBlobToGoogle");
+            var result = await Task.WhenAll(tasks);
+
+            var response = new NewMediaItemResultRoot
+            {
+                NewMediaItemResults = new List<NewMediaItemResult>()
+            };
+            foreach (var item in result) {
+                response.NewMediaItemResults.AddRange(item.NewMediaItemResults);
+            }
+            return response;
         }
     }
 }

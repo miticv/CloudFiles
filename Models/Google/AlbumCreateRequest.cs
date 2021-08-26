@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace AdaFile.Models.Google
+namespace CloudFiles.Models.Google
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
     public class AlbumCreate

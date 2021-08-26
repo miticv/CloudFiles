@@ -1,4 +1,4 @@
-﻿using AdaFile.Models;
+﻿using CloudFiles.Models;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace AdaFile.Utilities
+namespace CloudFiles.Utilities
 {
     public class AzureUtility
     {

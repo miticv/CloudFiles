@@ -1,4 +1,4 @@
-﻿namespace AdaFile.Models
+﻿namespace CloudFiles.Models
 {
     public static class Constants
     {
@@ -11,14 +11,13 @@
         public const string googleAlbumAdd = "googleAlbumAdd";
 
         // public
-        public const string ProcessAzureToGoogleStart = "processAzureToGooglestart";
+        public const string ProcessAzureToGoogle_Start = "processAzureToGooglestart";
 
         // automation
         public const string AzureToGoogleOrchestrator = "AzureToGoogleOrchestrator";
-        public const string AzureToGoogleCollectList = "AzureToGoogleCollectList";
         public const string AzureToGooglePrepareList = "AzureToGooglePrepareList";
+
         public const string CopyBlobsToGoogleOrchestrator = "CopyBlobsToGoogleOrchestrator";
-        public const string CopyBlobsToGoogleSubOrchestrator = "CopyBlobsToGoogleSubOrchestrator";
         public const string CopyBlobToGoogle = "CopyBlobToGoogle";
     }
 }

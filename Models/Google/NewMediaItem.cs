@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace AdaFile.Models.Google
+namespace CloudFiles.Models.Google
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<NewMediaItemRoot>(myJsonResponse);
     public class SimpleMediaItem

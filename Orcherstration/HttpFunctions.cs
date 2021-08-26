@@ -1,4 +1,4 @@
-﻿using AdaFile.Models;
+﻿using CloudFiles.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -9,12 +9,12 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace AdaFile
+namespace CloudFiles
 {
     public static class HttpFunctions
     {
-        // append this to statusQueryGetUri: &showHistory=true&showHistoryOutput=true
-        [FunctionName(Constants.ProcessAzureToGoogleStart)]
+        // append this to statusQueryGetUri: &showHistory=true&showHistoryOutput=true 
+        [FunctionName(Constants.ProcessAzureToGoogle_Start)]
         public static async Task<IActionResult> AzureToGoogleStarter(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "process/AzureToGoogle/start")] HttpRequest req,
             [DurableClient] IDurableOrchestrationClient starter,

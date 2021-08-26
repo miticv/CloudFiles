@@ -1,4 +1,4 @@
-# AdaFile
+# Cloud Files
 
 ## Setting up Storage Account connection string to Azure function app settings
 

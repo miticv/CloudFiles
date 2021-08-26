@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AdaFile.Utilities
+namespace CloudFiles.Utilities
 {
     public static class ErrorUtility
     {

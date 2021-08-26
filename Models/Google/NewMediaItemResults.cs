@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace AdaFile.Models.Google
+namespace CloudFiles.Models.Google
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<NewMediaItemResultRoot>(myJsonResponse);
     public class Status

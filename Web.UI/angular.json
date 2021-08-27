@@ -39,7 +39,8 @@
                                 "input": "src",
                                 "output": "/"
                             },
-                            "src/silent-renew.html"
+                            "src/silent-renew.html",
+                            "src/.well-known"
                         ],
                         "stylePreprocessorOptions": {
                             "includePaths": [

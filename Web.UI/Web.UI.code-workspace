@@ -9,7 +9,7 @@
 		"files.exclude": {
 			"**/bin": true,
 			"**/obj": true,
-		  ".well-known": true
+			"node_modules": true
 		}
 	}
 }

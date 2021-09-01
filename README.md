@@ -54,3 +54,9 @@
 "https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata", // Manage photos added by this app (non-sesitive)
 "https://www.googleapis.com/auth/photoslibrary.edit.appcreateddata", // Edit the info in your photos, videos and albums created within this app, including titles, descriptions and covers (non-sesitive)
 
+
+# google storage public (for google storage to google pictures )
+https://cloud.google.com/storage/docs/access-control/making-data-public
+
+only these token can call google storage apis:
+https://cloud.google.com/docs/authentication

@@ -2,22 +2,36 @@
 {
     public static class Constants
     {
+        public const string bffPing = "ping";
         // BFF
-        public const string azureFileList = "azureFileList";
-        public const string azureFileGetItem = "azureFileGetItem";
+        public const string AzureFileList = "azureFileList";
+        public const string AzureFileGetItem = "azureFileGetItem";
+        public const string AzureSubscriptionList = "azureSubscriptionList";
+        public const string AzureResourceGroupList = "azurListResourceGroupList";
+        public const string AzureStorageAccountList = "azureStorageAccountList";
+        public const string AzureContainerList = "azureContainerList";
+        public const string GoogleToken = "googleToken";
+        public const string GoogleValidateToken = "googleValidateToken";
 
-        public const string googleToken = "googleToken";
-        public const string googleAlbumList = "googleAlbumList";
-        public const string googleAlbumAdd = "googleAlbumAdd";
+        public const string GoogleAlbumList = "googleAlbumList";
+        public const string GoogleAlbumAdd = "googleAlbumAdd";
+        public const string GoogleGetServiceToken = "googleGetServiceToken";
+        public const string GoogleFileList = "googleFileList";
 
         // public
-        public const string ProcessAzureToGoogle_Start = "processAzureToGooglestart";
+        public const string ProcessAzureToGooglePhotos_Start = "processAzureToGooglePhotos_Start";
+        public const string ProcessGooleStorageToGooglePhotos_Start = "processGooleStorageToGooglePhotos_Start";
 
-        // automation
-        public const string AzureToGoogleOrchestrator = "AzureToGoogleOrchestrator";
-        public const string AzureToGooglePrepareList = "AzureToGooglePrepareList";
+        // automation azure storage
+        public const string AzureStorageToGooglePhotosOrchestrator = "azureStorageToGooglePhotosOrchestrator";
+        public const string AzureStorageToGooglePhotosPrepareList =  "azureStorageToGooglePhotosPrepareList";
+        public const string CopyAzureBlobsToGooglePhotosOrchestrator = "copyAzureBlobsToGooglePhotosOrchestrator";
+        public const string CopyAzureBlobToGooglePhotos = "copyAzureBlobToGooglePhotos";
 
-        public const string CopyBlobsToGoogleOrchestrator = "CopyBlobsToGoogleOrchestrator";
-        public const string CopyBlobToGoogle = "CopyBlobToGoogle";
+        // automation google storage
+        public const string GooleStorageToGooglePhotosOrchestrator = "gooleStorageToGooglePhotosOrchestrator";
+        public const string GoogleStorageToGooglePhotosPrepareList = "googleStorageToGooglePhotosPrepareList";
+        public const string CopyGoogleStorageToGooglePhotosOrchestrator = "copyGoogleStorageToGooglePhotosOrchestrator";
+        public const string CopyPhotoUrlToGooglePhotos = "copyPhotoUrlToGooglePhotos";
     }
 }

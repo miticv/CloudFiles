@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CloudFiles.Models
+﻿namespace CloudFiles.Models
 {
     public class Item
     {

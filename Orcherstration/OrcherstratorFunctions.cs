@@ -24,7 +24,7 @@ namespace CloudFiles
     [SuppressMessage("Readability", "RCS1090", Justification = "Orcherstrators must not have .ConfigureAwait(false)")]
     public static class OrcherstratorFunctions
     {
-        [FunctionName(Constants.AzureToGoogleOrchestrator)]
+        [FunctionName(Constants.AzureStorageToGooglePhotosOrchestrator)]
         public static async Task<object> AzureToGoogleOrchestrator(
                [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
         {
@@ -32,13 +32,13 @@ namespace CloudFiles
 
             var request = context.GetInput<FilesCopyRequest>();
 
-            log.LogInformation($"{Constants.AzureToGoogleOrchestrator}: Preparing request...");
+            log.LogInformation($"{Constants.AzureStorageToGooglePhotosOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<ItemsPrepared>(
-                Constants.AzureToGooglePrepareList, request);
+                Constants.AzureStorageToGooglePhotosPrepareList, request);
 
-            log.LogInformation($"{Constants.AzureToGoogleOrchestrator}: FanOut request to {Constants.CopyBlobsToGoogleOrchestrator} ...");
+            log.LogInformation($"{Constants.AzureStorageToGooglePhotosOrchestrator}: FanOut request to {Constants.CopyAzureBlobsToGooglePhotosOrchestrator} ...");
             var results = await context.CallSubOrchestratorAsync<NewMediaItemResultRoot>(
-               Constants.CopyBlobsToGoogleOrchestrator, preparedRequest);
+               Constants.CopyAzureBlobsToGooglePhotosOrchestrator, preparedRequest);
 
             //var copyBlobToGoogleTasksResults = await context.CallActivityWithRetryAsync<List<NewMediaItemResultRoot>>
             //    (Constants.CopyBlobsToGoogleOrchestrator, new RetryOptions(System.TimeSpan.FromSeconds(5), 4)
@@ -51,7 +51,7 @@ namespace CloudFiles
             };
         }
 
-        [FunctionName(Constants.CopyBlobsToGoogleOrchestrator)]
+        [FunctionName(Constants.CopyAzureBlobsToGooglePhotosOrchestrator)]
         public static async Task<NewMediaItemResultRoot> CopyBlobsToGoogleOrchestrator(
             [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
         {
@@ -62,7 +62,7 @@ namespace CloudFiles
             log.LogInformation("Fan-Out CopyBlobToGoogle");
             foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
             {
-                var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyBlobToGoogle, item);
+                var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyAzureBlobToGooglePhotos, item);
                 tasks.Add(task);
             }
             log.LogInformation("Fan-In CopyBlobToGoogle");
@@ -73,6 +73,58 @@ namespace CloudFiles
                 NewMediaItemResults = new List<NewMediaItemResult>()
             };
             foreach (var item in result) {
+                response.NewMediaItemResults.AddRange(item.NewMediaItemResults);
+            }
+            return response;
+        }
+
+        [FunctionName(Constants.GooleStorageToGooglePhotosOrchestrator)]
+        public static async Task<object> GooleStorageToGooglePhotosOrchestrator(
+            [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
+        {
+            log = context.CreateReplaySafeLogger(log);
+
+            var request = context.GetInput<FilesCopyRequest>();
+
+            log.LogInformation($"{Constants.GooleStorageToGooglePhotosOrchestrator}: Preparing request...");
+            var preparedRequest = await context.CallActivityAsync<GoogleItemsPrepared>(
+                Constants.GoogleStorageToGooglePhotosPrepareList, request);
+
+            log.LogInformation($"{Constants.GooleStorageToGooglePhotosOrchestrator}: FanOut request to {Constants.CopyGoogleStorageToGooglePhotosOrchestrator} ...");
+            var results = await context.CallSubOrchestratorAsync<NewMediaItemResultRoot>(
+               Constants.CopyGoogleStorageToGooglePhotosOrchestrator, preparedRequest);
+
+            return new
+            {
+                request,
+                preparedRequest.ListItemsPrepared,
+                results.NewMediaItemResults
+            };
+        }
+
+        [FunctionName(Constants.CopyGoogleStorageToGooglePhotosOrchestrator)]
+        public static async Task<NewMediaItemResultRoot> CopyGoogleStorageToGooglePhotosOrchestrator(
+            [OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
+        {
+            log = context.CreateReplaySafeLogger(log);
+            var filesCopyItemsPrepared = context.GetInput<GoogleItemsPrepared>();
+
+            var tasks = new List<Task<NewMediaItemResultRoot>>();
+            log.LogInformation("Fan-Out CopyPhotoUrlToGoogle");
+            foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
+            {
+                var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyPhotoUrlToGooglePhotos, item);
+                tasks.Add(task);
+            }
+            log.LogInformation("Fan-In CopyPhotoUrlToGoogle");
+            var result = await Task.WhenAll(tasks);
+
+            var response = new NewMediaItemResultRoot
+            {
+                NewMediaItemResults = new List<NewMediaItemResult>()
+            };
+            foreach (var item in result)
+            {
                 response.NewMediaItemResults.AddRange(item.NewMediaItemResults);
             }
             return response;

@@ -5,6 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Net.Http;
+using Microsoft.Rest;
+using Microsoft.Azure.Management.ResourceManager;
+using System.Linq;
+using CloudFiles.Models.Azure;
+using System;
+using Newtonsoft.Json;
 
 namespace CloudFiles.Utilities
 {
@@ -25,11 +32,129 @@ namespace CloudFiles.Utilities
             return blobServiceClient.GetBlobContainerClient(ContainerName);
         }
 
+        // GET https://management.azure.com/subscriptions?api-version=2018-02-01 but using sdk instead
+        public static async Task<List<AzureSubscription>> ListSubscriptionsAsync(string access_token)
+        {
+            var credentials = new TokenCredentials(access_token);
+
+            using SubscriptionClient client = new SubscriptionClient(credentials);
+            var subscriptions = await client.Subscriptions.ListAsync().ConfigureAwait(false);
+            return subscriptions.OrderBy(x => x.DisplayName)
+                .Select(sub => new AzureSubscription() {
+                    Id = sub.Id,
+                    SubscriptionId = sub.SubscriptionId,
+                    DisplayName =sub.DisplayName,
+                    TenantId =sub.TenantId,
+                    State = sub.State
+                })
+                .ToList();
+        }
+
+        public static async Task<List<AzureResource>> ListResourceGroupsAsync(string access_token, string subscriptionId)
+        {
+            var result = new List<AzureResource>();
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", access_token);
+            var urlGet = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups?api-version=2021-04-01";
+
+            HttpResponseMessage response = await client.GetAsync(urlGet).ConfigureAwait(false);
+            var data = response.Content.ReadAsStringAsync().Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                var rawResult = JsonConvert.DeserializeObject<RawAzureResourceGroups>(data);
+                foreach (var item in rawResult.Value)
+                {
+                    result.Add(new AzureResource()
+                    {
+                        Id = item.Id,
+                        Name = item.Name,
+                        Location = item.Location
+                    });
+                }
+                return result;
+            }
+            else
+            {
+                throw new InvalidOperationException(data);
+            }
+        }
+
+        public static async Task<List<AzureStorageAccount>> ListStorageAccountsAsync(string access_token, string subscriptionId, string resourceGroup)
+        {
+            var result = new List<AzureStorageAccount>();
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", access_token);
+            var urlGet = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Storage/storageAccounts?api-version=2021-06-01";
+
+            HttpResponseMessage response = await client.GetAsync(urlGet).ConfigureAwait(false);
+            var data = response.Content.ReadAsStringAsync().Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                var rawResult = JsonConvert.DeserializeObject<RawAzureBlobContainers>(data);
+                foreach (var item in rawResult.Value) {
+                    result.Add(new AzureStorageAccount()
+                    {
+                        Id = item.Id,
+                        Name = item.Name,
+                        AccessTier = item.Properties.AccessTier,
+                        Location = item.Location,
+                        Type = item.Type,
+                        CreationTime = item.Properties.CreationTime,
+                        PrimaryEndpoints = item.Properties.PrimaryEndpoints,
+                        SecondaryEndpoints = item.Properties.SecondaryEndpoints
+                    });
+                }
+                return result;
+            }
+            else
+            {
+                throw new InvalidOperationException(data);
+            }
+        }
+
+        public static async Task<List<AzureContainer>> ListBlobContainersAsync(string access_token, string subscriptionId, string resourceGroupName, string accountName)
+        {
+            var result = new List<AzureContainer>();
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", access_token);
+            var urlGet = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Storage/storageAccounts/{accountName}/blobServices/default/containers?api-version=2021-04-01"; // &$maxpagesize={$maxpagesize}&$filter={$filter}&$include=deleted
+
+            HttpResponseMessage response = await client.GetAsync(urlGet).ConfigureAwait(false);
+            var data = response.Content.ReadAsStringAsync().Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                var rawResult = JsonConvert.DeserializeObject<RawAzureContainer>(data);
+                foreach (var item in rawResult.Value)
+                {
+                    result.Add(new AzureContainer()
+                    {
+                        Id = item.Id,
+                        Name = item.Name,
+                        LastModifiedTime = item.Properties.LastModifiedTime
+                    });
+                }
+                return result;
+            }
+            else
+            {
+                throw new InvalidOperationException(data);
+            }
+        }
+
+        /********************************************************************************************************************************************/
+
         /**
          * Get all files within the prefix folder
          */
         public async Task<List<Item>> ItemsHierarchicalDeepListingAsync(string folderPath, int? pageSize)
         {
+            // const tokenCredential = new Azure.TokenCredential(accessToken)
+            //BlobServiceClient blobServiceClient = new(ConnectionString);
+            //var ContainerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+
             var result = new List<Item>();
             // Call the listing operation and return pages of the specified size.
             var resultSegment = ContainerClient.GetBlobsByHierarchyAsync(prefix: folderPath, delimiter: "/")

@@ -2,36 +2,12 @@
   "$schema": "http://json.schemastore.org/proxies",
   "proxies": {
 
-    "root": {
+    "swagger-root": {
       "matchCondition": {
         "methods": [ "GET" ],
         "route": "/"
       },
-      "backendUri": "https://vladstore.z20.web.core.windows.net/index.html"
-    },
-
-    "rootFiles": {
-      "matchCondition": {
-        "methods": [ "GET" ],
-        "route": "{file}.{ext}"
-      },
-      "backendUri": "https://vladstore.z20.web.core.windows.net/{file}.{ext}"
-    },
-
-    "assets": {
-      "matchCondition": {
-        "methods": [ "GET" ],
-        "route": "/assets/{*file}"
-      },
-      "backendUri": "https://vladstore.z20.web.core.windows.net/assets/{file}"
-    },
-
-    "well-known": {
-      "matchCondition": {
-        "methods": [ "GET" ],
-        "route": "/.well-known/{file}.{ext}"
-      },
-      "backendUri": "https://vladstore.z20.web.core.windows.net/.well-known/{file}.{ext}"
+      "backendUri": "https://cloudfilesapi.azurewebsites.net/api/swagger/ui"
     }
   }
 }

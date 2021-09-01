@@ -25,3 +25,34 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice.  To 
 ## Further help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+
+
+
+
+
+https://www.youtube.com/watch?v=B416AxHoMJ4
+https://github.com/AzureAD/microsoft-authentication-library-for-js
+https://github.com/Azure-Samples/ms-identity-javascript-angular-tutorial
+
+https://github.com/Azure-Samples/ms-identity-javascript-angular-tutorial/tree/main/6-Multitenancy/1-call-api-mt
+auth-config.ts
+```
+export const msalConfig: Configuration = {
+    auth: {
+        clientId: 'b0d156f7-f1b5-431d-81c6-c169d6e01405', // This is the ONLY mandatory field that you need to supply.
+        authority: 'https://login.microsoftonline.com/b3f2bf8d-6397-4c87-9c9a-ec7ce704004c', // Defaults to "https://login.microsoftonline.com/common"
+        redirectUri: '/', // Points to window.location.origin. You must register this URI on Azure portal/App Registration.
+...
+export const protectedResources = {
+    graphApi: {
+        endpoint: "https://graph.microsoft.com/v1.0/users",
+        scopes: ["User.Read.All"]
+    },
+    todoListApi: {
+        endpoint: "https://management.azure.com",
+        scopes: ["https://management.azure.com/user_impersonation"],
+    },
+}
+```
+
+

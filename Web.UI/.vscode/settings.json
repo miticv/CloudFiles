@@ -10,5 +10,10 @@
         "activityBarBadge.background": "#bf0060",
         "activityBarBadge.foreground": "#e7e7e7"
     },
-    "peacock.color": "#007fff"
+    "peacock.color": "#007fff",
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/e7feae5d-2e46-470e-a5b3-5eb025fd598e/resourceGroups/CloudFiles/providers/Microsoft.Web/sites/cloudfiles"
 }

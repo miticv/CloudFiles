@@ -1,22 +1,5 @@
 # Cloud Files
 
-## Setting up Storage Account connection string to Azure function app settings
-
-![image](https://user-images.githubusercontent.com/3289670/128946485-b7546c62-158f-46e3-a8c0-bcfcb8d09bca.png)
-
-## VSCode Compile and Build
-
-![image](https://user-images.githubusercontent.com/3289670/128947756-ba992e11-39c3-4389-af57-ce43767ceed7.png)
-
-## Settings
-
-    "AzureWebJobsStorage": "Your orcherstrator web job storage ",
-    "AzureStorage": "See settng up storage account connection above for your blob images",
-    "AzureContainer": "images",
-    "GooglePhotoClientId": "your google client id",
-    "GooglePhotoClientSecret": "your google client secret",
-    "UiRedirectUrl": "Your UI redirect url"
-
 
 # Google token
     // https://medium.com/automationmaster/getting-google-oauth-access-token-using-google-apis-18b2ba11a11a
@@ -60,3 +43,15 @@ https://cloud.google.com/storage/docs/access-control/making-data-public
 
 only these token can call google storage apis:
 https://cloud.google.com/docs/authentication
+
+# 
+https://loiane.com/2020/05/deploying-angular-to-azure-static-web-apps/
+
+# Google secret for deploying static website:
+
+AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_HILL_0CA4C2B0F
+value is inside "Manage deployment token" inside cloud-files-web Static Web app in Azure
+# Google secret for deploying bff azure functions:
+
+CLOUDFILES_DEPLOYAZUREFUNCTIONS
+`az webapp deployment list-publishing-profiles --name cloud-files-api --resource-group CloudFiles --subscription e7feae5d-2e46-470e-a5b3-5eb025fd598e --xml`

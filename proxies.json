@@ -7,7 +7,7 @@
         "methods": [ "GET" ],
         "route": "/"
       },
-      "backendUri": "https://cloudfilesapi.azurewebsites.net/api/swagger/ui"
+      "backendUri": "https://api.cloud-files.link/api/swagger/ui"
     }
   }
 }

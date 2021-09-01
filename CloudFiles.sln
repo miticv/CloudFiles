@@ -5,6 +5,12 @@ VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudFiles", "CloudFiles.csproj", "{FEC98F4C-EDE5-4CEA-B75B-DEC1676B889F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitWorkflows", "GitWorkflows", "{C5A10DBF-496F-446F-8F78-8DC270814F51}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\azure-static-web-apps-wonderful-hill-0ca4c2b0f.yml = .github\workflows\azure-static-web-apps-wonderful-hill-0ca4c2b0f.yml
+		.github\workflows\CloudFiles-Api.yml = .github\workflows\CloudFiles-Api.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -2,6 +2,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { environment } from 'environments/environment';
 
 @Component({
     selector: 'app-root',
@@ -12,13 +13,15 @@ export class AppComponent implements OnInit, OnDestroy {
     constructor(public oidcSecurityService: OidcSecurityService, private router: Router) { }
 
     ngOnInit() {
+        // eslint-disable-next-line no-debugger
         this.oidcSecurityService
-            .checkAuth()
+            .checkAuth(null, environment.azureId)
 
             .subscribe(({ isAuthenticated }) => {
+
                 if (!isAuthenticated) {
                     if ('/autologin' !== window.location.pathname) {
-                        this.write('redirect', window.location.pathname);
+                        localStorage.setItem('redirect', JSON.stringify(window.location.pathname));
                         this.router.navigateByUrl('/autologin');
                     }
                 }

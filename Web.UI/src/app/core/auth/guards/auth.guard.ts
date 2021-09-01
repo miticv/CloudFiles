@@ -1,3 +1,4 @@
+import { environment } from 'environments/environment';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, CanLoad, Route, Router, RouterStateSnapshot, UrlSegment, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
@@ -65,23 +66,17 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
      */
     private _check(redirectURL: string): Observable<boolean> {
         // Check the authentication status
-        return this._authService.isAuthenticated$
-            .pipe(
-                switchMap((authenticated) => {
+        if (this._authService.checkAuth(environment.azureId)) {
+            return of(true);
+        }
+        else {
+            // Redirect to the sign-in page
+            localStorage.setItem('redirect', JSON.stringify(redirectURL));
+            this._router.navigateByUrl('/autologin');
 
-                    // If the user is not authenticated...
-                    if (!authenticated) {
-                        // Redirect to the sign-in page
-                        localStorage.setItem('redirect', JSON.stringify(redirectURL));
-                        this._router.navigateByUrl('/autologin');
+            // Prevent the access
+            return of(false);
 
-                        // Prevent the access
-                        return of(false);
-                    }
-
-                    // Allow the access
-                    return of(true);
-                })
-            );
+        }
     }
 }

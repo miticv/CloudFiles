@@ -1,7 +1,7 @@
+import { environment } from 'environments/environment';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, CanLoad, Route, Router, RouterStateSnapshot, UrlSegment, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 
 @Injectable({
@@ -62,22 +62,15 @@ export class NoAuthGuard implements CanActivate, CanActivateChild, CanLoad {
      */
     private _check(): Observable<boolean> {
         // Check the authentication status
-        return this._authService.isAuthenticated$
-            .pipe(
-                switchMap((authenticated) => {
+        if (this._authService.checkAuth(environment.azureId)) {
+            // Redirect to the root
+            this._router.navigate(['']);
 
-                    // If the user is authenticated...
-                    if (authenticated) {
-                        // Redirect to the root
-                        this._router.navigate(['']);
-
-                        // Prevent the access
-                        return of(false);
-                    }
-
-                    // Allow the access
-                    return of(true);
-                })
-            );
+            // Prevent the access
+            return of(false);
+        }
+        else {
+            return of(true);
+        }
     }
 }

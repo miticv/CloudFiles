@@ -2,15 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { AuthService } from 'app/core/auth/auth.service';
-import { AuthUtils } from 'app/core/auth/auth.utils';
+import { OidcSecurityService } from 'angular-auth-oidc-client';
+
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
     /**
      * Constructor
      */
-    constructor(private _authService: AuthService) {
+    constructor(private _authService: OidcSecurityService) {
     }
 
     /**
@@ -31,9 +31,10 @@ export class AuthInterceptor implements HttpInterceptor {
         // for the protected API routes which our response interceptor will
         // catch and delete the access token from the local storage while logging
         // the user out from the app.
-        if (this._authService.accessToken && !AuthUtils.isTokenExpired(this._authService.accessToken)) {
+        const token = this._authService.getAccessToken();
+        if (!!token) {
             newReq = req.clone({
-                // headers: req.headers.set('Authorization', 'Bearer ' + this._authService.accessToken)
+                headers: req.headers.set('Authorization', 'Bearer ' + token)
             });
         }
 
@@ -44,7 +45,7 @@ export class AuthInterceptor implements HttpInterceptor {
                 // Catch "401 Unauthorized" responses
                 if (error instanceof HttpErrorResponse && error.status === 401) {
                     // Sign out
-                    this._authService.signOut();
+                    this._authService.logoff();
 
                     // Reload the app
                     location.reload();

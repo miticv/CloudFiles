@@ -1,7 +1,7 @@
 {
-    "name": "@ada/photo",
+    "name": "@cloud/files",
     "version": "0.0.1",
-    "description": "Ada - photo copy",
+    "description": "Cloud Files",
     "author": "Ada Luo",
     "license": "MIT",
     "private": true,

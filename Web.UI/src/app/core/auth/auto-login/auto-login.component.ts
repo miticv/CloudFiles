@@ -1,6 +1,8 @@
+
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Component, OnInit } from '@angular/core';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { environment } from 'environments/environment';
 
 @Component({
     selector: 'app-auto-component',
@@ -12,9 +14,10 @@ export class AutoLoginComponent implements OnInit {
     constructor(public oidcSecurityService: OidcSecurityService) { }
 
     ngOnInit() {
-        this.oidcSecurityService.checkAuth().subscribe(() => {
-            this.oidcSecurityService.authorize();
-            console.log('auto component: ' + this.oidcSecurityService.getAccessToken());
+
+        this.oidcSecurityService.checkAuth(null, environment.azureId).subscribe(() => {
+
+            this.oidcSecurityService.authorize(environment.azureId);
         });
     }
 }

@@ -203,7 +203,7 @@ namespace CloudFiles.Utilities
             */
 
             if (result.Aud != result.Azp ||
-               result.Scope != "https://www.googleapis.com/auth/photoslibrary" ||
+               !result.Scope.Contains("https://www.googleapis.com/auth/photoslibrary") ||
                result.Aud != Environment.GetEnvironmentVariable("GooglePhotoClientId") ||
                !int.TryParse(result.Exp, out int expiration) ||
                expiration < 0 ) {

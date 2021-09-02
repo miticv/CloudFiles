@@ -27,14 +27,12 @@ namespace CloudFiles
         [OpenApiParameter(name: "prefix", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "prefix of instanceId", Visibility = OpenApiVisibilityType.Advanced)]
         [OpenApiParameter(name: "showInput", In = ParameterLocation.Query, Required = false, Type = typeof(bool), Summary = "show job input", Visibility = OpenApiVisibilityType.Advanced)]
         [OpenApiParameter(name: "pageSize", In = ParameterLocation.Query, Required = false, Type = typeof(int), Summary = "records per page", Visibility = OpenApiVisibilityType.Advanced)]
-        [OpenApiParameter(name: "from", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Summary = "filter from creation date", Visibility = OpenApiVisibilityType.Advanced, Description = "Format: MM/dd/yyyy HH:mm:ss")]
-        [OpenApiParameter(name: "to", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Summary = "filter to creation date", Visibility = OpenApiVisibilityType.Advanced, Description = "Format: MM/dd/yyyy HH:mm:ss")]
-        [OpenApiParameter(name: "statusList", In = ParameterLocation.Query, Required = false, Type = typeof(List<OrchestrationRuntimeStatus>), Summary = "List of statuses to show", Visibility = OpenApiVisibilityType.Advanced,
+        [OpenApiParameter(name: "from", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Summary = "filter from creation date", Visibility = OpenApiVisibilityType.Advanced, Description = "MM/dd/yyyy HH:mm:ss")]
+        [OpenApiParameter(name: "to", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Summary = "filter to creation date", Visibility = OpenApiVisibilityType.Advanced, Description = "MM/dd/yyyy HH:mm:ss")]
+        [OpenApiParameter(name: "statusList", In = ParameterLocation.Query, Required = false, Type = typeof(List<int>), Summary = "List of statuses to show", Visibility = OpenApiVisibilityType.Advanced,
             Description = "0:Running, 1:Completed, 2:New: 3:Failed, 4:Canceled, 5:Terminated, 6:Pending")]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(OrchestrationStatusQueryResult),
-           Description = "Returns list of process instances. For statusQueryGetUri you can append these options as well: `&showHistory = true&showHistoryOutput = true`")]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json",  bodyType: typeof(object), Description = "Returns list of process instances.")]
 
-        // can also do this:
         [FunctionName(Constants.ProcessListInstances)]
         public static async Task<IActionResult> DurableFunctionsInstances(
            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "process/instances")] HttpRequest req,

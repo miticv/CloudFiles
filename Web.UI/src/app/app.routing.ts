@@ -10,16 +10,16 @@ import { AutoLoginComponent } from './core/auth/auto-login/auto-login.component'
 // tslint:disable:max-line-length
 export const appRoutes: Route[] = [
 
-    // Redirect empty path to '/example'
-    { path: '', pathMatch: 'full', redirectTo: 'example' },
+    // Redirect empty path to '/files'
+    { path: '', pathMatch: 'full', redirectTo: 'files' },
     { path: 'autologin', component: AutoLoginComponent },
 
-    // Redirect signed in user to the '/example'
+    // Redirect signed in user to the '/files'
     //
     // After the user signs in, the sign in page will redirect the user to the 'signed-in-redirect'
     // path. Below is another redirection for that path to redirect the user to the desired
     // location. This is a small convenience to keep all main routes together here on this file.
-    { path: 'signed-in-redirect', pathMatch: 'full', redirectTo: 'example' },
+    { path: 'signed-in-redirect', pathMatch: 'full', redirectTo: 'files' },
 
 
     // Auth routes for authenticated users
@@ -59,6 +59,7 @@ export const appRoutes: Route[] = [
             initialData: InitialDataResolver,
         },
         children: [
+            { path: 'files', loadChildren: () => import('app/modules/copy-files/copy-files.module').then(m => m.CopyFilesModule) },
             { path: 'example', loadChildren: () => import('app/modules/admin/example/example.module').then(m => m.ExampleModule) },
         ]
     }

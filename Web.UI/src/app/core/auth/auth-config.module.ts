@@ -20,7 +20,7 @@ import { AuthModule, LogLevel } from 'angular-auth-oidc-client';
             postLoginRoute: '/home',
             forbiddenRoute: '/forbidden',
             unauthorizedRoute: '/unauthorized',
-            logLevel: LogLevel.Debug,
+            logLevel: LogLevel.Error,
             historyCleanupOff: true,
             useRefreshToken: true,
         },
@@ -39,7 +39,7 @@ import { AuthModule, LogLevel } from 'angular-auth-oidc-client';
             maxIdTokenIatOffsetAllowedInSeconds: 600,
             issValidationOff: false, // this needs to be true if using a common endpoint in Azure
             autoUserInfo: false,
-            logLevel: LogLevel.Debug,
+            logLevel: LogLevel.Error,
         }]
     })],
     exports: [AuthModule],

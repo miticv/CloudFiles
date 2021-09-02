@@ -4,6 +4,13 @@ import { Navigation } from '../navigation/navigation.types';
 
 const defaultNavigation: FuseNavigationItem[] = [
     {
+        id: 'files',
+        title: 'Copy Files',
+        type: 'basic',
+        icon: 'file_copy',
+        link: '/files'
+    },
+    {
         id: 'example',
         title: 'Example',
         type: 'basic',

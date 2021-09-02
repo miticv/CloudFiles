@@ -46,9 +46,9 @@ namespace CloudFiles
         {
             try
             {
-                var accessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAccessToken = CommonUtility.GetTokenFromHeaders(req);
                 log.LogInformation($"{Constants.AzureSubscriptionList} call");
-                var list = await AzureUtility.ListSubscriptionsAsync(accessToken).ConfigureAwait(false);
+                var list = await AzureUtility.ListSubscriptionsAsync(azureAccessToken).ConfigureAwait(false);
                 return new OkObjectResult(list);
             }
             catch (InvalidOperationException ex)
@@ -71,9 +71,9 @@ namespace CloudFiles
         {
             try
             {
-                var accessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAccessToken = CommonUtility.GetTokenFromHeaders(req);
                 log.LogInformation($"{Constants.AzureResourceGroupList} call");
-                var list = await AzureUtility.ListResourceGroupsAsync(accessToken, subscriptionId).ConfigureAwait(false);
+                var list = await AzureUtility.ListResourceGroupsAsync(azureAccessToken, subscriptionId).ConfigureAwait(false);
                 return new OkObjectResult(list);
             }
             catch (InvalidOperationException ex)
@@ -97,9 +97,9 @@ namespace CloudFiles
         {
             try
             {
-                var accessToken = CommonUtility.GetTokenFromHeaders(req);
+                var AzureAccessToken = CommonUtility.GetTokenFromHeaders(req);
                 log.LogInformation($"{Constants.AzureStorageAccountList} call");
-                var list = await AzureUtility.ListStorageAccountsAsync(accessToken, subscriptionId, resourceGroupId).ConfigureAwait(false);
+                var list = await AzureUtility.ListStorageAccountsAsync(AzureAccessToken, subscriptionId, resourceGroupId).ConfigureAwait(false);
                 return new OkObjectResult(list);
             }
             catch (InvalidOperationException ex)
@@ -124,9 +124,9 @@ namespace CloudFiles
         {
             try
             {
-                var accessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAaccessToken = CommonUtility.GetTokenFromHeaders(req);
                 log.LogInformation($"{Constants.AzureContainerList} call");
-                var list = await AzureUtility.ListBlobContainersAsync(accessToken, subscriptionId, resourceGroupId, accountName).ConfigureAwait(false);
+                var list = await AzureUtility.ListBlobContainersAsync(azureAaccessToken, subscriptionId, resourceGroupId, accountName).ConfigureAwait(false);
                 return new OkObjectResult(list);
             }
             catch (InvalidOperationException ex)
@@ -148,7 +148,7 @@ namespace CloudFiles
         {
             try
             {
-                var accessToken = CommonUtility.GetTokenFromHeaders(req);
+                var googleAccessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
 
                 var response = new AlbumListResponse
                 {
@@ -160,7 +160,7 @@ namespace CloudFiles
                 var result = new AlbumListResponse();
                 do
                 {
-                    result = await GoogleUtility.ListAlbumsAsync(accessToken, result.NextPageToken).ConfigureAwait(false);
+                    result = await GoogleUtility.ListAlbumsAsync(googleAccessToken, result.NextPageToken).ConfigureAwait(false);
                     if (result.Albums?.Count > 0)
                     {
                         response.Albums.AddRange(result.Albums);
@@ -169,7 +169,12 @@ namespace CloudFiles
 
                 return new OkObjectResult(response);
             }
-            catch(InvalidOperationException ex) {
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex) {
                 return new BadRequestObjectResult(ex.Message);
             }
         }
@@ -185,7 +190,7 @@ namespace CloudFiles
             ILogger log)
         {
             try {
-                string accessToken = CommonUtility.GetTokenFromHeaders(req);
+                var googleAccessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
 
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
                 var data = JsonConvert.DeserializeObject<AlbumCreate>(requestBody);
@@ -195,10 +200,16 @@ namespace CloudFiles
                 }
 
                 log.LogInformation($"{Constants.GoogleAlbumAdd} function processing {nameof(GoogleUtility.AddAlbumAsync)}.");
-                var created = await GoogleUtility.AddAlbumAsync(accessToken, data.Title).ConfigureAwait(false);
+                var created = await GoogleUtility.AddAlbumAsync(googleAccessToken, data.Title).ConfigureAwait(false);
                 return new OkObjectResult(created);
             }
-            catch(InvalidOperationException ex) {
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
                 return new BadRequestObjectResult(ex.Message);
             }
         }
@@ -219,8 +230,10 @@ namespace CloudFiles
 
                 return new OkResult();
             }
-            catch (InvalidOperationException ex) {
-                return new BadRequestObjectResult($"Token not valid/expired: {ex.Message}");
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
         }
 

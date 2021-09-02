@@ -34,6 +34,12 @@ namespace CloudFiles.Utilities
             return newInstance;
         }
 
+        public string GetServiceToken()
+        {
+            return this.GoogleToken;
+            // return  await GetServiceAccessTokenFromJSONKeyAsync("service_account.secret.json").ConfigureAwait(false);
+        }
+
         private static async Task<string> GetServiceAccessTokenFromJSONKey(string jsonKeyFilePath)
         {
             var scopes = new string[] {
@@ -175,7 +181,7 @@ namespace CloudFiles.Utilities
             }
             else
             {
-                throw new InvalidOperationException(result);
+                throw new UnauthorizedAccessException(result);
             }
         }
 
@@ -201,15 +207,9 @@ namespace CloudFiles.Utilities
                result.Aud != Environment.GetEnvironmentVariable("GooglePhotoClientId") ||
                !int.TryParse(result.Exp, out int expiration) ||
                expiration < 0 ) {
-                throw new InvalidOperationException("Google token did not pass validation using Google Utility");
+                throw new UnauthorizedAccessException("Google token did not pass validation");
             }
             return accessToken;
-        }
-
-        public string GetServiceToken()
-        {
-            return this.GoogleToken;
-            // return  await GetServiceAccessTokenFromJSONKeyAsync("service_account.secret.json").ConfigureAwait(false);
         }
 
         /**

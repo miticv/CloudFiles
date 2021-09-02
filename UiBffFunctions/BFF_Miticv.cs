@@ -62,6 +62,10 @@ namespace CloudFiles
                 log.LogInformation($"{Constants.AzureFileGetItem} call for path=`{path}`.");
                 return await azureUtility.GetHttpItemAsync(path).ConfigureAwait(false);
             }
+            catch (UnauthorizedAccessException ex) {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
             catch (RequestFailedException ex)
             {
                 if (ex.Status == StatusCodes.Status404NotFound)
@@ -89,24 +93,32 @@ namespace CloudFiles
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "azure/miticv/file/list")] HttpRequest req,
             ILogger log)
         {
-            await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
-            string path = req.Query["path"];
-
-            string pagesizestring = req.Query["pagesize"];
-            bool success = int.TryParse(pagesizestring, out int trypagesize);
-            if (!string.IsNullOrEmpty(pagesizestring) && !success)
+            try
             {
-                return new BadRequestObjectResult("Query parameter `pagesize` must me integer");
+                await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                string path = req.Query["path"];
+
+                string pagesizestring = req.Query["pagesize"];
+                bool success = int.TryParse(pagesizestring, out int trypagesize);
+                if (!string.IsNullOrEmpty(pagesizestring) && !success)
+                {
+                    return new BadRequestObjectResult("Query parameter `pagesize` must me integer");
+                }
+                int? pagesize = trypagesize == 0 ? 5000 : trypagesize;
+
+                var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+                var containerName = Environment.GetEnvironmentVariable("AzureContainer");
+                var azureUtility = new AzureUtility(connectionString, containerName);
+                log.LogInformation($"{Constants.AzureFileList} function processing a request for path=`{path}` and pagesize of {pagesize}.");
+                var fileList = await azureUtility.ItemShallowListingAsync(path, pagesize).ConfigureAwait(false);
+
+                return new OkObjectResult(fileList);
             }
-            int? pagesize = trypagesize == 0 ? 5000 : trypagesize;
-
-            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-            var containerName = Environment.GetEnvironmentVariable("AzureContainer");
-            var azureUtility = new AzureUtility(connectionString, containerName);
-            log.LogInformation($"{Constants.AzureFileList} function processing a request for path=`{path}` and pagesize of {pagesize}.");
-            var fileList = await azureUtility.ItemShallowListingAsync(path, pagesize).ConfigureAwait(false);
-
-            return new OkObjectResult(fileList);
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
         }
 
         [OpenApiOperation(operationId: Constants.GoogleFileList, tags: new[] { "Google" }, Summary = "Get list of items from google storage path", Description = "It will display the list of items contained in ths path", Visibility = OpenApiVisibilityType.Important)]
@@ -121,14 +133,22 @@ namespace CloudFiles
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/miticv/file/list")] HttpRequest req,
             ILogger log)
         {
-            await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
-            string path = req.Query["path"];
+            try
+            {
+                await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                string path = req.Query["path"];
 
-            var googleUtility = await GoogleUtility.CreateAsync().ConfigureAwait(false);
-            log.LogInformation($"{Constants.GoogleFileList} function processing a request for path=`{path}`.");
-            var fileList = await googleUtility.ItemShallowListingAsync(path).ConfigureAwait(false);
+                var googleUtility = await GoogleUtility.CreateAsync().ConfigureAwait(false);
+                log.LogInformation($"{Constants.GoogleFileList} function processing a request for path=`{path}`.");
+                var fileList = await googleUtility.ItemShallowListingAsync(path).ConfigureAwait(false);
 
-            return new OkObjectResult(fileList);
+                return new OkObjectResult(fileList);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

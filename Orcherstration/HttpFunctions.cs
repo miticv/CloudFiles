@@ -108,8 +108,8 @@ namespace CloudFiles
                 log.LogInformation($"List orchestration instances.");
                 var result = await starter.ListInstancesAsync(queryFilter, CancellationToken.None).ConfigureAwait(false);
                 return new OkObjectResult(result);
-
-            } catch (UnauthorizedAccessException ex) {
+            }
+            catch (UnauthorizedAccessException ex) {
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
@@ -128,7 +128,8 @@ namespace CloudFiles
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
         {
-            try {
+            try
+            {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
                 var request = JsonConvert.DeserializeObject<FilesCopyRequest>(requestBody);
@@ -143,7 +144,8 @@ namespace CloudFiles
                 log.LogInformation($"Started orchestration instance '{instanceId}'.");
 
                 return starter.CreateCheckStatusResponse(req, instanceId);
-            } catch (UnauthorizedAccessException ex) {
+            }
+            catch (UnauthorizedAccessException ex) {
                     log.LogError(ex.Message);
                     return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
@@ -178,8 +180,8 @@ namespace CloudFiles
                 log.LogInformation($"Started orchestration instance '{instanceId}'.");
 
                 return starter.CreateCheckStatusResponse(req, instanceId);
-
-            } catch (UnauthorizedAccessException ex) {
+            }
+            catch (UnauthorizedAccessException ex) {
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }

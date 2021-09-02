@@ -84,7 +84,6 @@ namespace CloudFiles
         [OpenApiOperation(operationId: Constants.AzureFileList, tags: new[] { "Azure" }, Summary = "Get list of items from azure storage path", Description = "It will display the list of items contained in ths path", Visibility = OpenApiVisibilityType.Important)]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "path to the resource", Description = "example: '2011 PhotoShoot Feng'", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "pagesize", In = ParameterLocation.Query, Required = false, Type = typeof(int), Summary = "page size if needed", Visibility = OpenApiVisibilityType.Advanced)]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Item>))]
 
         // azure/file/list?path=2011 PhotoShoot Feng
@@ -98,19 +97,11 @@ namespace CloudFiles
                 await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
                 string path = req.Query["path"];
 
-                string pagesizestring = req.Query["pagesize"];
-                bool success = int.TryParse(pagesizestring, out int trypagesize);
-                if (!string.IsNullOrEmpty(pagesizestring) && !success)
-                {
-                    return new BadRequestObjectResult("Query parameter `pagesize` must me integer");
-                }
-                int? pagesize = trypagesize == 0 ? 5000 : trypagesize;
-
                 var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
                 var containerName = Environment.GetEnvironmentVariable("AzureContainer");
                 var azureUtility = new AzureUtility(connectionString, containerName);
-                log.LogInformation($"{Constants.AzureFileList} function processing a request for path=`{path}` and pagesize of {pagesize}.");
-                var fileList = await azureUtility.ItemShallowListingAsync(path, pagesize).ConfigureAwait(false);
+                log.LogInformation($"{Constants.AzureFileList} function processing a request for path=`{path}`");
+                var fileList = await azureUtility.ItemShallowListingAsync(path, 5000).ConfigureAwait(false);
 
                 return new OkObjectResult(fileList);
             }

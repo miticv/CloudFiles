@@ -46,10 +46,15 @@ namespace CloudFiles
         {
             try
             {
-                var azureAccessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
                 log.LogInformation($"{Constants.AzureSubscriptionList} call");
                 var list = await AzureUtility.ListSubscriptionsAsync(azureAccessToken).ConfigureAwait(false);
                 return new OkObjectResult(list);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
@@ -71,10 +76,15 @@ namespace CloudFiles
         {
             try
             {
-                var azureAccessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
                 log.LogInformation($"{Constants.AzureResourceGroupList} call");
                 var list = await AzureUtility.ListResourceGroupsAsync(azureAccessToken, subscriptionId).ConfigureAwait(false);
                 return new OkObjectResult(list);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
@@ -97,10 +107,15 @@ namespace CloudFiles
         {
             try
             {
-                var AzureAccessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
                 log.LogInformation($"{Constants.AzureStorageAccountList} call");
-                var list = await AzureUtility.ListStorageAccountsAsync(AzureAccessToken, subscriptionId, resourceGroupId).ConfigureAwait(false);
+                var list = await AzureUtility.ListStorageAccountsAsync(azureAccessToken, subscriptionId, resourceGroupId).ConfigureAwait(false);
                 return new OkObjectResult(list);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
@@ -124,10 +139,15 @@ namespace CloudFiles
         {
             try
             {
-                var azureAaccessToken = CommonUtility.GetTokenFromHeaders(req);
+                var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
                 log.LogInformation($"{Constants.AzureContainerList} call");
-                var list = await AzureUtility.ListBlobContainersAsync(azureAaccessToken, subscriptionId, resourceGroupId, accountName).ConfigureAwait(false);
+                var list = await AzureUtility.ListBlobContainersAsync(azureAccessToken, subscriptionId, resourceGroupId, accountName).ConfigureAwait(false);
                 return new OkObjectResult(list);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {

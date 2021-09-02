@@ -1,13 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace CloudFiles.Utilities
 {
@@ -39,23 +34,8 @@ namespace CloudFiles.Utilities
             }
             return values.FirstOrDefault()?.Replace("Bearer ", "").Replace("bearer ", "");
         }
-
-        public static void ValidateJwtToken(string accessToken)
-        {
-            var tokenValidationParameters = new TokenValidationParameters();
-            var jsonWebTokenHandler = new JsonWebTokenHandler();
-            var json = jsonWebTokenHandler.ReadJsonWebToken(accessToken);
-
-            var tokenValidationResult = jsonWebTokenHandler.ValidateToken(accessToken, tokenValidationParameters);
-            if (!tokenValidationResult.IsValid && json.Claims.Any())
-            {
-                if (tokenValidationResult.Exception != null)
-                    throw tokenValidationResult.Exception;
-
-                throw tokenValidationResult.Exception;
-            }
-        }
     }
+
     public class UiErrorFormat {
         public string Message { get; set; }
     }

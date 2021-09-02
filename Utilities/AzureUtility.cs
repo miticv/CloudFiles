@@ -12,6 +12,12 @@ using System.Linq;
 using CloudFiles.Models.Azure;
 using System;
 using Newtonsoft.Json;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.AspNetCore.Http;
 
 namespace CloudFiles.Utilities
 {
@@ -30,6 +36,64 @@ namespace CloudFiles.Utilities
         {
             BlobServiceClient blobServiceClient = new BlobServiceClient(ConnectionString);
             return blobServiceClient.GetBlobContainerClient(ContainerName);
+        }
+
+        // VerifyGoogleHeaderTokenIsValid
+        public static async Task<string> VerifyAzureManagementHeaderTokenIsValid(HttpRequest req)
+        {
+            string accessToken = CommonUtility.GetTokenFromHeaders(req);
+            await ValidateJwtToken(accessToken, "https://management.azure.com").ConfigureAwait(false);
+            return accessToken;
+        }
+
+        public static async Task<string> VerifyAzureStorageHeaderTokenIsValid(HttpRequest req)
+        {
+            string accessToken = CommonUtility.GetTokenFromHeaders(req);
+            await ValidateJwtToken(accessToken, "https://storage.azure.com").ConfigureAwait(false);
+            return accessToken;
+        }
+
+        private static async Task ValidateJwtToken(string accessToken, string audience)
+        {
+            try
+            {
+                var tenantid = Environment.GetEnvironmentVariable("AzureTennantId");
+                var jsonWebTokenHandler2 = new JsonWebTokenHandler();
+                var json = jsonWebTokenHandler2.ReadJsonWebToken(accessToken);
+
+                var openidConfigManaged = new ConfigurationManager<OpenIdConnectConfiguration>(
+                    $"https://login.microsoftonline.com/{tenantid}/v2.0/.well-known/openid-configuration",
+                    new OpenIdConnectConfigurationRetriever(),
+                    new HttpDocumentRetriever());
+                var config = await openidConfigManaged.GetConfigurationAsync().ConfigureAwait(false);
+
+                var tokenValidationParameters = new TokenValidationParameters()
+                {
+                    RequireAudience = true,
+                    RequireExpirationTime = true,
+                    ValidateAudience = true,
+                    ValidateIssuer = true,
+                    ValidateLifetime = true,
+                    // The Audience should be the requested resource => client_id and or resource identifier.
+                    // Refer to the "aud" claim in the token
+                    ValidAudiences = new[] { audience },
+                    // The issuer is the identity provider
+                    // Refer to the "iss" claim in the token
+                    ValidIssuers = new[] { $"https://sts.windows.net/{tenantid}/" },
+                    IssuerSigningKeys = config.SigningKeys
+                };
+                var jsonWebTokenHandler = new JwtSecurityTokenHandler();
+                var claimPrincipal = jsonWebTokenHandler.ValidateToken(accessToken, tokenValidationParameters, out _);
+
+                if (!claimPrincipal.Claims.Any())
+                {
+                    throw new UnauthorizedAccessException("Azure token did not pass validation");
+                }
+            }
+            catch (Exception)
+            {
+                throw new UnauthorizedAccessException("Azure token did not pass validation");
+            }
         }
 
         // GET https://management.azure.com/subscriptions?api-version=2018-02-01 but using sdk instead

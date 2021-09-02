@@ -105,7 +105,7 @@ namespace CloudFiles
                 queryFilter.PageSize = pageSizeInt;
                 queryFilter.RuntimeStatus = statuses;
 
-                log.LogInformation($"List orchestration instances.");
+                log.LogInformation("List orchestration instances.");
                 var result = await starter.ListInstancesAsync(queryFilter, CancellationToken.None).ConfigureAwait(false);
                 return new OkObjectResult(result);
             }

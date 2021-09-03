@@ -20,8 +20,8 @@ namespace CloudFiles
 {
     public static class BFF_MultiTenant
     {
-        [OpenApiOperation(operationId: Constants.bffPing, tags: new[] { "Common" }, Summary = "Ping function", Description = "Simple ping function.", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "This returns plain 'pong' response")]
+        [OpenApiOperation(operationId: Constants.bffPing, tags: new[] { "Common" }, Summary = "Ping function")]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "This returns plain `pong` response")]
         [FunctionName(Constants.bffPing)]
         public static IActionResult Ping(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ping")] HttpRequest req,
@@ -33,7 +33,7 @@ namespace CloudFiles
 
         /********************************************************************************************************************************************/
 
-        [OpenApiOperation(operationId: Constants.AzureSubscriptionList, tags: new[] { "Azure" }, Summary = "List Azure Subscriptions", Description = "For now single tenant only", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.AzureSubscriptionList, tags: new[] { "Azure" }, Summary = "List Azure Subscriptions")]
         // [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Models.Azure.AzureSubscription>))]
@@ -62,9 +62,9 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.AzureResourceGroupList, tags: new[] { "Azure" }, Summary = "List Azure Resource Groups", Description = "For now single tenant only", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.AzureResourceGroupList, tags: new[] { "Azure" }, Summary = "List Azure Resource Groups")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "subscriptionId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Subscription Id", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiParameter(name: "subscriptionId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Subscription Id")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Models.Azure.AzureResource>))]
         [OpenApiIgnore]
 
@@ -92,10 +92,10 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.AzureStorageAccountList, tags: new[] { "Azure" }, Summary = "List Azure Storage Accounts", Description = "For now single tenant only", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.AzureStorageAccountList, tags: new[] { "Azure" }, Summary = "List Azure Storage Accounts")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "subscriptionId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Subscription Id", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "resourceGroupId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Resource Group Id", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiParameter(name: "subscriptionId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Subscription Id")]
+        [OpenApiParameter(name: "resourceGroupId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Resource Group Id")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Models.Azure.AzureStorageAccount>))]
         [OpenApiIgnore]
 
@@ -123,11 +123,11 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.AzureContainerList, tags: new[] { "Azure" }, Summary = "List Azure Storage Containers", Description = "For now single tenant only", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.AzureContainerList, tags: new[] { "Azure" }, Summary = "List Azure Storage Containers")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "subscriptionId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Subscription Id", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "resourceGroupId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Resource Group Id", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiParameter(name: "accountName", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Account Name", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiParameter(name: "subscriptionId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Subscription Id")]
+        [OpenApiParameter(name: "resourceGroupId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Resource Group Id")]
+        [OpenApiParameter(name: "accountName", In = ParameterLocation.Path, Required = true, Type = typeof(string), Summary = "Account Name")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Models.Azure.AzureResource>))]
         [OpenApiIgnore]
 
@@ -157,7 +157,7 @@ namespace CloudFiles
 
         /********************************************************************************************************************************************/
 
-        [OpenApiOperation(operationId: Constants.GoogleAlbumList, tags: new[] { "Google" }, Summary = "List Google Albums", Description = "Multi tenant", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.GoogleAlbumList, tags: new[] { "Google" }, Summary = "List Google Albums")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<AlbumListResponse>))]
 
@@ -199,7 +199,7 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.GoogleAlbumAdd, tags: new[] { "Google" }, Summary = "Add Google Album", Description = "Multi tenant", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.GoogleAlbumAdd, tags: new[] { "Google" }, Summary = "Add Google Album")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiRequestBody("Album Create",  typeof(AlbumCreate))]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(AlbumCreateResponse))]
@@ -234,7 +234,7 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.GoogleValidateToken, tags: new[] { "Google" }, Summary = "Verifies Google Bearer Token", Description = "Verifies it agains single tenant!", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.GoogleValidateToken, tags: new[] { "Google" }, Summary = "Verifies Google Bearer Token")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string))]
 

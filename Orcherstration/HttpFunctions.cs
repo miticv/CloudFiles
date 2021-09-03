@@ -21,17 +21,16 @@ namespace CloudFiles
 {
     public static class HttpFunctions
     {
-        [OpenApiOperation(operationId: Constants.ProcessListInstances, tags: new[] { "Processes" }, Summary = "List all process instances", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.ProcessListInstances, tags: new[] { "Processes" }, Summary = "List all process instances")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "continueToken", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "next page token if applicable", Visibility = OpenApiVisibilityType.Advanced)]
-        [OpenApiParameter(name: "prefix", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "prefix of instanceId", Visibility = OpenApiVisibilityType.Advanced)]
-        [OpenApiParameter(name: "showInput", In = ParameterLocation.Query, Required = false, Type = typeof(bool), Summary = "show job input", Visibility = OpenApiVisibilityType.Advanced)]
-        [OpenApiParameter(name: "pageSize", In = ParameterLocation.Query, Required = false, Type = typeof(int), Summary = "records per page", Visibility = OpenApiVisibilityType.Advanced)]
-        [OpenApiParameter(name: "from", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Summary = "filter from creation date", Visibility = OpenApiVisibilityType.Advanced, Description = "MM/dd/yyyy HH:mm:ss")]
-        [OpenApiParameter(name: "to", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Summary = "filter to creation date", Visibility = OpenApiVisibilityType.Advanced, Description = "MM/dd/yyyy HH:mm:ss")]
-        [OpenApiParameter(name: "statusList", In = ParameterLocation.Query, Required = false, Type = typeof(List<int>), Summary = "List of statuses to show", Visibility = OpenApiVisibilityType.Advanced,
+        [OpenApiParameter(name: "continueToken", In = ParameterLocation.Query, Required = false, Type = typeof(string))]
+        [OpenApiParameter(name: "prefix", In = ParameterLocation.Query, Required = false, Type = typeof(string))]
+        [OpenApiParameter(name: "showInput", In = ParameterLocation.Query, Required = false, Type = typeof(bool))]
+        [OpenApiParameter(name: "pageSize", In = ParameterLocation.Query, Required = false, Type = typeof(int))]
+        [OpenApiParameter(name: "from", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Description = "MM/dd/yyyy HH:mm:ss")]
+        [OpenApiParameter(name: "to", In = ParameterLocation.Query, Required = false, Type = typeof(DateTime), Description = "MM/dd/yyyy HH:mm:ss")]
+        [OpenApiParameter(name: "statusList", In = ParameterLocation.Query, Required = false, Type = typeof(List<int>),
             Description = "0:Running, 1:Completed, 2:New: 3:Failed, 4:Canceled, 5:Terminated, 6:Pending")]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json",  bodyType: typeof(object), Description = "Returns list of process instances.")]
 
         [FunctionName(Constants.ProcessListInstances)]
         public static async Task<IActionResult> DurableFunctionsInstances(
@@ -113,7 +112,7 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.ProcessAzureToGooglePhotos_Start, tags: new[] { "Processes" }, Summary = "Start Azure to Google Photos job", Description = "Single tenant for now.", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.ProcessAzureToGooglePhotos_Start, tags: new[] { "Processes" }, Summary = "Start Azure to Google Photos job")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiRequestBody("File Copy Request", typeof(FilesCopyRequest))]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(StartJobResponse),
@@ -149,7 +148,7 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.ProcessGooleStorageToGooglePhotos_Start, tags: new[] { "Processes" }, Summary = "Start Google Storage to Google Photos job", Description = "Single tenant for now", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.ProcessGooleStorageToGooglePhotos_Start, tags: new[] { "Processes" }, Summary = "Start Google Storage to Google Photos job")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
         [OpenApiRequestBody("File Copy Request", typeof(FilesCopyRequest))]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(StartJobResponse),

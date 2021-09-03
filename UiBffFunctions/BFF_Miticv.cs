@@ -37,10 +37,10 @@ namespace CloudFiles
 
         /********************************************************************************************************************************************/
 
-        [OpenApiOperation(operationId: Constants.AzureFileGetItem, tags: new[] { "Azure" }, Summary = "Get item from azure storage", Description = "It will display the image to the browser", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.AzureFileGetItem, tags: new[] { "Azure" }, Summary = "Get item from azure storage")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = true, Type = typeof(string), Summary = "path to the resource", Description = "example: '2011 PhotoShoot Feng/Feng-1.jpg'", Visibility = OpenApiVisibilityType.Important)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/pdf", bodyType: typeof(byte[]), Description = "It will return image with proper media type to show on the browser")]
+        [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = true, Type = typeof(string), Summary = "path to the resource", Description = "example: `2011 PhotoShoot Feng/Feng-1.jpg`")]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/pdf", bodyType: typeof(string), Description = "It will return image with proper media type to show on the browser")]
 
         // azure/file/item?path=2011 PhotoShoot Feng/Feng-2.jpg
         [FunctionName(Constants.AzureFileGetItem)]
@@ -81,9 +81,9 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.AzureFileList, tags: new[] { "Azure" }, Summary = "Get list of items from azure storage path", Description = "It will display the list of items contained in ths path", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.AzureFileList, tags: new[] { "Azure" }, Summary = "Get list of items from azure storage path", Description = "It will display the list of items contained in ths path")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "path to the resource", Description = "example: '2011 PhotoShoot Feng'", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "path to the resource", Description = "example: `2011 PhotoShoot Feng`")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Item>))]
 
         // azure/file/list?path=2011 PhotoShoot Feng
@@ -112,9 +112,9 @@ namespace CloudFiles
             }
         }
 
-        [OpenApiOperation(operationId: Constants.GoogleFileList, tags: new[] { "Google" }, Summary = "Get list of items from google storage path", Description = "It will display the list of items contained in ths path", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiOperation(operationId: Constants.GoogleFileList, tags: new[] { "Google" }, Summary = "Get list of items from google storage path")]
         [OpenApiSecurity("Bearer token", SecuritySchemeType.ApiKey, Name = "Authorization", In = OpenApiSecurityLocationType.Header, Description = "Google bearer token")]
-        [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "path to the resource", Description = "example: '2011 PhotoShoot Feng'", Visibility = OpenApiVisibilityType.Important)]
+        [OpenApiParameter(name: "path", In = ParameterLocation.Query, Required = false, Type = typeof(string), Summary = "path to the resource", Description = "example: `2011 PhotoShoot Feng`")]
         [OpenApiIgnore]
 
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Item>))]

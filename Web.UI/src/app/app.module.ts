@@ -20,6 +20,7 @@ import { reducers, metaReducers } from './store/reducers';
 import { StoreRouterConnectingModule, DefaultRouterStateSerializer, RouterStateSerializer } from '@ngrx/router-store';
 import { CustomRouterSerializerService } from './service/custom-router-serializer.service';
 import { EffectsModule } from '@ngrx/effects';
+import { NoAuthModule } from './modules/no-auth/no-auth.module';
 
 
 
@@ -52,6 +53,8 @@ const routerConfig: ExtraOptions = {
 
         // 3rd party modules that require global configuration via forRoot
         MarkdownModule.forRoot({}),
+
+        NoAuthModule,
 
         StoreModule.forRoot(reducers, {
             metaReducers,

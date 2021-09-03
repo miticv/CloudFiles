@@ -23,7 +23,7 @@ namespace CloudFiles
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/miticv/getServiceToken")] HttpRequest req,
             ILogger log)
         {
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IS_RUNNING_LOCALLY"))) {
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IS_RUNNING_LOCALLY"))) {
                 return new BadRequestObjectResult("This API is only allowed for local debugging");
             }
 
@@ -64,7 +64,7 @@ namespace CloudFiles
             }
             catch (UnauthorizedAccessException ex) {
                 log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
             catch (RequestFailedException ex)
             {
@@ -108,7 +108,7 @@ namespace CloudFiles
             catch (UnauthorizedAccessException ex)
             {
                 log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
         }
 
@@ -138,7 +138,7 @@ namespace CloudFiles
             catch (UnauthorizedAccessException ex)
             {
                 log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
         }
     }

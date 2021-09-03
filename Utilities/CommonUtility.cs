@@ -30,7 +30,7 @@ namespace CloudFiles.Utilities
             var success = req.Headers.TryGetValue("Authorization", out StringValues values);
             if (!success || values.Count == 0 || String.IsNullOrEmpty(values.FirstOrDefault()) || values.FirstOrDefault().Length < 20)
             {
-                throw new InvalidOperationException("Please include Authorization header with bearer token");
+                throw new UnauthorizedAccessException("Please include Authorization header with bearer token");
             }
             return values.FirstOrDefault()?.Replace("Bearer ", "").Replace("bearer ", "");
         }

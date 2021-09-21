@@ -8,8 +8,7 @@
         "activityBar.foreground": "#15202b",
         "activityBar.inactiveForeground": "#15202b99",
         "activityBarBadge.background": "#bf0060",
-        "activityBarBadge.foreground": "#e7e7e7",
-
+        "activityBarBadge.foreground": "#e7e7e7"
     },
     "peacock.color": "#007fff",
     "appService.zipIgnorePattern": [

@@ -8,7 +8,7 @@ import { PrivacystatementComponent } from './privacystatement/privacystatement.c
   declarations: [
 
     TermsofserviceComponent,
-        PrivacystatementComponent
+    PrivacystatementComponent
   ],
   imports: [
     CommonModule

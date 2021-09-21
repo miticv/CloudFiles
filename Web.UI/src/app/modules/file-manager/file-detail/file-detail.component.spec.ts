@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CopyFilesPageComponent } from './copy-files-page.component';
+import { FileDetailComponent } from './file-detail.component';
 
-describe('CopyFilesPageComponent', () => {
-  let component: CopyFilesPageComponent;
-  let fixture: ComponentFixture<CopyFilesPageComponent>;
+describe('FileDetailComponent', () => {
+  let component: FileDetailComponent;
+  let fixture: ComponentFixture<FileDetailComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CopyFilesPageComponent ]
+      declarations: [ FileDetailComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(CopyFilesPageComponent);
+    fixture = TestBed.createComponent(FileDetailComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

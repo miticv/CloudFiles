@@ -1,12 +1,149 @@
-<div class="flex flex-col flex-auto min-w-0">
 
-    <!-- Main -->
-    <div class="flex-auto p-6 sm:p-10">
+<div class="absolute inset-0 flex flex-col min-w-0 overflow-hidden" *ngIf="folders$ | async as folders">
 
-        <!-- CONTENT GOES HERE -->
-        <div class="h-400 min-h-400 max-h-400 border-2 border-dashed border-gray-300 rounded-2xl"></div>
+    <mat-drawer-container
+        class="flex-auto h-full bg-card dark:bg-transparent" *ngIf="files$ | async as files">
+        <!-- Drawer -->
+        <mat-drawer
+            class="w-full sm:w-100 dark:bg-gray-900"
+            [mode]="drawerMode"
+            [opened]="showDetail$|async"
+            [position]="'end'"
+            [disableClose]="true"
+            #matDrawer>
+            <app-file-detail [file]="currentFile$ | async" [fileItem]="currentFileItem"></app-file-detail>
+        </mat-drawer>
 
-    </div>
+        <mat-drawer-content class="flex flex-col bg-gray-100 dark:bg-transparent">
+
+            <!-- Main -->
+            <div class="flex flex-col flex-auto">
+
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-12 md:px-8 border-b bg-card dark:bg-transparent">
+                    <!-- Title -->
+                    <div>
+                        <div class="text-4xl font-extrabold tracking-tight leading-none">File Manager</div>
+                        <div class="flex items-center mt-0.5 font-medium text-secondary">
+                               <div class="mr-8">{{folders.length}} folders, {{files.length}} files</div>
+                                <ng-container *ngIf="currentPath$ | async as currentPath">
+                                    <div class="flex items-center space-x-2" *ngIf="currentPath.length">
+                                        <a
+                                            class="text-primary cursor-pointer"
+                                            (click)="getFolder();">Home
+                                        </a>
+                                        <div class="">/</div>
+                                        <ng-container *ngFor="let path of currentPath; index as i; let last = last;">
+                                            <ng-container *ngIf="!last">
+                                                <a
+                                                    class="text-primary cursor-pointer"
+                                                    (click)="getFolderByIndex(currentPath, i);">{{path}}</a>
+                                            </ng-container>
+                                            <ng-container *ngIf="last">
+                                                <div>{{path}}</div>
+                                            </ng-container>
+                                            <ng-container *ngIf="!last">
+                                                <div class="">/</div>
+                                            </ng-container>
+                                        </ng-container>
+                                    </div>
+                                </ng-container>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Items list -->
+                <ng-container *ngIf="(folders.length > 0 || files.length > 0); else noItems">
+                    <div class="p-6 md:p-8 space-y-8">
+                        <!-- Folders -->
+                        <ng-container *ngIf="folders.length > 0">
+                            <div>
+                                <div class="font-medium">Folders</div>
+                                <div
+                                    class="flex flex-wrap -m-2 mt-2">
+                                    <ng-container *ngFor="let folder of folders; trackBy:trackByFn">
+                                        <div class="relative w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card">
+                                            <a
+                                                class="z-10 absolute inset-0 flex flex-col p-4 cursor-pointer"
+                                                (click)="getFolder(folder.itemPath);">
+                                                <div class="aspect-w-9 aspect-h-6">
+                                                    <div class="flex items-center justify-center">
+                                                        <!-- Icon -->
+                                                        <mat-icon
+                                                            class="icon-size-14 text-hint"
+                                                            [svgIcon]="'iconsmind:folder'"></mat-icon>
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-col flex-auto justify-center text-center text-sm font-medium">
+                                                    <div
+                                                        class="truncate"
+                                                        [matTooltip]="folder.itemPath">{{folder.itemName}}</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </ng-container>
+                                </div>
+                            </div>
+                        </ng-container>
+
+                        <!-- Files -->
+                        <ng-container *ngIf="files.length > 0">
+                            <div>
+                                <div class="font-medium">Files</div>
+                                <div
+                                    class="flex flex-wrap -m-2 mt-2">
+                                    <ng-container *ngFor="let file of files; trackBy:trackByFn">
+                                        <a
+                                            class="flex flex-col w-40 h-40 m-2 p-4 shadow rounded-2xl cursor-pointer bg-card"
+                                            (click)="getFile(file)">
+                                            <div class="aspect-w-9 aspect-h-6">
+                                                <div class="flex items-center justify-center">
+                                                    <!-- Icons -->
+                                                    <div class="relative">
+                                                        <mat-icon
+                                                            class="icon-size-14 text-hint"
+                                                            [svgIcon]="'iconsmind:file'"></mat-icon>
+                                                        <div
+                                                            class="absolute left-0 bottom-0 px-1.5 rounded text-sm font-semibold leading-5 text-white bg-file-default"
+                                                            [class.bg-red-600]="file.itemType === 'PDF'"
+                                                            [class.bg-blue-600]="file.itemType === 'DOC'"
+                                                            [class.bg-green-600]="file.itemType === 'XLS'"
+                                                            [class.bg-gray-600]="file.itemType === 'TXT'"
+                                                            [class.bg-amber-600]="file.itemType === 'JPG' || file.itemType === 'JPEG'">
+                                                            {{file.itemType}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col flex-auto justify-center text-center text-sm font-medium">
+                                                <div
+                                                    class="truncate"
+                                                    [matTooltip]="file.name">{{file.itemName}}</div>
+                                            </div>
+                                        </a>
+                                    </ng-container>
+                                </div>
+                            </div>
+                        </ng-container>
+                    </div>
+                </ng-container>
+
+                <!-- No items template -->
+                <ng-template #noItems>
+                    <div class="flex flex-auto flex-col items-center justify-center bg-gray-100 dark:bg-transparent">
+                        <mat-icon
+                            class="icon-size-24"
+                            [svgIcon]="'iconsmind:file_hide'"></mat-icon>
+                        <div class="mt-4 text-2xl font-semibold tracking-tight text-secondary">There are no items!</div>
+                    </div>
+                </ng-template>
+
+            </div>
+
+        </mat-drawer-content>
+
+    </mat-drawer-container>
 
 </div>
 

@@ -23,7 +23,7 @@ export class FileManagerService extends HttpService {
     }
 
     public getFile(path: string): Observable<any> {
-        let url = `${this.baseUrl}/azure/miticv/json/item`;
+        let url = `${this.baseUrl}azure/miticv/json/item`;
         url = url + this.getUrlPath(path);
         return this.http.get<FileDetail>(url, this.getRequestOptions(true));
     }

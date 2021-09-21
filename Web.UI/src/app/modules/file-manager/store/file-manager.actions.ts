@@ -13,7 +13,7 @@ export const loadFolderSuccess = createAction(
 );
 
 export const loadFile = createAction(
-    '[Files] Load File List',
+    '[Files] Load File',
     props<{ path: string | null }>()
 );
 

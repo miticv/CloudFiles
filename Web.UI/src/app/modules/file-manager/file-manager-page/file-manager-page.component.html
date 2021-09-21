@@ -62,7 +62,7 @@
                                 <div class="font-medium">Folders</div>
                                 <div
                                     class="flex flex-wrap -m-2 mt-2">
-                                    <ng-container *ngFor="let folder of folders; trackBy:trackByFn">
+                                    <ng-container *ngFor="let folder of folders;">
                                         <div class="relative w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card">
                                             <a
                                                 class="z-10 absolute inset-0 flex flex-col p-4 cursor-pointer"
@@ -93,7 +93,7 @@
                                 <div class="font-medium">Files</div>
                                 <div
                                     class="flex flex-wrap -m-2 mt-2">
-                                    <ng-container *ngFor="let file of files; trackBy:trackByFn">
+                                    <ng-container *ngFor="let file of files;">
                                         <a
                                             class="flex flex-col w-40 h-40 m-2 p-4 shadow rounded-2xl cursor-pointer bg-card"
                                             (click)="getFile(file)">

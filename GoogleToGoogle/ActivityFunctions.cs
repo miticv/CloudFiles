@@ -11,69 +11,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace CloudFiles
+namespace CloudFiles.GoogleToGoogle
 {
     public static class ActivityFunctions
     {
-        [FunctionName(Constants.AzureStorageToGooglePhotosPrepareList)]
-        public static async Task<ItemsPrepared> AzureToGooglePrepareList(
-            [ActivityTrigger] FilesCopyRequest request,
-            ILogger log)
-        {
-            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-            var containerName = Environment.GetEnvironmentVariable("AzureContainer");
-            var azureUtility = new AzureUtility(connectionString, containerName);
-
-            log.LogInformation($"{Constants.AzureStorageToGooglePhotosPrepareList}: Getting full list from {request.SelectedItemsList.Count} selections...");
-            var expandedItemsList = await azureUtility.SelectionToHierarchicalDeepListingAsync(request.SelectedItemsList.ToList()).ConfigureAwait(false);
-
-            log.LogInformation($"{Constants.AzureStorageToGooglePhotosPrepareList}: Preparing {expandedItemsList.Count} items...");
-            var preparedList = new List<ItemPrepared>();
-            foreach (var item in expandedItemsList) {
-                preparedList.Add(new ItemPrepared(item, request.AccessToken, request.AlbumId));
-            }
-
-            return new ItemsPrepared() {  ListItemsPrepared = preparedList };
-        }
-
-        [FunctionName(Constants.CopyAzureBlobToGooglePhotos)]
-        public static async Task<NewMediaItemResultRoot> CopyAzureBlobToGooglePhotos(
-            [ActivityTrigger] ItemPrepared item,
-             ILogger log)
-        {
-            try
-            {
-                log.LogInformation($"{Constants.CopyAzureBlobToGooglePhotos}: Copy image {item.ItemPath}.");
-
-                var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-                var containerName = Environment.GetEnvironmentVariable("AzureContainer");
-                var azureUtility = new AzureUtility(connectionString, containerName);
-
-                var blobData = await azureUtility.GetBlobItemAsync(item.ItemPath).ConfigureAwait(false);
-
-                MemoryStream memoryStream = new MemoryStream();
-                await blobData.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
-                memoryStream.Position = 0;
-                item.ContentType = blobData.ContentType;
-                item.ContentLength = blobData.Details.ContentLength;
-
-                if (String.IsNullOrEmpty(item.UploadToken))
-                {
-                    item.UploadToken = await GoogleUtility.CopyBytesToGooglePhotosAsync(memoryStream, item.AccessToken, item.ContentType).ConfigureAwait(false);
-                }
-
-                return await GoogleUtility.SaveMediaItemsToGooglePhotosAsync(item).ConfigureAwait(false);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return ReturnUnprocessedItem(ex.Message, item);
-            }
-            catch (HttpRequestException ex)
-            {
-                return ReturnUnprocessedItem(ex.Message, item);
-            }
-        }
-
         [FunctionName(Constants.GoogleStorageToGooglePhotosPrepareList)]
         public static async Task<GoogleItemsPrepared> GoogleStorageToGooglePhotosPrepareList(
             [ActivityTrigger] FilesCopyRequest request,

@@ -6,6 +6,7 @@
         // BFF
         public const string AzureFileList = "azureFileList";
         public const string AzureFileGetItem = "azureFileGetItem";
+        public const string AzureFileGetItemJson = "azureFileGetItemJson";
         public const string AzureSubscriptionList = "azureSubscriptionList";
         public const string AzureResourceGroupList = "azurListResourceGroupList";
         public const string AzureStorageAccountList = "azureStorageAccountList";

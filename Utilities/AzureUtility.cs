@@ -297,5 +297,29 @@ namespace CloudFiles.Utilities
 
             return new FileStreamResult(memoryStream, blobdata.ContentType);
         }
+
+        // filePath = "2011 PhotoShoot Feng/Feng-1.jpg"
+        public async Task<IActionResult> GetHttpItemJsonAsync(string filePath)
+        {
+            var blobdata = await GetBlobItemAsync(filePath).ConfigureAwait(false);
+            MemoryStream memoryStream = new MemoryStream();
+            await blobdata.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
+            memoryStream.Position = 0;
+            var imageContent = memoryStream.ToArray();
+
+            return new OkObjectResult(new ItemJsonUI
+            {
+                // blobdata.Details.LastAccessed,
+                LastModified = $"{blobdata.Details.LastModified}",
+                ContentLength = blobdata.Details.ContentLength,
+                ContentLengthFriendly = CommonUtility.ToFileSize(blobdata.Details.ContentLength),
+                ContentType = blobdata.Details.ContentType,
+                Metadata = blobdata.Details.Metadata,
+                ItemPath = filePath,
+                ItemName = filePath.GetItemNameFromPath(),
+                ItemType = filePath.GetItemTypeFromPath(),
+                ImageContent = $"data:{blobdata.Details.ContentType};base64,{Convert.ToBase64String(imageContent)}"
+            });
+        }
     }
 }

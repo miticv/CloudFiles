@@ -4,7 +4,9 @@ import { Injectable } from '@angular/core';
 import { HttpService } from 'app/service/http.service';
 import { Observable } from 'rxjs';
 import { FileDetail } from '../model/FileDetail';
-import { FileItem } from '../model/fileItem';
+
+import { FileItem } from '../model/FileItem';
+
 
 @Injectable({
     providedIn: 'root'

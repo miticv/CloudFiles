@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /c/Users/mitic/Downloads/Code/CloudFiles/UiBffFunctions/*.cs)",
+      "Bash(git -C /c/Users/mitic/Downloads/Code/CloudFiles log --oneline)",
+      "Bash(az --version)",
+      "Bash(az account show)",
+      "Bash(npm install --save-dev puppeteer --legacy-peer-deps)",
+      "Bash(grep -r \"ViewEngine\\\\|Ivy\\\\|enableIvy\\\\|strict\" /c/Users/mitic/Downloads/Code/CloudFiles/Web.UI/tsconfig*.json)"
+    ]
+  }
+}

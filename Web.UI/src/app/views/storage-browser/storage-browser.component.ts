@@ -56,7 +56,9 @@ export class StorageBrowserComponent implements OnInit {
             const azureStorage = providers.find(p => p.configId === 'azure-storage');
             this.isAzureStorageConnected = azureStorage?.authenticated ?? false;
             if (this.isAzureConnected) {
-                this.loadSubscriptions();
+                if (!this.restoreState()) {
+                    this.loadSubscriptions();
+                }
             }
         });
     }
@@ -74,6 +76,7 @@ export class StorageBrowserComponent implements OnInit {
             next: (data) => {
                 this.subscriptions = data;
                 this.loading = false;
+                this.saveState();
             },
             error: (err) => {
                 this.error = this.extractError(err, 'Failed to load subscriptions');
@@ -93,6 +96,7 @@ export class StorageBrowserComponent implements OnInit {
             next: (data) => {
                 this.resourceGroups = data;
                 this.loading = false;
+                this.saveState();
             },
             error: (err) => {
                 this.error = this.extractError(err, 'Failed to load resource groups');
@@ -117,6 +121,7 @@ export class StorageBrowserComponent implements OnInit {
             next: (data) => {
                 this.storageAccounts = data;
                 this.loading = false;
+                this.saveState();
             },
             error: (err) => {
                 this.error = this.extractError(err, 'Failed to load storage accounts');
@@ -144,6 +149,7 @@ export class StorageBrowserComponent implements OnInit {
             next: (data) => {
                 this.containers = data;
                 this.loading = false;
+                this.saveState();
             },
             error: (err) => {
                 this.error = this.extractError(err, 'Failed to load containers');
@@ -158,6 +164,9 @@ export class StorageBrowserComponent implements OnInit {
             account: this.selectedStorageAccount!.name,
             container: container.name
         };
+
+        // Save the selected container so we can restore directly to file-manager
+        this.saveState(container);
 
         if (!this.isAzureStorageConnected) {
             const target = `/file-manager?provider=azure&account=${encodeURIComponent(queryParams.account)}&container=${encodeURIComponent(queryParams.container)}`;
@@ -189,6 +198,62 @@ export class StorageBrowserComponent implements OnInit {
 
     connectAzure(): void {
         this.multiAuthService.login('azure');
+    }
+
+    private saveState(selectedContainer?: AzureContainer): void {
+        const state: Record<string, unknown> = {
+            currentLevel: this.currentLevel,
+            selectedSubscription: this.selectedSubscription,
+            selectedResourceGroup: this.selectedResourceGroup,
+            selectedStorageAccount: this.selectedStorageAccount,
+        };
+        if (selectedContainer) {
+            state['selectedContainer'] = selectedContainer;
+        }
+        sessionStorage.setItem('storageBrowserState', JSON.stringify(state));
+    }
+
+    private restoreState(): boolean {
+        const raw = sessionStorage.getItem('storageBrowserState');
+        if (!raw) return false;
+        try {
+            const state = JSON.parse(raw);
+            if (state.currentLevel === 'subscriptions' || !state.currentLevel) return false;
+
+            // If a container was selected, navigate directly to file-manager
+            if (state.selectedContainer && state.selectedStorageAccount) {
+                this.selectedSubscription = state.selectedSubscription;
+                this.selectedResourceGroup = state.selectedResourceGroup;
+                this.selectedStorageAccount = state.selectedStorageAccount;
+                this.router.navigate(['/file-manager'], {
+                    queryParams: {
+                        provider: 'azure',
+                        account: state.selectedStorageAccount.name,
+                        container: state.selectedContainer.name
+                    }
+                });
+                return true;
+            }
+
+            if (state.currentLevel === 'resourceGroups' && state.selectedSubscription) {
+                this.selectSubscription(state.selectedSubscription);
+                return true;
+            }
+            if (state.currentLevel === 'storageAccounts' && state.selectedSubscription && state.selectedResourceGroup) {
+                this.selectedSubscription = state.selectedSubscription;
+                this.selectResourceGroup(state.selectedResourceGroup);
+                return true;
+            }
+            if (state.currentLevel === 'containers' && state.selectedSubscription && state.selectedResourceGroup && state.selectedStorageAccount) {
+                this.selectedSubscription = state.selectedSubscription;
+                this.selectedResourceGroup = state.selectedResourceGroup;
+                this.selectStorageAccount(state.selectedStorageAccount);
+                return true;
+            }
+        } catch {
+            sessionStorage.removeItem('storageBrowserState');
+        }
+        return false;
     }
 
     private extractError(error: unknown, fallback: string): string {

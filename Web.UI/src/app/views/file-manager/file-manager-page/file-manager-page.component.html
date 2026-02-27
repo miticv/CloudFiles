@@ -18,6 +18,20 @@
             <!-- Main -->
             <div class="flex flex-col flex-auto">
 
+                <!-- Storage hierarchy breadcrumbs -->
+                <nav class="flex items-center px-6 md:px-8 pt-4 text-sm" *ngIf="storageBrowserPath.length > 0">
+                    <button mat-button class="px-2 min-w-0" (click)="navigateToStorageBrowser('root')">
+                        <mat-icon class="mr-1" style="font-size: 18px; width: 18px; height: 18px;">storage</mat-icon>
+                        Storage Browser
+                    </button>
+                    <ng-container *ngFor="let crumb of storageBrowserPath; let last = last">
+                        <mat-icon class="text-gray-400" style="font-size: 18px; width: 18px; height: 18px;">chevron_right</mat-icon>
+                        <button mat-button class="px-2 min-w-0" [disabled]="last" (click)="navigateToStorageBrowser(crumb.level)">
+                            {{crumb.label}}
+                        </button>
+                    </ng-container>
+                </nav>
+
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
                     <!-- Title -->

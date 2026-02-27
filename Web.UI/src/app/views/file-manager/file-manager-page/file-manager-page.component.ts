@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { MatDrawer } from '@angular/material/sidenav';
@@ -29,10 +29,13 @@ export class FileManagerPageComponent implements OnInit {
     context$: Observable<StorageContext>;
     error$: Observable<string | null>;
     currentFileItem: FileItem;
+    storageBrowserPath: { label: string; level: string }[] = [];
+    private currentContext: StorageContext;
 
     constructor(
         private store: Store,
         private route: ActivatedRoute,
+        private router: Router,
         private dialog: MatDialog
     ) {}
 
@@ -44,9 +47,13 @@ export class FileManagerPageComponent implements OnInit {
             account: params['account'],
             container: params['container']
         };
+        this.currentContext = context;
         this.store.dispatch(setContext({ context }));
+        this.loadStorageBrowserPath(context);
 
-        this.store.dispatch(loadFolder({ path: null }));
+        const savedPath = this.getSavedFolderPath(context);
+        this.saveFileManagerState(savedPath);
+        this.store.dispatch(loadFolder({ path: savedPath }));
         this.files$ = this.store.select(getFiles);
         this.folders$ = this.store.select(getFolders);
         this.currentPath$ = this.store.select(getCurrentPath);
@@ -57,7 +64,9 @@ export class FileManagerPageComponent implements OnInit {
     }
 
     getFolder(path?: string) {
-        this.store.dispatch(loadFolder({ path: path || null }));
+        const folderPath = path || null;
+        this.saveFileManagerState(folderPath);
+        this.store.dispatch(loadFolder({ path: folderPath }));
     }
 
     getFolderByIndex(currentPath: string[], index: number) {
@@ -66,6 +75,7 @@ export class FileManagerPageComponent implements OnInit {
             path = path + '/' + currentPath[i];
         }
         path = path + '/';
+        this.saveFileManagerState(path);
         this.store.dispatch(loadFolder({ path }));
     }
 
@@ -74,7 +84,75 @@ export class FileManagerPageComponent implements OnInit {
         this.currentFileItem = item;
     }
 
+    navigateToStorageBrowser(level: string): void {
+        if (level === 'root') {
+            sessionStorage.removeItem('storageBrowserState');
+        } else {
+            const raw = sessionStorage.getItem('storageBrowserState');
+            if (raw) {
+                const state = JSON.parse(raw);
+                delete state.selectedContainer;
+                if (level === 'subscriptions') {
+                    state.currentLevel = 'resourceGroups';
+                } else if (level === 'resourceGroups') {
+                    state.currentLevel = 'storageAccounts';
+                } else {
+                    state.currentLevel = 'containers';
+                }
+                sessionStorage.setItem('storageBrowserState', JSON.stringify(state));
+            }
+        }
+        this.router.navigate(['/storage-browser']);
+    }
+
     openHelp(): void {
         this.dialog.open(StorageHelpDialogComponent, { width: '560px' });
+    }
+
+    private saveFileManagerState(folderPath: string | null): void {
+        sessionStorage.setItem('fileManagerState', JSON.stringify({
+            provider: this.currentContext.provider,
+            account: this.currentContext.account,
+            container: this.currentContext.container,
+            folderPath: folderPath
+        }));
+    }
+
+    private getSavedFolderPath(context: StorageContext): string | null {
+        const raw = sessionStorage.getItem('fileManagerState');
+        if (!raw) return null;
+        try {
+            const state = JSON.parse(raw);
+            if (state.provider === context.provider &&
+                state.account === context.account &&
+                state.container === context.container) {
+                return state.folderPath || null;
+            }
+        } catch { /* ignore */ }
+        return null;
+    }
+
+    private loadStorageBrowserPath(context: StorageContext): void {
+        const raw = sessionStorage.getItem('storageBrowserState');
+        if (!raw) return;
+        try {
+            const state = JSON.parse(raw);
+            const path: { label: string; level: string }[] = [];
+            if (state.selectedSubscription) {
+                path.push({ label: state.selectedSubscription.displayName, level: 'subscriptions' });
+            }
+            if (state.selectedResourceGroup) {
+                path.push({ label: state.selectedResourceGroup.name, level: 'resourceGroups' });
+            }
+            if (state.selectedStorageAccount) {
+                path.push({ label: state.selectedStorageAccount.name, level: 'storageAccounts' });
+            }
+            if (context.container) {
+                path.push({ label: context.container, level: 'containers' });
+            }
+            this.storageBrowserPath = path;
+        } catch {
+            // ignore malformed state
+        }
     }
 }

@@ -31,6 +31,12 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
         this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((providers) => {
             const google = providers.find(p => p.configId === 'google');
             this.isGoogleConnected = google?.authenticated ?? false;
+            if (this.isGoogleConnected && this.pickedItems.length === 0) {
+                const saved = sessionStorage.getItem('googlePhotosPickedItems');
+                if (saved) {
+                    try { this.pickedItems = JSON.parse(saved); } catch { /* ignore */ }
+                }
+            }
         });
     }
 
@@ -133,6 +139,7 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
             next: (items) => {
                 this.pickedItems = items;
                 this.loading = false;
+                sessionStorage.setItem('googlePhotosPickedItems', JSON.stringify(items));
                 // Clean up session
                 this.googlePhotosService.deleteSession(sessionId).subscribe();
                 this.activeSessionId = null;

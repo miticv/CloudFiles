@@ -1,0 +1,65 @@
+<div class="flex flex-col p-6 md:p-8">
+
+    <!-- Not connected state -->
+    <div *ngIf="!isGoogleConnected" class="flex flex-col items-center justify-center py-16">
+        <mat-icon class="text-6xl text-gray-400 mb-4" style="font-size: 64px; width: 64px; height: 64px;">photo_library</mat-icon>
+        <h2 class="text-xl font-medium mb-2">Google Not Connected</h2>
+        <p class="text-secondary mb-6">Connect your Google account to browse your photos.</p>
+        <button mat-flat-button color="primary" (click)="connectGoogle()">
+            <mat-icon>login</mat-icon>
+            Connect Google
+        </button>
+    </div>
+
+    <!-- Connected state -->
+    <div *ngIf="isGoogleConnected">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">Google Photos</h2>
+            <button mat-flat-button color="primary" (click)="selectPhotos()" [disabled]="loading || polling">
+                <mat-icon>photo_library</mat-icon>
+                {{ pickedItems.length > 0 ? 'Select More Photos' : 'Select Photos from Google' }}
+            </button>
+        </div>
+
+        <!-- Polling state -->
+        <div *ngIf="polling" class="flex flex-col items-center justify-center py-12">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="text-secondary mt-4">Waiting for photo selection...</p>
+            <p class="text-xs text-secondary mt-1">Select photos in the Google Photos picker window</p>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading && !polling" class="flex items-center justify-center py-12">
+            <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center">
+                <mat-icon class="text-red-500 mr-2">error</mat-icon>
+                <span class="text-red-700">{{error}}</span>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="!loading && !polling && pickedItems.length === 0 && !error" class="flex flex-col items-center justify-center py-12">
+            <mat-icon class="text-gray-300 mb-4" style="font-size: 64px; width: 64px; height: 64px;">collections</mat-icon>
+            <p class="text-secondary">No photos selected yet. Click the button above to pick photos from Google.</p>
+        </div>
+
+        <!-- Photos grid -->
+        <div *ngIf="!loading && !polling && pickedItems.length > 0"
+            class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+            <div *ngFor="let item of pickedItems"
+                class="cursor-pointer rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow aspect-square bg-gray-100"
+                (click)="viewPhoto(item)"
+                [matTooltip]="item.mediaFile.filename">
+                <img [secureImage]="getThumbUrl(item)" [alt]="item.mediaFile.filename"
+                    class="w-full h-full object-cover">
+            </div>
+        </div>
+
+    </div>
+</div>

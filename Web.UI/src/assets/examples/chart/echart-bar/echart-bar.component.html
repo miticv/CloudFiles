@@ -1,0 +1,21 @@
+<div class="container mx-auto px-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <!-- Bar chart with zoom option -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Bar chart with zoom option</h3>
+      <div echarts [options]="zoomBarOptions" class="h-80 w-full"></div>
+    </div>
+
+    <!-- Cluster bar chart with rotation -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Cluster bar chart with rotation</h3>
+      <div echarts [options]="clusteredVBarOptions" class="h-80 w-full"></div>
+    </div>
+
+    <!-- Middle bar chart -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Middle bar chart</h3>
+      <div echarts [options]="middleBarOption" class="h-80 w-full"></div>
+    </div>
+  </div>
+</div>

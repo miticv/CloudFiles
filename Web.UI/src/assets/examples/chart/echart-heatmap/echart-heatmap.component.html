@@ -1,0 +1,15 @@
+<div class="container mx-auto px-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <!-- Heatmap on Cartesian -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium">Heatmap on Cartesian</h3>
+      <div echarts [options]="heatMapOptions" class="h-80 w-full"></div>
+    </div>
+
+    <!-- Heatmap - 2w Data -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium">Heatmap - 2w Data</h3>
+      <div echarts [options]="heatMap2wOptions" class="h-80 w-full"></div>
+    </div>
+  </div>
+</div>

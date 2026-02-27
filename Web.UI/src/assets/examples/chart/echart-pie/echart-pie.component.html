@@ -1,0 +1,27 @@
+<div class="container mx-auto px-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <!-- Basic Pie Chart -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Basic Pie Chart</h3>
+      <div echarts [options]="pieOptions" class="h-80 w-full"></div>
+    </div>
+
+    <!-- Nightingale's Rose Diagram -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Nightingale's Rose Diagram</h3>
+      <div echarts [options]="customPieOptions" class="h-80 w-full"></div>
+    </div>
+
+    <!-- Doughnut Pie -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Doughnut Pie</h3>
+      <div echarts [options]="doughNutPieOptions" class="h-80 w-full"></div>
+    </div>
+
+    <!-- Nested Pie -->
+    <div class="border border-divider rounded-lg p-4">
+      <h3 class="mb-4 text-lg font-medium text-primary-900">Nested Pie</h3>
+      <div echarts [options]="nestedPieOptions" class="h-80 w-full"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "<azure-storage-connection-string>",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureContainer": "<blob-container-name>",
+    "GoogleBucket": "<gcs-bucket-name>",
+    "GoogleServiceJsonFileName": "<path-to-service-account-key.json>",
+    "GooglePhotoClientId": "<google-oauth-client-id>",
+    "AzureTenantId": "<azure-ad-tenant-id>",
+    "IS_RUNNING_LOCALLY": "true"
+  },
+  "Host": {
+    "LocalHttpPort": 7071,
+    "CORS": "https://cloud-files-web.azurestaticapps.net,http://localhost:4200",
+    "CORSCredentials": true
+  }
+}

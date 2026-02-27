@@ -1,0 +1,113 @@
+<div class="flex flex-col p-6 md:p-8">
+
+    <!-- Not connected state -->
+    <div *ngIf="!isAzureConnected" class="flex flex-col items-center justify-center py-16">
+        <mat-icon class="text-6xl text-gray-400 mb-4" style="font-size: 64px; width: 64px; height: 64px;">cloud_off</mat-icon>
+        <h2 class="text-xl font-medium mb-2">Azure Not Connected</h2>
+        <p class="text-secondary mb-6">Connect your Azure account to browse your storage resources.</p>
+        <button mat-flat-button color="primary" (click)="connectAzure()">
+            <mat-icon>login</mat-icon>
+            Connect Azure
+        </button>
+    </div>
+
+    <!-- Connected state -->
+    <div *ngIf="isAzureConnected">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">Storage Browser</h2>
+            <div class="flex items-center gap-1">
+                <button mat-icon-button (click)="openHelp()" matTooltip="Help — Azure storage access requirements">
+                    <mat-icon class="text-secondary">help_outline</mat-icon>
+                </button>
+                <button mat-icon-button (click)="loadSubscriptions()" matTooltip="Refresh">
+                    <mat-icon>refresh</mat-icon>
+                </button>
+            </div>
+        </div>
+
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center mb-6 text-sm" *ngIf="breadcrumbs.length > 0">
+            <button mat-button class="px-2 min-w-0" (click)="loadSubscriptions()">
+                <mat-icon class="mr-1" style="font-size: 18px; width: 18px; height: 18px;">home</mat-icon>
+                Subscriptions
+            </button>
+            <ng-container *ngFor="let crumb of breadcrumbs; let last = last">
+                <mat-icon class="text-gray-400" style="font-size: 18px; width: 18px; height: 18px;">chevron_right</mat-icon>
+                <button mat-button class="px-2 min-w-0" [disabled]="last" (click)="navigateToBreadcrumb(crumb)">
+                    {{crumb.label}}
+                </button>
+            </ng-container>
+        </nav>
+
+        <!-- Level title -->
+        <div class="text-lg font-medium text-secondary mb-4">{{levelTitle}}</div>
+
+        <!-- Loading -->
+        <div *ngIf="loading" class="flex items-center justify-center py-12">
+            <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center">
+                <mat-icon class="text-red-500 mr-2">error</mat-icon>
+                <span class="text-red-700">{{error}}</span>
+            </div>
+        </div>
+
+        <!-- Subscriptions list -->
+        <mat-nav-list *ngIf="!loading && currentLevel === 'subscriptions'">
+            <mat-list-item *ngFor="let sub of subscriptions" (click)="selectSubscription(sub)">
+                <mat-icon matListItemIcon class="text-blue-500">subscriptions</mat-icon>
+                <div matListItemTitle>{{sub.displayName}}</div>
+                <div matListItemLine class="text-secondary text-xs">{{sub.subscriptionId}}</div>
+                <mat-icon matListItemMeta>chevron_right</mat-icon>
+            </mat-list-item>
+            <div *ngIf="subscriptions.length === 0" class="text-center py-8 text-secondary">
+                No subscriptions found.
+            </div>
+        </mat-nav-list>
+
+        <!-- Resource Groups list -->
+        <mat-nav-list *ngIf="!loading && currentLevel === 'resourceGroups'">
+            <mat-list-item *ngFor="let rg of resourceGroups" (click)="selectResourceGroup(rg)">
+                <mat-icon matListItemIcon class="text-green-500">folder</mat-icon>
+                <div matListItemTitle>{{rg.name}}</div>
+                <div matListItemLine class="text-secondary text-xs">{{rg.location}}</div>
+                <mat-icon matListItemMeta>chevron_right</mat-icon>
+            </mat-list-item>
+            <div *ngIf="resourceGroups.length === 0" class="text-center py-8 text-secondary">
+                No resource groups found.
+            </div>
+        </mat-nav-list>
+
+        <!-- Storage Accounts list -->
+        <mat-nav-list *ngIf="!loading && currentLevel === 'storageAccounts'">
+            <mat-list-item *ngFor="let sa of storageAccounts" (click)="selectStorageAccount(sa)">
+                <mat-icon matListItemIcon class="text-amber-500">storage</mat-icon>
+                <div matListItemTitle>{{sa.name}}</div>
+                <div matListItemLine class="text-secondary text-xs">{{sa.location}} &middot; {{sa.accessTier}}</div>
+                <mat-icon matListItemMeta>chevron_right</mat-icon>
+            </mat-list-item>
+            <div *ngIf="storageAccounts.length === 0" class="text-center py-8 text-secondary">
+                No storage accounts found.
+            </div>
+        </mat-nav-list>
+
+        <!-- Containers list -->
+        <mat-nav-list *ngIf="!loading && currentLevel === 'containers'">
+            <mat-list-item *ngFor="let c of containers" (click)="selectContainer(c)">
+                <mat-icon matListItemIcon class="text-teal-500">inventory_2</mat-icon>
+                <div matListItemTitle>{{c.name}}</div>
+                <div matListItemLine class="text-secondary text-xs">Last modified: {{c.lastModifiedTime | date}}</div>
+                <mat-icon matListItemMeta>open_in_new</mat-icon>
+            </mat-list-item>
+            <div *ngIf="containers.length === 0" class="text-center py-8 text-secondary">
+                No containers found.
+            </div>
+        </mat-nav-list>
+
+    </div>
+</div>

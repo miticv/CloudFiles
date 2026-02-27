@@ -1,0 +1,164 @@
+<div class="flex flex-col h-full min-w-0 overflow-hidden" *ngIf="folders$ | async as folders">
+
+    <mat-drawer-container
+        class="flex-auto h-full bg-card" *ngIf="files$ | async as files">
+        <!-- Drawer -->
+        <mat-drawer
+            class="w-full sm:w-96"
+            [mode]="drawerMode"
+            [opened]="showDetail$|async"
+            [position]="'end'"
+            [disableClose]="true"
+            #matDrawer>
+            <app-file-detail [file]="currentFile$ | async" [fileItem]="currentFileItem"></app-file-detail>
+        </mat-drawer>
+
+        <mat-drawer-content class="flex flex-col">
+
+            <!-- Main -->
+            <div class="flex flex-col flex-auto">
+
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
+                    <!-- Title -->
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-3xl font-bold tracking-tight leading-none">File Manager</div>
+                            <ng-container *ngIf="context$ | async as ctx">
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold uppercase"
+                                    [ngClass]="{'bg-blue-100 text-blue-800': ctx.provider === 'azure', 'bg-amber-100 text-amber-800': ctx.provider === 'google'}">
+                                    {{ctx.provider}}
+                                </span>
+                                <span *ngIf="ctx.container" class="text-sm text-secondary">
+                                    {{ctx.account}} / {{ctx.container}}
+                                </span>
+                            </ng-container>
+                            <button mat-icon-button (click)="openHelp()" matTooltip="Help — Azure storage access requirements" class="ml-auto">
+                                <mat-icon class="text-secondary">help_outline</mat-icon>
+                            </button>
+                        </div>
+                        <div class="flex items-center mt-1 font-medium text-secondary">
+                            <div class="mr-8">{{folders.length}} folders, {{files.length}} files</div>
+                            <ng-container *ngIf="currentPath$ | async as currentPath">
+                                <div class="flex items-center space-x-2" *ngIf="currentPath.length">
+                                    <a
+                                        class="text-primary cursor-pointer"
+                                        (click)="getFolder();">Home
+                                    </a>
+                                    <div>/</div>
+                                    <ng-container *ngFor="let path of currentPath; index as i; let last = last;">
+                                        <ng-container *ngIf="!last">
+                                            <a
+                                                class="text-primary cursor-pointer"
+                                                (click)="getFolderByIndex(currentPath, i);">{{path}}</a>
+                                        </ng-container>
+                                        <ng-container *ngIf="last">
+                                            <div>{{path}}</div>
+                                        </ng-container>
+                                        <ng-container *ngIf="!last">
+                                            <div>/</div>
+                                        </ng-container>
+                                    </ng-container>
+                                </div>
+                            </ng-container>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <div *ngIf="error$ | async as error" class="mx-6 md:mx-8 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <mat-icon class="text-red-500 mr-2">error</mat-icon>
+                        <span class="text-red-700 flex-1">{{error}}</span>
+                        <button mat-icon-button (click)="getFolder()" matTooltip="Retry">
+                            <mat-icon>refresh</mat-icon>
+                        </button>
+                        <button mat-button color="primary" class="text-sm" (click)="openHelp()">
+                            <mat-icon class="mr-1" style="font-size: 16px; width: 16px; height: 16px;">help_outline</mat-icon>
+                            Learn more
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Items list -->
+                <ng-container *ngIf="(folders.length > 0 || files.length > 0); else noItems">
+                    <div class="p-6 md:p-8 space-y-8">
+                        <!-- Folders -->
+                        <ng-container *ngIf="folders.length > 0">
+                            <div>
+                                <div class="font-medium">Folders</div>
+                                <div class="flex flex-wrap -m-2 mt-2">
+                                    <ng-container *ngFor="let folder of folders;">
+                                        <div class="relative w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card">
+                                            <a
+                                                class="z-10 absolute inset-0 flex flex-col p-4 cursor-pointer"
+                                                (click)="getFolder(folder.itemPath);">
+                                                <div class="flex items-center justify-center flex-1">
+                                                    <mat-icon class="text-6xl text-hint" style="font-size: 56px; width: 56px; height: 56px;">folder</mat-icon>
+                                                </div>
+                                                <div class="flex flex-col flex-auto justify-center text-center text-sm font-medium">
+                                                    <div
+                                                        class="truncate"
+                                                        [matTooltip]="folder.itemPath">{{folder.itemName}}</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </ng-container>
+                                </div>
+                            </div>
+                        </ng-container>
+
+                        <!-- Files -->
+                        <ng-container *ngIf="files.length > 0">
+                            <div>
+                                <div class="font-medium">Files</div>
+                                <div class="flex flex-wrap -m-2 mt-2">
+                                    <ng-container *ngFor="let file of files;">
+                                        <a
+                                            class="flex flex-col w-40 h-40 m-2 p-4 shadow rounded-2xl cursor-pointer bg-card"
+                                            (click)="getFile(file)">
+                                            <div class="flex items-center justify-center flex-1">
+                                                <div class="relative">
+                                                    <mat-icon class="text-6xl text-hint" style="font-size: 56px; width: 56px; height: 56px;">description</mat-icon>
+                                                    <div
+                                                        class="absolute left-0 bottom-0 px-1.5 rounded text-sm font-semibold leading-5 text-white"
+                                                        [ngClass]="{
+                                                            'bg-red-600': file.itemType === 'PDF',
+                                                            'bg-blue-600': file.itemType === 'DOC',
+                                                            'bg-green-600': file.itemType === 'XLS',
+                                                            'bg-gray-600': file.itemType === 'TXT',
+                                                            'bg-amber-600': file.itemType === 'JPG' || file.itemType === 'JPEG',
+                                                            'bg-teal-600': file.itemType !== 'PDF' && file.itemType !== 'DOC' && file.itemType !== 'XLS' && file.itemType !== 'TXT' && file.itemType !== 'JPG' && file.itemType !== 'JPEG'
+                                                        }">
+                                                        {{file.itemType}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col flex-auto justify-center text-center text-sm font-medium">
+                                                <div
+                                                    class="truncate"
+                                                    [matTooltip]="file.itemName">{{file.itemName}}</div>
+                                            </div>
+                                        </a>
+                                    </ng-container>
+                                </div>
+                            </div>
+                        </ng-container>
+                    </div>
+                </ng-container>
+
+                <!-- No items template -->
+                <ng-template #noItems>
+                    <div class="flex flex-auto flex-col items-center justify-center">
+                        <mat-icon class="text-hint" style="font-size: 96px; width: 96px; height: 96px;">folder_open</mat-icon>
+                        <div class="mt-4 text-2xl font-semibold tracking-tight text-secondary">No items found</div>
+                    </div>
+                </ng-template>
+
+            </div>
+
+        </mat-drawer-content>
+
+    </mat-drawer-container>
+
+</div>

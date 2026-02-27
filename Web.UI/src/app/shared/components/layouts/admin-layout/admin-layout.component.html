@@ -1,0 +1,55 @@
+<mat-sidenav-container class="h-screen">
+    <!-- Sidebar -->
+    <mat-sidenav #sidenav [mode]="'side'" [opened]="sidebarOpen" class="w-64 border-r">
+        <!-- Logo -->
+        <div class="flex items-center gap-2 p-4 border-b h-16">
+            <mat-icon class="text-primary">cloud</mat-icon>
+            <span class="text-lg font-bold">CloudFiles</span>
+        </div>
+
+        <!-- Navigation -->
+        <mat-nav-list>
+            <ng-container *ngFor="let item of menuItems">
+                <div *ngIf="item.type === 'separator'" class="px-4 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    {{item.name}}
+                </div>
+                <a *ngIf="item.type === 'link'" mat-list-item [routerLink]="['/' + item.state]" routerLinkActive="bg-primary/10 text-primary">
+                    <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
+                    <span matListItemTitle>{{item.name}}</span>
+                </a>
+            </ng-container>
+        </mat-nav-list>
+    </mat-sidenav>
+
+    <!-- Main content -->
+    <mat-sidenav-content>
+        <!-- Header toolbar -->
+        <mat-toolbar class="border-b h-16 flex items-center justify-between">
+            <div class="flex items-center">
+                <button mat-icon-button (click)="toggleSidebar()">
+                    <mat-icon>menu</mat-icon>
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button mat-icon-button [matMenuTriggerFor]="userMenu">
+                    <mat-icon>account_circle</mat-icon>
+                </button>
+                <mat-menu #userMenu="matMenu">
+                    <a mat-menu-item routerLink="/sessions/signin">
+                        <mat-icon>link</mat-icon>
+                        <span>Connections</span>
+                    </a>
+                    <button mat-menu-item (click)="signOut()">
+                        <mat-icon>exit_to_app</mat-icon>
+                        <span>Sign Out</span>
+                    </button>
+                </mat-menu>
+            </div>
+        </mat-toolbar>
+
+        <!-- Page content -->
+        <div class="flex-1 overflow-auto" style="height: calc(100vh - 64px);">
+            <router-outlet></router-outlet>
+        </div>
+    </mat-sidenav-content>
+</mat-sidenav-container>

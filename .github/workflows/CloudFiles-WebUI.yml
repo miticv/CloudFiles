@@ -53,7 +53,7 @@ jobs:
           action: "upload"
           app_location: "/Web.UI"
           api_location: ""
-          output_location: "dist/CloudFiles"
+          output_location: "dist/CloudFiles/browser"
           skip_app_build: true
 
   close_pull_request_job:

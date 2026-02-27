@@ -1,13 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { MultiAuthService, ProviderStatus } from 'app/core/auth/multi-auth.service';
-import { egretAnimations } from 'app/shared/animations/egret-animations';
+import { appAnimations } from 'app/shared/animations/animations';
 
 @Component({
     selector: 'app-signin',
     templateUrl: './signin.component.html',
     styleUrls: ['./signin.component.scss'],
-    animations: egretAnimations,
+    animations: appAnimations,
     standalone: false
 })
 export class SigninComponent implements OnInit, OnDestroy {

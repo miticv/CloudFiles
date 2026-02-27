@@ -3,8 +3,8 @@ module.exports = {
   content: [
     "./src/**/*.{html,ts}",
   ],
-  // Support for dark mode via the .egret-navy-dark class
-  darkMode: ['class', '.egret-navy-dark'],
+  // Support for dark mode via a CSS class
+  darkMode: ['class', '.app-dark'],
   theme: {
     extend: {
       colors: {
@@ -60,7 +60,7 @@ module.exports = {
         '10/12': '83.333333%',
         '11/12': '91.666667%',
       },
-      // Customized font families to match Egret
+      // Font families
       fontFamily: {
         sans: ['var(--font-family-base)'],
         mono: ['var(--font-family-mono)'],

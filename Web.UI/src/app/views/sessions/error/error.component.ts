@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { egretAnimations } from 'app/shared/animations/egret-animations';
+import { appAnimations } from 'app/shared/animations/animations';
 @Component({
     selector: 'app-error',
     templateUrl: './error.component.html',
     styleUrls: ['./error.component.css'],
-    animations: egretAnimations,
+    animations: appAnimations,
     standalone: false
 })
 export class ErrorComponent implements OnInit {

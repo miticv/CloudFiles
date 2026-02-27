@@ -21,7 +21,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
 
     private checkAuth(): Observable<boolean | UrlTree> {
         return this.multiAuthService.isAnyAuthenticated().pipe(
-            map(isAuthenticated => {
+            map((isAuthenticated) => {
                 if (isAuthenticated) {
                     return true;
                 }

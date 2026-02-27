@@ -19,7 +19,7 @@ export class AuthInterceptor implements HttpInterceptor {
         }
 
         return this.oidcSecurityService.getAccessToken(configId).pipe(
-            switchMap(token => {
+            switchMap((token) => {
                 const newReq = token
                     ? req.clone({ headers: req.headers.set('Authorization', 'Bearer ' + token) })
                     : req;

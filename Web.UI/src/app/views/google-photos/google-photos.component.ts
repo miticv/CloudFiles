@@ -28,7 +28,7 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.multiAuthService.watchAuthStatus().pipe(first()).subscribe(providers => {
+        this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((providers) => {
             const google = providers.find(p => p.configId === 'google');
             this.isGoogleConnected = google?.authenticated ?? false;
         });

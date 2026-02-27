@@ -21,7 +21,7 @@ export class FileManagerEffects {
                         const path = action.path ? action.path.split('/').filter(x => x) : [];
                         return FileManagerActions.loadFolderSuccess({ items, path });
                     }),
-                    catchError((error) => of(FileManagerActions.loadFolderError({
+                    catchError(error => of(FileManagerActions.loadFolderError({
                         message: this.extractErrorMessage(error, 'Failed to load folder contents')
                     })))
                 )
@@ -35,8 +35,8 @@ export class FileManagerEffects {
             withLatestFrom(this.store.select(getContext)),
             switchMap(([action, context]) =>
                 this.fileManagerService.getFile(action.path, context).pipe(
-                    map((file) => FileManagerActions.loadFileSuccess({ file })),
-                    catchError((error) => of(FileManagerActions.loadFileError({
+                    map(file => FileManagerActions.loadFileSuccess({ file })),
+                    catchError(error => of(FileManagerActions.loadFileError({
                         message: this.extractErrorMessage(error, 'Failed to load file')
                     })))
                 )

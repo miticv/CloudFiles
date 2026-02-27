@@ -35,7 +35,7 @@ export class AppComponent implements OnInit {
     private checkAuth() {
         // Auth callback is already processed by withAppInitializerAuthCheck() before routing.
         // Use isAuthenticated$ (via watchAuthStatus) which has the correct state immediately.
-        this.multiAuthService.watchAuthStatus().pipe(first()).subscribe(statuses => {
+        this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((statuses) => {
             const anyAuthenticated = statuses.some(s => s.authenticated);
             if (!anyAuthenticated) {
                 const currentPath = window.location.pathname;
@@ -70,7 +70,7 @@ export class AppComponent implements OnInit {
             }
             const pageTitle = routeParts
                 .reverse()
-                .map((part) => part.title)
+                .map(part => part.title)
                 .reduce((partA, partI) => `${partA} > ${partI}`);
             this.title.setTitle(`${pageTitle} | ${this.appTitle}`);
         });

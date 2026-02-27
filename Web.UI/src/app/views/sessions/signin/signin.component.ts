@@ -23,7 +23,7 @@ export class SigninComponent implements OnInit, OnDestroy {
         // (OIDC callback is already processed by withAppInitializerAuthCheck before routing)
         this.multiAuthService.watchAuthStatus()
             .pipe(takeUntil(this.destroy$))
-            .subscribe(statuses => {
+            .subscribe((statuses) => {
                 this.providers = statuses;
             });
     }

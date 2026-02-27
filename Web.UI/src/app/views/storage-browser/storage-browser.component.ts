@@ -50,7 +50,7 @@ export class StorageBrowserComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.multiAuthService.watchAuthStatus().pipe(first()).subscribe(providers => {
+        this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((providers) => {
             const azure = providers.find(p => p.configId === 'azure');
             this.isAzureConnected = azure?.authenticated ?? false;
             const azureStorage = providers.find(p => p.configId === 'azure-storage');

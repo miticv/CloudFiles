@@ -39,7 +39,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.menuSub = this.navService.menuItems$.subscribe(items => {
+        this.menuSub = this.navService.menuItems$.subscribe((items) => {
             this.menuItems = items;
         });
     }

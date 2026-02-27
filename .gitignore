@@ -281,6 +281,9 @@ __pycache__/
 *.pyc
 Properties/ServiceDependencies/*
 
+# Claude Code local settings (may contain secrets in command history)
+.claude/settings.local.json
+
 # Angular CLI cache
 Web.UI/.angular/
 .azurite

@@ -7,7 +7,8 @@
         "ecmaVersion": 2018
     },
     "ignorePatterns": [
-        "projects/**/*"
+        "projects/**/*",
+        "src/assets/examples/**/*"
     ],
     "overrides": [
         {
@@ -21,8 +22,7 @@
                 "createDefaultProgram": true
             },
             "extends": [
-                "plugin:@angular-eslint/ng-cli-compat",
-                "plugin:@angular-eslint/ng-cli-compat--formatting-add-on",
+                "plugin:@angular-eslint/recommended",
                 "plugin:@angular-eslint/template/process-inline-templates"
             ],
             "rules": {
@@ -42,6 +42,8 @@
                         "style": "camelCase"
                     }
                 ],
+                "@angular-eslint/prefer-standalone": "off",
+                "@angular-eslint/no-empty-lifecycle-method": "warn",
                 "@typescript-eslint/dot-notation": "off",
                 "@typescript-eslint/explicit-function-return-type": "off",
                 "@typescript-eslint/explicit-member-accessibility": [

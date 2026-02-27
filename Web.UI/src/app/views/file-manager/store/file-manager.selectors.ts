@@ -37,3 +37,8 @@ export const getError = createSelector(
     getFileManagerState,
     (state: FileManagerState) => state.error
 );
+
+export const getIsLoading = createSelector(
+    getFileManagerState,
+    (state: FileManagerState) => state.items === null
+);

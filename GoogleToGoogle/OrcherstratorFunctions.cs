@@ -51,24 +51,39 @@ namespace CloudFiles.GoogleToGoogle
             ILogger log = context.CreateReplaySafeLogger<object>();
             var filesCopyItemsPrepared = context.GetInput<GoogleItemsPrepared>();
 
-            var tasks = new List<Task<NewMediaItemResultRoot>>();
+            var taskToFile = new Dictionary<Task<NewMediaItemResultRoot>, string>();
             log.LogInformation("Fan-Out CopyPhotoUrlToGoogle");
             foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
             {
                 var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyPhotoUrlToGooglePhotos, item);
-                tasks.Add(task);
+                taskToFile[task] = item.ItemFilename;
             }
-            log.LogInformation("Fan-In CopyPhotoUrlToGoogle");
-            var result = await Task.WhenAll(tasks);
+
+            var pending = new HashSet<Task<NewMediaItemResultRoot>>(taskToFile.Keys);
+            int total = pending.Count;
+            context.SetCustomStatus(new { completed = 0, total, lastFile = "" });
 
             var response = new NewMediaItemResultRoot
             {
                 NewMediaItemResults = new List<NewMediaItemResult>()
             };
-            foreach (var item in result)
+
+            log.LogInformation("Fan-In CopyPhotoUrlToGoogle");
+            while (pending.Count > 0)
             {
-                response.NewMediaItemResults.AddRange(item.NewMediaItemResults);
+                var done = await Task.WhenAny(pending);
+                pending.Remove(done);
+                var result = await done;
+                response.NewMediaItemResults.AddRange(result.NewMediaItemResults);
+
+                context.SetCustomStatus(new
+                {
+                    completed = total - pending.Count,
+                    total,
+                    lastFile = taskToFile[done]
+                });
             }
+
             return response;
         }
     }

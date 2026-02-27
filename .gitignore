@@ -287,3 +287,5 @@ Properties/ServiceDependencies/*
 # Angular CLI cache
 Web.UI/.angular/
 .azurite
+Web.UI/.screenshots/**
+Web.UI/screenshot-*.cjs

@@ -134,5 +134,32 @@ namespace CloudFiles
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }
+
+        [Function(Constants.ProcessPurgeInstance)]
+        public static async Task<IActionResult> PurgeInstance(
+           [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "process/instances/{instanceId}")] HttpRequest req,
+           [DurableClient] DurableTaskClient starter,
+           string instanceId,
+           FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(PurgeInstance));
+            try
+            {
+                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                log.LogInformation($"Purging orchestration instance '{instanceId}'.");
+                var result = await starter.PurgeInstanceAsync(instanceId).ConfigureAwait(false);
+                return new OkObjectResult(new { instanceId, purged = result != null });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Error purging instance {instanceId}");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
     }
 }

@@ -29,6 +29,7 @@
         public const string ProcessAzureToGooglePhotos_Start = "processAzureToGooglePhotos_Start";
         public const string ProcessGooleStorageToGooglePhotos_Start = "processGooleStorageToGooglePhotos_Start";
         public const string ProcessListInstances = "processListInstances";
+        public const string ProcessPurgeInstance = "processPurgeInstance";
 
         // automation azure storage
         public const string AzureStorageToGooglePhotosOrchestrator = "azureStorageToGooglePhotosOrchestrator";

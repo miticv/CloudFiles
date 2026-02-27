@@ -1,18 +1,18 @@
-<div class="flex flex-col h-full min-w-0 overflow-auto">
+<div class="flex flex-col w-full h-full min-w-0 overflow-auto">
 
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
-        <div>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card sticky top-0 z-10">
+        <div class="flex-1 min-w-0">
             <div class="text-3xl font-bold tracking-tight leading-none">Processes</div>
             <div class="mt-1 font-medium text-secondary">
-                {{instances.length}} orchestration instance{{instances.length !== 1 ? 's' : ''}}
+                {{groups.length}} orchestration group{{groups.length !== 1 ? 's' : ''}}
             </div>
         </div>
-        <div class="flex items-center gap-3 mt-4 sm:mt-0">
+        <div class="flex items-center gap-3 mt-4 sm:mt-0 flex-shrink-0 ml-auto">
             <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic"
-                            style="width: 180px; --mdc-outlined-text-field-container-shape: 8px;">
-                <mat-label>Filter by status</mat-label>
-                <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()" multiple>
+                            style="width: 180px; min-width: 180px;" floatLabel="never">
+                <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()" multiple
+                            panelClass="filter-panel" placeholder="Filter by status">
                     <mat-option [value]="0">Running</mat-option>
                     <mat-option [value]="1">Completed</mat-option>
                     <mat-option [value]="3">Failed</mat-option>
@@ -20,92 +20,187 @@
                     <mat-option [value]="5">Terminated</mat-option>
                 </mat-select>
             </mat-form-field>
-            <button mat-icon-button (click)="loadInstances()" matTooltip="Refresh">
+            <button mat-icon-button class="toolbar-btn" (click)="loadInstances()" matTooltip="Refresh">
                 <mat-icon>refresh</mat-icon>
             </button>
         </div>
     </div>
 
     <!-- Error -->
-    <div *ngIf="error" class="mx-6 md:mx-8 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-        <div class="flex items-center">
-            <mat-icon class="text-red-500 mr-2">error</mat-icon>
-            <span class="text-red-700 flex-1">{{error}}</span>
-            <button mat-icon-button (click)="loadInstances()" matTooltip="Retry">
-                <mat-icon>refresh</mat-icon>
-            </button>
-        </div>
+    <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
+         style="background: #fef2f2; border: 1px solid #fecaca;">
+        <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
+        <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+        <button mat-icon-button (click)="loadInstances()" matTooltip="Retry">
+            <mat-icon>refresh</mat-icon>
+        </button>
     </div>
 
     <!-- Loading -->
-    <div *ngIf="loading && instances.length === 0" class="flex items-center justify-center p-16">
-        <mat-spinner diameter="40"></mat-spinner>
+    <div *ngIf="loading && instances.length === 0" class="spinner-wrapper">
+        <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
+        <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading processes...</p>
     </div>
 
-    <!-- Instance list -->
-    <div class="p-6 md:p-8 space-y-3" *ngIf="instances.length > 0">
-        <div *ngFor="let instance of instances"
-             class="bg-card rounded-xl shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
-             (click)="toggleExpand(instance)">
-            <!-- Row summary -->
-            <div class="flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3 min-w-0">
-                    <mat-icon [class]="statusColors[instance.runtimeStatus]"
-                              class="rounded-full p-0.5"
-                              style="font-size: 20px; width: 20px; height: 20px;">
-                        {{statusIcons[instance.runtimeStatus]}}
-                    </mat-icon>
-                    <span class="px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap"
-                          [ngClass]="statusColors[instance.runtimeStatus]">
-                        {{statusLabels[instance.runtimeStatus]}}
-                    </span>
-                    <span class="font-medium text-sm truncate">{{instance.name}}</span>
-                    <span class="text-xs text-secondary font-mono hidden sm:inline">{{instance.instanceId | slice:0:12}}...</span>
-                    <span *ngIf="getInputSummary(instance)" class="text-xs text-secondary hidden md:inline">
-                        ({{getInputSummary(instance)}})
-                    </span>
-                </div>
-                <div class="flex items-center gap-4 text-xs text-secondary whitespace-nowrap">
-                    <span class="hidden sm:inline">{{instance.createdAt | date:'short'}}</span>
-                    <mat-icon style="font-size: 18px; width: 18px; height: 18px;">
-                        {{expandedInstanceId === instance.instanceId ? 'expand_less' : 'expand_more'}}
-                    </mat-icon>
+    <!-- Grouped instance list -->
+    <div class="p-6 md:p-8 space-y-4" *ngIf="groups.length > 0">
+        <div *ngFor="let group of groups"
+             class="bg-card rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+
+            <!-- Parent row -->
+            <div class="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="toggleExpand(group.parent.instanceId)">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <mat-icon [class]="statusColors[group.parent.runtimeStatus]"
+                                  class="rounded-full p-0.5"
+                                  style="font-size: 20px; width: 20px; height: 20px;">
+                            {{statusIcons[group.parent.runtimeStatus]}}
+                        </mat-icon>
+                        <span class="px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap"
+                              [ngClass]="statusColors[group.parent.runtimeStatus]">
+                            {{statusLabels[group.parent.runtimeStatus]}}
+                        </span>
+                        <span class="font-medium text-sm truncate">{{getDisplayName(group.parent.name)}}</span>
+                        <span *ngIf="getInputSummary(group.parent)" class="text-xs text-secondary hidden md:inline">
+                            ({{getInputSummary(group.parent)}})
+                        </span>
+                        <span *ngIf="group.children.length > 0"
+                              class="px-1.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600 hidden sm:inline">
+                            +{{group.children.length}} sub
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-secondary whitespace-nowrap">
+                        <span *ngIf="getStartedBy(group.parent)" class="hidden lg:flex items-center gap-1">
+                            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">person</mat-icon>
+                            {{getStartedBy(group.parent)}}
+                        </span>
+                        <span class="hidden sm:inline">{{group.parent.createdAt | date:'short'}}</span>
+                        <button mat-icon-button
+                                class="delete-btn"
+                                (click)="group.children.length > 0 ? purgeGroup(group, $event) : purgeInstance(group.parent.instanceId, $event)"
+                                [disabled]="deletingInstanceIds.has(group.parent.instanceId)"
+                                matTooltip="Delete">
+                            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">
+                                {{deletingInstanceIds.has(group.parent.instanceId) ? 'hourglass_empty' : 'delete_outline'}}
+                            </mat-icon>
+                        </button>
+                        <mat-icon style="font-size: 18px; width: 18px; height: 18px;">
+                            {{expandedInstanceId === group.parent.instanceId ? 'expand_less' : 'expand_more'}}
+                        </mat-icon>
+                    </div>
                 </div>
             </div>
 
-            <!-- Expanded detail -->
-            <div *ngIf="expandedInstanceId === instance.instanceId" class="mt-4 pt-4 border-t">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <!-- Expanded parent detail -->
+            <div *ngIf="expandedInstanceId === group.parent.instanceId" class="px-4 pb-4 border-t">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
                     <div>
                         <div class="font-semibold mb-1">Details</div>
                         <div class="space-y-1 text-secondary">
-                            <div>Instance ID: <span class="font-mono text-xs">{{instance.instanceId}}</span></div>
-                            <div>Created: {{instance.createdAt | date:'medium'}}</div>
-                            <div>Last Updated: {{instance.lastUpdatedAt | date:'medium'}}</div>
+                            <div>Instance ID: <span class="font-mono text-xs">{{group.parent.instanceId}}</span></div>
+                            <div>Created: {{group.parent.createdAt | date:'medium'}}</div>
+                            <div>Last Updated: {{group.parent.lastUpdatedAt | date:'medium'}}</div>
+                            <div *ngIf="getStartedBy(group.parent)">
+                                Started by: {{getStartedBy(group.parent)}}
+                            </div>
                         </div>
                     </div>
-                    <div *ngIf="parseJson(instance.serializedInput) as input">
+                    <div *ngIf="parseJson(group.parent.serializedInput) as input">
                         <div class="font-semibold mb-1">Input</div>
                         <div class="text-secondary space-y-1">
                             <div *ngIf="input['AlbumId']">Album: {{input['AlbumId']}}</div>
                             <div *ngIf="input['SelectedItemsList']">Items: {{input['SelectedItemsList'].length}}</div>
+                            <div *ngIf="input['AccountName']">Account: {{input['AccountName']}}</div>
+                            <div *ngIf="input['ContainerName']">Container: {{input['ContainerName']}}</div>
                         </div>
                     </div>
                 </div>
-                <div *ngIf="instance.serializedOutput" class="mt-4">
-                    <div class="font-semibold mb-1 text-sm">Output</div>
-                    <pre class="text-xs bg-gray-50 p-3 rounded overflow-auto max-h-40">{{instance.serializedOutput}}</pre>
+                <!-- Nested children -->
+                <div *ngIf="group.children.length > 0" class="mt-4">
+                    <div class="font-semibold mb-2 text-sm flex items-center gap-1">
+                        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">account_tree</mat-icon>
+                        Sub-orchestrators ({{group.children.length}})
+                    </div>
+                    <div class="space-y-2 ml-4 border-l-2 pl-4" style="border-color: #e0e0e0;">
+                        <div *ngFor="let child of group.children"
+                             class="rounded-lg p-3 text-sm"
+                             style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <mat-icon [class]="statusColors[child.runtimeStatus]"
+                                              style="font-size: 16px; width: 16px; height: 16px;">
+                                        {{statusIcons[child.runtimeStatus]}}
+                                    </mat-icon>
+                                    <span class="px-1.5 py-0.5 rounded text-xs font-semibold"
+                                          [ngClass]="statusColors[child.runtimeStatus]">
+                                        {{statusLabels[child.runtimeStatus]}}
+                                    </span>
+                                    <span class="font-medium truncate">{{getDisplayName(child.name)}}</span>
+                                    <ng-container *ngIf="getSubProgress(child) as progress; else fileCount">
+                                        <span class="text-xs text-secondary">
+                                            ({{progress.completed}}/{{progress.total}})
+                                        </span>
+                                        <span *ngIf="progress.lastFile && child.runtimeStatus === 0"
+                                              class="text-xs text-blue-600 truncate" style="max-width: 200px;">
+                                            {{progress.lastFile}}
+                                        </span>
+                                    </ng-container>
+                                    <ng-template #fileCount>
+                                        <span *ngIf="getChildFiles(child).length > 0"
+                                              class="text-xs text-secondary">
+                                            ({{getChildFiles(child).length}} files)
+                                        </span>
+                                    </ng-template>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-secondary whitespace-nowrap">
+                                    <span>{{child.createdAt | date:'short'}}</span>
+                                    <button mat-icon-button
+                                            class="delete-btn"
+                                            style="width: 28px; height: 28px;"
+                                            (click)="purgeInstance(child.instanceId, $event)"
+                                            [disabled]="deletingInstanceIds.has(child.instanceId)"
+                                            matTooltip="Delete sub-orchestrator">
+                                        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">
+                                            {{deletingInstanceIds.has(child.instanceId) ? 'hourglass_empty' : 'delete_outline'}}
+                                        </mat-icon>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- File list -->
+                            <div *ngIf="getChildFiles(child).length > 0" class="mt-2 flex flex-wrap gap-1.5">
+                                <div *ngFor="let file of getChildFiles(child)"
+                                     class="flex items-center gap-1 px-2 py-1 rounded-md text-xs"
+                                     style="background: white; border: 1px solid #e2e8f0;"
+                                     [matTooltip]="file.path">
+                                    <mat-icon [style.color]="file.isImage ? '#3b82f6' : '#94a3b8'"
+                                              style="font-size: 14px; width: 14px; height: 14px;">
+                                        {{getFileIcon(file.name)}}
+                                    </mat-icon>
+                                    <span class="truncate" style="max-width: 140px;">{{file.name}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Empty state -->
+    <!-- No matching results (filter active but nothing matches) -->
+    <div *ngIf="!loading && groups.length === 0 && instances.length > 0 && !error"
+         class="flex flex-auto flex-col items-center justify-center">
+        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">filter_list_off</mat-icon>
+        <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No matching processes</div>
+        <div class="mt-2 text-sm text-secondary">Try adjusting your filter criteria.</div>
+    </div>
+
+    <!-- Empty state (no data at all) -->
     <div *ngIf="!loading && instances.length === 0 && !error"
          class="flex flex-auto flex-col items-center justify-center">
-        <mat-icon class="text-hint" style="font-size: 96px; width: 96px; height: 96px;">hourglass_empty</mat-icon>
-        <div class="mt-4 text-2xl font-semibold tracking-tight text-secondary">No processes found</div>
-        <div class="mt-2 text-secondary">Start a migration from the File Manager to see processes here.</div>
+        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">hourglass_empty</mat-icon>
+        <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No processes found</div>
+        <div class="mt-2 text-sm text-secondary">Start a migration from the File Manager to see processes here.</div>
     </div>
 
 </div>

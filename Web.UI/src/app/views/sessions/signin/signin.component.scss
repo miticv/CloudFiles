@@ -1,1 +1,14 @@
+:host {
+    display: flex;
+    flex: 1 1 auto;
+    height: 100%;
+}
 
+// Provider cards — lift on hover
+.border.rounded-xl {
+    transition: box-shadow 0.15s, border-color 0.15s;
+    &:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        border-color: #d1d5db;
+    }
+}

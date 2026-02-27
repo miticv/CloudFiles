@@ -10,7 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
 import { GoogleAlbumService, GoogleAlbum } from 'app/core/services/google-album.service';
 import { ProcessService, MigrationItem } from 'app/core/services/process.service';
 import { FileItem } from '../model/FileItem';
@@ -242,14 +243,25 @@ export class MigrateDialogComponent implements OnInit {
             ...this.data.selectedFiles.map(f => ({ itemPath: f.itemPath, isFolder: false })),
             ...this.data.selectedFolders.map(f => ({ itemPath: f.itemPath, isFolder: true }))
         ];
-        this.oidcSecurityService.getAccessToken('azure-storage').pipe(
-            switchMap(azureToken => this.processService.startMigration({
-                albumId: this.selectedAlbumId,
-                selectedItemsList: items,
-                accountName: this.data.account,
-                containerName: this.data.container,
-                azureAccessToken: azureToken
-            }))
+        forkJoin({
+            azureToken: this.oidcSecurityService.getAccessToken('azure-storage').pipe(take(1)),
+            googleUser: this.oidcSecurityService.getUserData('google').pipe(take(1)),
+            azureUser: this.oidcSecurityService.getUserData('azure').pipe(take(1))
+        }).pipe(
+            switchMap(({ azureToken, googleUser, azureUser }) => {
+                const emails: string[] = [];
+                if (googleUser?.email) emails.push(googleUser.email);
+                if (azureUser?.preferred_username) emails.push(azureUser.preferred_username);
+                else if (azureUser?.email) emails.push(azureUser.email);
+                return this.processService.startMigration({
+                    albumId: this.selectedAlbumId,
+                    selectedItemsList: items,
+                    accountName: this.data.account,
+                    containerName: this.data.container,
+                    azureAccessToken: azureToken,
+                    startedBy: emails.join(', ')
+                });
+            })
         ).subscribe({
             next: (response) => {
                 this.success = true;

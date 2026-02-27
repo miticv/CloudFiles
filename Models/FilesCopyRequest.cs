@@ -11,6 +11,7 @@ namespace CloudFiles.Models
         public string AccountName { get; set; }
         public string ContainerName { get; set; }
         public string AzureAccessToken { get; set; }
+        public string StartedBy { get; set; }
     }
 
     public class FilesCopyRequestUI
@@ -20,5 +21,6 @@ namespace CloudFiles.Models
         public string AccountName { get; set; }
         public string ContainerName { get; set; }
         public string AzureAccessToken { get; set; }
+        public string StartedBy { get; set; }
     }
 }

@@ -8,6 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { FileManagerPageComponent } from './file-manager-page/file-manager-page.component';
 import { FileDetailComponent } from './file-detail/file-detail.component';
@@ -34,7 +35,8 @@ const fileRoutes: Route[] = [
         MatIconModule,
         MatTooltipModule,
         MatSidenavModule,
-        MatDialogModule
+        MatDialogModule,
+        MatProgressSpinnerModule
     ],
     providers: [
         provideState(fromStore.storeFeatureKey, fromStore.reducer),

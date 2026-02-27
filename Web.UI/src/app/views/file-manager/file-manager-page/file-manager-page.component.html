@@ -1,5 +1,13 @@
-<div class="flex flex-col h-full min-w-0 overflow-hidden" *ngIf="folders$ | async as folders">
+<div class="flex flex-col h-full min-w-0 overflow-hidden">
 
+    <!-- Loading state (before any data arrives) -->
+    <div *ngIf="isLoading$ | async" class="flex flex-col flex-auto items-center justify-center gap-4">
+        <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
+        <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading files...</p>
+    </div>
+
+    <ng-container *ngIf="(isLoading$ | async) === false">
+    <ng-container *ngIf="folders$ | async as folders">
     <mat-drawer-container
         class="flex-auto h-full bg-card" *ngIf="files$ | async as files">
         <!-- Drawer -->
@@ -25,7 +33,7 @@
                         Storage Browser
                     </button>
                     <ng-container *ngFor="let crumb of storageBrowserPath; let last = last">
-                        <mat-icon class="text-gray-400" style="font-size: 18px; width: 18px; height: 18px;">chevron_right</mat-icon>
+                        <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: rgba(0,0,0,0.25);">chevron_right</mat-icon>
                         <button mat-button class="px-2 min-w-0" [disabled]="last" (click)="navigateToStorageBrowser(crumb.level)">
                             {{crumb.label}}
                         </button>
@@ -48,18 +56,19 @@
                                 </span>
                             </ng-container>
                             <div class="ml-auto flex items-center gap-1">
-                                <button mat-icon-button (click)="toggleSelectionMode()"
-                                        [matTooltip]="selectionMode ? 'Exit selection mode' : 'Select files for migration'"
-                                        [class.text-primary]="selectionMode">
+                                <button mat-icon-button class="header-btn"
+                                        (click)="toggleSelectionMode()"
+                                        [matTooltip]="selectionMode ? 'Exit selection' : 'Select for migration'"
+                                        [class.active]="selectionMode">
                                     <mat-icon>{{selectionMode ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
                                 </button>
-                                <button mat-icon-button (click)="openHelp()" matTooltip="Help — Azure storage access requirements">
-                                    <mat-icon class="text-secondary">help_outline</mat-icon>
+                                <button mat-icon-button class="header-btn" (click)="openHelp()" matTooltip="Help">
+                                    <mat-icon>help_outline</mat-icon>
                                 </button>
                             </div>
                         </div>
                         <div class="flex items-center mt-1 font-medium text-secondary">
-                            <div class="mr-8">{{folders.length}} folders, {{files.length}} files</div>
+                            <div class="mr-8" *ngIf="(error$ | async) === null">{{folders.length}} folders, {{files.length}} files</div>
                             <ng-container *ngIf="currentPath$ | async as currentPath">
                                 <div class="flex items-center space-x-2" *ngIf="currentPath.length">
                                     <a
@@ -87,18 +96,17 @@
                 </div>
 
                 <!-- Error -->
-                <div *ngIf="error$ | async as error" class="mx-6 md:mx-8 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div class="flex items-center">
-                        <mat-icon class="text-red-500 mr-2">error</mat-icon>
-                        <span class="text-red-700 flex-1">{{error}}</span>
-                        <button mat-icon-button (click)="getFolder()" matTooltip="Retry">
-                            <mat-icon>refresh</mat-icon>
-                        </button>
-                        <button mat-button color="primary" class="text-sm" (click)="openHelp()">
-                            <mat-icon class="mr-1" style="font-size: 16px; width: 16px; height: 16px;">help_outline</mat-icon>
-                            Learn more
-                        </button>
-                    </div>
+                <div *ngIf="error$ | async as error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
+                     style="background: #fef2f2; border: 1px solid #fecaca;">
+                    <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
+                    <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+                    <button mat-icon-button (click)="getFolder()" matTooltip="Retry">
+                        <mat-icon>refresh</mat-icon>
+                    </button>
+                    <button mat-button color="primary" class="text-sm" (click)="openHelp()">
+                        <mat-icon class="mr-1" style="font-size: 16px; width: 16px; height: 16px;">help_outline</mat-icon>
+                        Learn more
+                    </button>
                 </div>
 
                 <!-- Items list -->
@@ -110,7 +118,7 @@
                                 <div class="font-medium">Folders</div>
                                 <div class="flex flex-wrap -m-2 mt-2">
                                     <ng-container *ngFor="let folder of folders;">
-                                        <div class="relative w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card transition-all"
+                                        <div class="relative w-40 h-40 m-2 p-4 shadow-sm rounded-2xl bg-card border border-gray-100 transition-all hover:shadow-md"
                                              [class.ring-2]="selectedFolders.has(folder)"
                                              [class.ring-primary]="selectedFolders.has(folder)">
                                             <!-- Selection checkbox -->
@@ -145,7 +153,7 @@
                                 <div class="font-medium">Files</div>
                                 <div class="flex flex-wrap -m-2 mt-2">
                                     <ng-container *ngFor="let file of files;">
-                                        <div class="relative flex flex-col w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card cursor-pointer transition-all"
+                                        <div class="relative flex flex-col w-40 h-40 m-2 p-4 shadow-sm rounded-2xl bg-card border border-gray-100 cursor-pointer transition-all hover:shadow-md"
                                              [class.ring-2]="selectedFiles.has(file)"
                                              [class.ring-primary]="selectedFiles.has(file)"
                                              (click)="selectionMode ? toggleFileSelection(file, $event) : getFile(file)">
@@ -190,9 +198,10 @@
 
                 <!-- No items template -->
                 <ng-template #noItems>
-                    <div class="flex flex-auto flex-col items-center justify-center">
-                        <mat-icon class="text-hint" style="font-size: 96px; width: 96px; height: 96px;">folder_open</mat-icon>
-                        <div class="mt-4 text-2xl font-semibold tracking-tight text-secondary">No items found</div>
+                    <div *ngIf="(error$ | async) === null" class="flex flex-auto flex-col items-center justify-center">
+                        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">folder_open</mat-icon>
+                        <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No items found</div>
+                        <div class="mt-2 text-sm text-secondary">This folder is empty.</div>
                     </div>
                 </ng-template>
 
@@ -201,6 +210,8 @@
         </mat-drawer-content>
 
     </mat-drawer-container>
+    </ng-container>
+    </ng-container>
 
     <!-- Selection action bar -->
     <div *ngIf="hasSelection"

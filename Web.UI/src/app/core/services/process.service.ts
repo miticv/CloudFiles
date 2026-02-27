@@ -14,6 +14,7 @@ export interface StartMigrationRequest {
     accountName: string;
     containerName: string;
     azureAccessToken: string;
+    startedBy: string;
 }
 
 export interface StartJobResponse {
@@ -63,6 +64,13 @@ export class ProcessService extends HttpService {
         return this.http.post<StartJobResponse>(
             `${this.baseUrl}process/AzureStorageToGooglePhotos/start`,
             request,
+            this.getRequestOptions(true)
+        );
+    }
+
+    purgeInstance(instanceId: string): Observable<{ instanceId: string; purged: boolean }> {
+        return this.http.delete<{ instanceId: string; purged: boolean }>(
+            `${this.baseUrl}process/instances/${instanceId}`,
             this.getRequestOptions(true)
         );
     }

@@ -1,10 +1,26 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import {
     ProcessService,
     OrchestrationInstance,
     OrchestrationRuntimeStatus,
     ProcessListParams
 } from 'app/core/services/process.service';
+
+export interface ProcessGroup {
+    parent: OrchestrationInstance;
+    children: OrchestrationInstance[];
+}
+
+const PARENT_NAMES = new Set([
+    'azureStorageToGooglePhotosOrchestrator',
+    'gooleStorageToGooglePhotosOrchestrator'
+]);
+
+const CHILD_NAMES = new Set([
+    'copyAzureBlobsToGooglePhotosOrchestrator',
+    'copyGoogleStorageToGooglePhotosOrchestrator'
+]);
 
 @Component({
     standalone: false,
@@ -14,10 +30,12 @@ import {
 })
 export class ProcessesComponent implements OnInit, OnDestroy {
     instances: OrchestrationInstance[] = [];
+    groups: ProcessGroup[] = [];
     loading = false;
     error: string | null = null;
     statusFilter: number[] = [];
     expandedInstanceId: string | null = null;
+    deletingInstanceIds = new Set<string>();
     private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
     readonly statusLabels: Record<number, string> = {
@@ -71,6 +89,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         this.processService.listInstances(params).subscribe({
             next: (data) => {
                 this.instances = data;
+                this.groups = this.buildGroups(data);
                 this.loading = false;
             },
             error: (err) => {
@@ -84,21 +103,145 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         this.loadInstances();
     }
 
-    toggleExpand(instance: OrchestrationInstance): void {
+    toggleExpand(instanceId: string): void {
         this.expandedInstanceId =
-            this.expandedInstanceId === instance.instanceId ? null : instance.instanceId;
+            this.expandedInstanceId === instanceId ? null : instanceId;
     }
 
-    parseJson(serialized: string): unknown {
+    parseJson(serialized: string): Record<string, unknown> | null {
         if (!serialized) return null;
         try { return JSON.parse(serialized); } catch { return null; }
     }
 
+    redactOutput(serialized: string): string {
+        if (!serialized) return '';
+        return serialized.replace(/"(accessToken|azureAccessToken|AccessToken|AzureAccessToken)"\s*:\s*"[^"]*"/gi,
+            '"$1":"[REDACTED]"');
+    }
+
     getInputSummary(instance: OrchestrationInstance): string {
-        const input = this.parseJson(instance.serializedInput) as Record<string, unknown> | null;
+        const input = this.parseJson(instance.serializedInput);
         if (!input) return '';
         const items = input['SelectedItemsList'] as unknown[] | undefined;
         return items ? `${items.length} items` : '';
+    }
+
+    getStartedBy(instance: OrchestrationInstance): string {
+        const input = this.parseJson(instance.serializedInput);
+        if (!input) return '';
+        return (input['StartedBy'] as string) || '';
+    }
+
+    getChildFiles(child: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
+        const input = this.parseJson(child.serializedInput);
+        if (!input) return [];
+        const items = input['ListItemsPrepared'] as { ItemFilename?: string; ItemPath?: string }[] | undefined;
+        if (!items) return [];
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+        return items.map(i => {
+            const name = i.ItemFilename || i.ItemPath || 'unknown';
+            const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+            return { name, path: i.ItemPath || '', isImage: imageExts.has(ext) };
+        });
+    }
+
+    getSubProgress(child: OrchestrationInstance): { completed: number; total: number; lastFile: string } | null {
+        const status = this.parseJson(child.serializedCustomStatus);
+        if (!status || !status['total']) return null;
+        return {
+            completed: (status['completed'] as number) || 0,
+            total: (status['total'] as number) || 0,
+            lastFile: (status['lastFile'] as string) || ''
+        };
+    }
+
+    getFileIcon(fileName: string): string {
+        const ext = fileName.includes('.') ? fileName.split('.').pop()!.toLowerCase() : '';
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+        const videoExts = new Set(['mp4', 'mov', 'avi', 'mkv', 'webm']);
+        if (imageExts.has(ext)) return 'image';
+        if (videoExts.has(ext)) return 'videocam';
+        return 'insert_drive_file';
+    }
+
+    getDisplayName(name: string): string {
+        if (name === 'azureStorageToGooglePhotosOrchestrator') return 'Azure to Google Photos';
+        if (name === 'gooleStorageToGooglePhotosOrchestrator') return 'Google Storage to Photos';
+        if (name === 'copyAzureBlobsToGooglePhotosOrchestrator') return 'Copy Blobs';
+        if (name === 'copyGoogleStorageToGooglePhotosOrchestrator') return 'Copy Storage';
+        return name;
+    }
+
+    purgeInstance(instanceId: string, event: Event): void {
+        event.stopPropagation();
+        this.deletingInstanceIds.add(instanceId);
+        this.processService.purgeInstance(instanceId).subscribe({
+            next: () => {
+                this.deletingInstanceIds.delete(instanceId);
+                this.instances = this.instances.filter(i => i.instanceId !== instanceId);
+                this.groups = this.buildGroups(this.instances);
+            },
+            error: () => {
+                this.deletingInstanceIds.delete(instanceId);
+            }
+        });
+    }
+
+    purgeGroup(group: ProcessGroup, event: Event): void {
+        event.stopPropagation();
+        const allIds = [group.parent.instanceId, ...group.children.map(c => c.instanceId)];
+        allIds.forEach(id => this.deletingInstanceIds.add(id));
+        forkJoin(allIds.map(id => this.processService.purgeInstance(id))).subscribe({
+            next: () => {
+                allIds.forEach(id => this.deletingInstanceIds.delete(id));
+                this.instances = this.instances.filter(i => !allIds.includes(i.instanceId));
+                this.groups = this.buildGroups(this.instances);
+            },
+            error: () => {
+                allIds.forEach(id => this.deletingInstanceIds.delete(id));
+                this.loadInstances();
+            }
+        });
+    }
+
+    private buildGroups(instances: OrchestrationInstance[]): ProcessGroup[] {
+        // Sort newest first
+        const sorted = [...instances].sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        const parents = sorted.filter(i => PARENT_NAMES.has(i.name));
+        const children = sorted.filter(i => CHILD_NAMES.has(i.name));
+        const other = sorted.filter(i => !PARENT_NAMES.has(i.name) && !CHILD_NAMES.has(i.name));
+        const usedChildIds = new Set<string>();
+
+        const groups: ProcessGroup[] = parents.map(parent => {
+            const parentTime = new Date(parent.createdAt).getTime();
+            const matched = children.filter(child => {
+                if (usedChildIds.has(child.instanceId)) return false;
+                // Match by instanceId prefix (durable functions pattern) or creation time proximity
+                if (child.instanceId.startsWith(parent.instanceId)) return true;
+                const childTime = new Date(child.createdAt).getTime();
+                return Math.abs(childTime - parentTime) < 60000;
+            });
+            matched.forEach(c => usedChildIds.add(c.instanceId));
+            return { parent, children: matched };
+        });
+
+        // Unmatched children and other instances become standalone groups
+        children.filter(c => !usedChildIds.has(c.instanceId)).forEach(c => {
+            groups.push({ parent: c, children: [] });
+        });
+        other.forEach(o => {
+            groups.push({ parent: o, children: [] });
+        });
+
+        // Sort groups by parent's createdAt descending
+        groups.sort((a, b) =>
+            new Date(b.parent.createdAt).getTime() - new Date(a.parent.createdAt).getTime()
+        );
+
+        return groups;
     }
 
     private startAutoRefresh(): void {

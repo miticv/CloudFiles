@@ -8,7 +8,7 @@ import { FileItem } from '../model/FileItem';
 import { FileDetail } from '../model/FileDetail';
 import { StorageContext } from '../service/file-manager.service';
 import { loadFile, loadFolder, setContext } from '../store/file-manager.actions';
-import { getCurrentPath, getFiles, getFolders, getCurrentFile, getShowDetail, getContext, getError } from '../store/file-manager.selectors';
+import { getCurrentPath, getFiles, getFolders, getCurrentFile, getShowDetail, getContext, getError, getIsLoading } from '../store/file-manager.selectors';
 import { StorageHelpDialogComponent } from '../../storage-browser/storage-help-dialog.component';
 import { MigrateDialogComponent, MigrateDialogData } from '../migrate-dialog/migrate-dialog.component';
 
@@ -29,6 +29,7 @@ export class FileManagerPageComponent implements OnInit {
     showDetail$: Observable<boolean>;
     context$: Observable<StorageContext>;
     error$: Observable<string | null>;
+    isLoading$: Observable<boolean>;
     currentFileItem: FileItem;
     storageBrowserPath: { label: string; level: string }[] = [];
     selectionMode = false;
@@ -65,6 +66,7 @@ export class FileManagerPageComponent implements OnInit {
         this.currentFile$ = this.store.select(getCurrentFile);
         this.context$ = this.store.select(getContext);
         this.error$ = this.store.select(getError);
+        this.isLoading$ = this.store.select(getIsLoading);
     }
 
     getFolder(path?: string) {

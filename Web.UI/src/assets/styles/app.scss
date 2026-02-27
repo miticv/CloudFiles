@@ -29,3 +29,63 @@ html, body {
 .border-divider {
     border-color: rgba(0, 0, 0, 0.12);
 }
+
+// ─── Global Material tooltip polish ───
+.mat-mdc-tooltip .mdc-tooltip__surface {
+    background: white !important;
+    color: #334155 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0;
+    line-height: 1.4;
+}
+
+// ─── Global pseudo-checkbox softening (select dropdowns, etc.) ───
+.mat-pseudo-checkbox {
+    border-color: #cbd5e1 !important;
+}
+
+// ─── Processes filter dropdown panel (rendered in CDK overlay, outside component) ───
+.filter-panel {
+    background: white !important;
+    border-radius: 12px !important;
+    margin-top: 4px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0;
+
+    .mat-mdc-option {
+        height: 40px !important;
+        min-height: 40px !important;
+        font-size: 13px;
+        letter-spacing: 0.01em;
+        border-radius: 8px;
+        margin: 2px 6px;
+        padding: 0 12px !important;
+        transition: background 0.12s;
+
+        &:hover {
+            background: #f1f5f9 !important;
+        }
+
+        &.mdc-list-item--selected,
+        &.mat-mdc-option-active {
+            background: #eff6ff !important;
+        }
+
+        .mat-pseudo-checkbox {
+            width: 18px !important;
+            height: 18px !important;
+            border-radius: 4px !important;
+            border-width: 1.5px !important;
+            margin-right: 10px;
+        }
+        .mat-pseudo-checkbox-checked {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+        }
+    }
+}

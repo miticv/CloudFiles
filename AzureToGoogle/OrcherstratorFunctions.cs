@@ -54,23 +54,39 @@ namespace CloudFiles.AzureToGoogle
             ILogger log = context.CreateReplaySafeLogger<object>();
             var filesCopyItemsPrepared = context.GetInput<ItemsPrepared>();
 
-            var tasks = new List<Task<NewMediaItemResultRoot>>();
+            var taskToFile = new Dictionary<Task<NewMediaItemResultRoot>, string>();
             log.LogInformation("Fan-Out CopyBlobToGoogle");
             foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
             {
                 var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyAzureBlobToGooglePhotos, item);
-                tasks.Add(task);
+                taskToFile[task] = item.ItemFilename;
             }
-            log.LogInformation("Fan-In CopyBlobToGoogle");
-            var result = await Task.WhenAll(tasks);
+
+            var pending = new HashSet<Task<NewMediaItemResultRoot>>(taskToFile.Keys);
+            int total = pending.Count;
+            context.SetCustomStatus(new { completed = 0, total, lastFile = "" });
 
             var response = new NewMediaItemResultRoot
             {
                 NewMediaItemResults = new List<NewMediaItemResult>()
             };
-            foreach (var item in result) {
-                response.NewMediaItemResults.AddRange(item.NewMediaItemResults);
+
+            log.LogInformation("Fan-In CopyBlobToGoogle");
+            while (pending.Count > 0)
+            {
+                var done = await Task.WhenAny(pending);
+                pending.Remove(done);
+                var result = await done;
+                response.NewMediaItemResults.AddRange(result.NewMediaItemResults);
+
+                context.SetCustomStatus(new
+                {
+                    completed = total - pending.Count,
+                    total,
+                    lastFile = taskToFile[done]
+                });
             }
+
             return response;
         }
     }

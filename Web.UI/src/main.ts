@@ -36,13 +36,17 @@ bootstrapApplication(AppComponent, {
                     redirectUrl: window.location.origin,
                     clientId: environment.googleClientId,
                     responseType: 'code',
-                    scope: 'openid email profile https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+                    scope: 'openid email profile https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
                     triggerAuthorizationResultEvent: true,
                     postLogoutRedirectUri: window.location.origin,
                     startCheckSession: false,
                     silentRenew: true,
                     useRefreshToken: true,
                     ignoreNonceAfterRefresh: true,
+                    customParamsAuthRequest: {
+                        access_type: 'offline',
+                        prompt: 'consent'
+                    },
                     customParamsCodeRequest: {
                         client_secret: environment.googleClientSecret
                     },

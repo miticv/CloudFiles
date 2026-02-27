@@ -47,9 +47,16 @@
                                     {{ctx.account}} / {{ctx.container}}
                                 </span>
                             </ng-container>
-                            <button mat-icon-button (click)="openHelp()" matTooltip="Help — Azure storage access requirements" class="ml-auto">
-                                <mat-icon class="text-secondary">help_outline</mat-icon>
-                            </button>
+                            <div class="ml-auto flex items-center gap-1">
+                                <button mat-icon-button (click)="toggleSelectionMode()"
+                                        [matTooltip]="selectionMode ? 'Exit selection mode' : 'Select files for migration'"
+                                        [class.text-primary]="selectionMode">
+                                    <mat-icon>{{selectionMode ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
+                                </button>
+                                <button mat-icon-button (click)="openHelp()" matTooltip="Help — Azure storage access requirements">
+                                    <mat-icon class="text-secondary">help_outline</mat-icon>
+                                </button>
+                            </div>
                         </div>
                         <div class="flex items-center mt-1 font-medium text-secondary">
                             <div class="mr-8">{{folders.length}} folders, {{files.length}} files</div>
@@ -96,17 +103,27 @@
 
                 <!-- Items list -->
                 <ng-container *ngIf="(folders.length > 0 || files.length > 0); else noItems">
-                    <div class="p-6 md:p-8 space-y-8">
+                    <div class="p-6 md:p-8 space-y-8" [class.pb-24]="hasSelection">
                         <!-- Folders -->
                         <ng-container *ngIf="folders.length > 0">
                             <div>
                                 <div class="font-medium">Folders</div>
                                 <div class="flex flex-wrap -m-2 mt-2">
                                     <ng-container *ngFor="let folder of folders;">
-                                        <div class="relative w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card">
-                                            <a
-                                                class="z-10 absolute inset-0 flex flex-col p-4 cursor-pointer"
-                                                (click)="getFolder(folder.itemPath);">
+                                        <div class="relative w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card transition-all"
+                                             [class.ring-2]="selectedFolders.has(folder)"
+                                             [class.ring-primary]="selectedFolders.has(folder)">
+                                            <!-- Selection checkbox -->
+                                            <div class="absolute top-2 left-2 z-20" *ngIf="selectionMode"
+                                                 (click)="toggleFolderSelection(folder, $event)">
+                                                <mat-icon class="cursor-pointer text-gray-400 hover:text-primary"
+                                                          [class.text-primary]="selectedFolders.has(folder)"
+                                                          [class.text-gray-400]="!selectedFolders.has(folder)">
+                                                    {{selectedFolders.has(folder) ? 'check_box' : 'check_box_outline_blank'}}
+                                                </mat-icon>
+                                            </div>
+                                            <a class="z-10 absolute inset-0 flex flex-col p-4 cursor-pointer"
+                                               (click)="selectionMode ? toggleFolderSelection(folder, $event) : getFolder(folder.itemPath)">
                                                 <div class="flex items-center justify-center flex-1">
                                                     <mat-icon class="text-6xl text-hint" style="font-size: 56px; width: 56px; height: 56px;">folder</mat-icon>
                                                 </div>
@@ -128,9 +145,19 @@
                                 <div class="font-medium">Files</div>
                                 <div class="flex flex-wrap -m-2 mt-2">
                                     <ng-container *ngFor="let file of files;">
-                                        <a
-                                            class="flex flex-col w-40 h-40 m-2 p-4 shadow rounded-2xl cursor-pointer bg-card"
-                                            (click)="getFile(file)">
+                                        <div class="relative flex flex-col w-40 h-40 m-2 p-4 shadow rounded-2xl bg-card cursor-pointer transition-all"
+                                             [class.ring-2]="selectedFiles.has(file)"
+                                             [class.ring-primary]="selectedFiles.has(file)"
+                                             (click)="selectionMode ? toggleFileSelection(file, $event) : getFile(file)">
+                                            <!-- Selection checkbox -->
+                                            <div class="absolute top-2 left-2 z-20" *ngIf="selectionMode"
+                                                 (click)="toggleFileSelection(file, $event)">
+                                                <mat-icon class="cursor-pointer hover:text-primary"
+                                                          [class.text-primary]="selectedFiles.has(file)"
+                                                          [class.text-gray-400]="!selectedFiles.has(file)">
+                                                    {{selectedFiles.has(file) ? 'check_box' : 'check_box_outline_blank'}}
+                                                </mat-icon>
+                                            </div>
                                             <div class="flex items-center justify-center flex-1">
                                                 <div class="relative">
                                                     <mat-icon class="text-6xl text-hint" style="font-size: 56px; width: 56px; height: 56px;">description</mat-icon>
@@ -153,7 +180,7 @@
                                                     class="truncate"
                                                     [matTooltip]="file.itemName">{{file.itemName}}</div>
                                             </div>
-                                        </a>
+                                        </div>
                                     </ng-container>
                                 </div>
                             </div>
@@ -174,5 +201,23 @@
         </mat-drawer-content>
 
     </mat-drawer-container>
+
+    <!-- Selection action bar -->
+    <div *ngIf="hasSelection"
+         class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-3 bg-white border-t shadow-lg">
+        <div class="text-sm font-medium">
+            <span *ngIf="selectedFiles.size > 0">{{selectedFiles.size}} file{{selectedFiles.size !== 1 ? 's' : ''}}</span>
+            <span *ngIf="selectedFiles.size > 0 && selectedFolders.size > 0"> and </span>
+            <span *ngIf="selectedFolders.size > 0">{{selectedFolders.size}} folder{{selectedFolders.size !== 1 ? 's' : ''}}</span>
+            selected
+        </div>
+        <div class="flex items-center gap-3">
+            <button mat-button (click)="clearSelection()">Clear</button>
+            <button mat-flat-button color="primary" (click)="openMigrateDialog()">
+                <mat-icon class="mr-1">cloud_upload</mat-icon>
+                Migrate to Google Photos
+            </button>
+        </div>
+    </div>
 
 </div>

@@ -10,6 +10,7 @@ import { StorageContext } from '../service/file-manager.service';
 import { loadFile, loadFolder, setContext } from '../store/file-manager.actions';
 import { getCurrentPath, getFiles, getFolders, getCurrentFile, getShowDetail, getContext, getError } from '../store/file-manager.selectors';
 import { StorageHelpDialogComponent } from '../../storage-browser/storage-help-dialog.component';
+import { MigrateDialogComponent, MigrateDialogData } from '../migrate-dialog/migrate-dialog.component';
 
 @Component({
     standalone: false,
@@ -30,6 +31,9 @@ export class FileManagerPageComponent implements OnInit {
     error$: Observable<string | null>;
     currentFileItem: FileItem;
     storageBrowserPath: { label: string; level: string }[] = [];
+    selectionMode = false;
+    selectedFiles = new Set<FileItem>();
+    selectedFolders = new Set<FileItem>();
     private currentContext: StorageContext;
 
     constructor(
@@ -64,6 +68,7 @@ export class FileManagerPageComponent implements OnInit {
     }
 
     getFolder(path?: string) {
+        this.clearSelection();
         const folderPath = path || null;
         this.saveFileManagerState(folderPath);
         this.store.dispatch(loadFolder({ path: folderPath }));
@@ -107,6 +112,57 @@ export class FileManagerPageComponent implements OnInit {
 
     openHelp(): void {
         this.dialog.open(StorageHelpDialogComponent, { width: '560px' });
+    }
+
+    toggleSelectionMode(): void {
+        this.selectionMode = !this.selectionMode;
+        if (!this.selectionMode) {
+            this.clearSelection();
+        }
+    }
+
+    toggleFileSelection(file: FileItem, event: Event): void {
+        event.stopPropagation();
+        if (this.selectedFiles.has(file)) {
+            this.selectedFiles.delete(file);
+        } else {
+            this.selectedFiles.add(file);
+        }
+    }
+
+    toggleFolderSelection(folder: FileItem, event: Event): void {
+        event.stopPropagation();
+        if (this.selectedFolders.has(folder)) {
+            this.selectedFolders.delete(folder);
+        } else {
+            this.selectedFolders.add(folder);
+        }
+    }
+
+    clearSelection(): void {
+        this.selectedFiles.clear();
+        this.selectedFolders.clear();
+        this.selectionMode = false;
+    }
+
+    get hasSelection(): boolean {
+        return this.selectedFiles.size > 0 || this.selectedFolders.size > 0;
+    }
+
+    openMigrateDialog(): void {
+        const data: MigrateDialogData = {
+            selectedFiles: Array.from(this.selectedFiles),
+            selectedFolders: Array.from(this.selectedFolders),
+            account: this.currentContext.account,
+            container: this.currentContext.container
+        };
+        const dialogRef = this.dialog.open(MigrateDialogComponent, {
+            width: '520px',
+            data
+        });
+        dialogRef.afterClosed().subscribe(() => {
+            this.clearSelection();
+        });
     }
 
     private saveFileManagerState(folderPath: string | null): void {

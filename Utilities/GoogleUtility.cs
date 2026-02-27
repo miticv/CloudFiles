@@ -225,7 +225,8 @@ namespace CloudFiles.Utilities
 
             if (result.Aud != result.Azp ||
                !(result.Scope.Contains("https://www.googleapis.com/auth/photoslibrary") ||
-                 result.Scope.Contains("https://www.googleapis.com/auth/photospicker.mediaitems.readonly")) ||
+                 result.Scope.Contains("https://www.googleapis.com/auth/photospicker.mediaitems.readonly") ||
+                 result.Scope.Contains("https://www.googleapis.com/auth/photoslibrary.appendonly")) ||
                result.Aud != Environment.GetEnvironmentVariable("GooglePhotoClientId") ||
                !int.TryParse(result.Exp, out int expiration) ||
                expiration < 0 ) {

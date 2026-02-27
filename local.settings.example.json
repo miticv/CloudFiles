@@ -3,7 +3,6 @@
   "Values": {
     "AzureWebJobsStorage": "<azure-storage-connection-string>",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "AzureContainer": "<blob-container-name>",
     "GoogleBucket": "<gcs-bucket-name>",
     "GoogleServiceJsonFileName": "<path-to-service-account-key.json>",
     "GooglePhotoClientId": "<google-oauth-client-id>",

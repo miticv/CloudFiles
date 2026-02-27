@@ -39,6 +39,11 @@ export const rootRouterConfig: Routes = [
                 path: 'google-photos',
                 loadChildren: () => import('./views/google-photos/google-photos.module').then(m => m.GooglePhotosModule),
                 data: { title: 'Google Photos', breadcrumb: 'GOOGLE PHOTOS' }
+            },
+            {
+                path: 'processes',
+                loadChildren: () => import('./views/processes/processes.module').then(m => m.ProcessesModule),
+                data: { title: 'Processes', breadcrumb: 'PROCESSES' }
             }
         ]
     },

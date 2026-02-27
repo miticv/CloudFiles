@@ -41,6 +41,9 @@ export class AuthInterceptor implements HttpInterceptor {
         if (url.includes('/google/')) {
             return 'google';
         }
+        if (url.includes('/process/')) {
+            return 'google';
+        }
         return null;
     }
 }

@@ -74,7 +74,6 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    | `GoogleClientSecret` | Google OAuth Client Secret |
    | `AzureTenantId` | Azure AD Tenant ID |
    | `AzureClientId` | Azure App Registration Client ID |
-   | `AzureContainer` | Azure Blob Storage container name |
    | `GoogleBucket` | Google Cloud Storage bucket name |
    | `GoogleServiceJsonFileName` | Path to Google service account key JSON |
    | `ProductionApiUrl` | Production API base URL |
@@ -92,7 +91,7 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    ```
 
 4. **Run locally**:
-   ```bash
+   ```bash 
 
     # Terminal 1: azurite (when "AzureWebJobsStorage": "UseDevelopmentStorage=true")
     npx azurite --silent --location .azurite

@@ -4,12 +4,16 @@
     {
         public ItemPrepared() { }
 
-        public ItemPrepared(Item item, string accessToken, string albumId)
+        public ItemPrepared(Item item, string accessToken, string albumId,
+            string accountName = null, string containerName = null, string azureAccessToken = null)
         {
             ItemPath = item.ItemPath;
             ItemFilename = GetFilename(item.ItemPath);
             AccessToken = accessToken;
             AlbumId = albumId;
+            AccountName = accountName;
+            ContainerName = containerName;
+            AzureAccessToken = azureAccessToken;
         }
 
         private string GetFilename(string path) {
@@ -27,5 +31,8 @@
         public string AlbumId { get; set; }
         public string UploadToken { get; set; }
         public string StatusMessage { get; set; }
+        public string AccountName { get; set; }
+        public string ContainerName { get; set; }
+        public string AzureAccessToken { get; set; }
     }
 }

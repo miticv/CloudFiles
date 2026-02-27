@@ -24,6 +24,12 @@ export class NavigationService {
             state: 'google-photos'
         },
         {
+            name: 'Processes',
+            type: 'link',
+            icon: 'sync',
+            state: 'processes'
+        },
+        {
             type: 'separator',
             name: 'Account'
         },

@@ -21,9 +21,7 @@ namespace CloudFiles.AzureToGoogle
         {
             ILogger log = executionContext.GetLogger(nameof(ActivityFunctions));
 
-            var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-            var containerName = Environment.GetEnvironmentVariable("AzureContainer");
-            var azureUtility = new AzureUtility(connectionString, containerName);
+            var azureUtility = new AzureUtility(request.AccountName, request.ContainerName, request.AzureAccessToken);
 
             log.LogInformation($"{Constants.AzureStorageToGooglePhotosPrepareList}: Getting full list from {request.SelectedItemsList.Count} selections...");
             var expandedItemsList = await azureUtility.SelectionToHierarchicalDeepListingAsync(request.SelectedItemsList.ToList()).ConfigureAwait(false);
@@ -31,7 +29,8 @@ namespace CloudFiles.AzureToGoogle
             log.LogInformation($"{Constants.AzureStorageToGooglePhotosPrepareList}: Preparing {expandedItemsList.Count} items...");
             var preparedList = new List<ItemPrepared>();
             foreach (var item in expandedItemsList) {
-                preparedList.Add(new ItemPrepared(item, request.AccessToken, request.AlbumId));
+                preparedList.Add(new ItemPrepared(item, request.AccessToken, request.AlbumId,
+                    request.AccountName, request.ContainerName, request.AzureAccessToken));
             }
 
             return new ItemsPrepared() {  ListItemsPrepared = preparedList };
@@ -48,9 +47,7 @@ namespace CloudFiles.AzureToGoogle
             {
                 log.LogInformation($"{Constants.CopyAzureBlobToGooglePhotos}: Copy image {item.ItemPath}.");
 
-                var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-                var containerName = Environment.GetEnvironmentVariable("AzureContainer");
-                var azureUtility = new AzureUtility(connectionString, containerName);
+                var azureUtility = new AzureUtility(item.AccountName, item.ContainerName, item.AzureAccessToken);
 
                 var blobData = await azureUtility.GetBlobItemAsync(item.ItemPath).ConfigureAwait(false);
 

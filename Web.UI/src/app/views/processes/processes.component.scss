@@ -1,0 +1,30 @@
+:host {
+    display: flex;
+    flex: 1 1 auto;
+    height: 100%;
+}
+
+// Compact filter dropdown — ::ng-deep needed to penetrate Material's encapsulation
+::ng-deep .filter-field {
+    .mat-mdc-text-field-wrapper {
+        height: 40px;
+        border-radius: 8px !important;
+    }
+    .mat-mdc-form-field-infix {
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+        min-height: unset !important;
+    }
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__trailing {
+        border-radius: 8px !important;
+    }
+    .mdc-notched-outline__leading {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+    .mdc-notched-outline__trailing {
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+    }
+}

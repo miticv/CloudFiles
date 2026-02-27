@@ -1,0 +1,111 @@
+<div class="flex flex-col h-full min-w-0 overflow-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
+        <div>
+            <div class="text-3xl font-bold tracking-tight leading-none">Processes</div>
+            <div class="mt-1 font-medium text-secondary">
+                {{instances.length}} orchestration instance{{instances.length !== 1 ? 's' : ''}}
+            </div>
+        </div>
+        <div class="flex items-center gap-3 mt-4 sm:mt-0">
+            <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic"
+                            style="width: 180px; --mdc-outlined-text-field-container-shape: 8px;">
+                <mat-label>Filter by status</mat-label>
+                <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()" multiple>
+                    <mat-option [value]="0">Running</mat-option>
+                    <mat-option [value]="1">Completed</mat-option>
+                    <mat-option [value]="3">Failed</mat-option>
+                    <mat-option [value]="6">Pending</mat-option>
+                    <mat-option [value]="5">Terminated</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-icon-button (click)="loadInstances()" matTooltip="Refresh">
+                <mat-icon>refresh</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error" class="mx-6 md:mx-8 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center">
+            <mat-icon class="text-red-500 mr-2">error</mat-icon>
+            <span class="text-red-700 flex-1">{{error}}</span>
+            <button mat-icon-button (click)="loadInstances()" matTooltip="Retry">
+                <mat-icon>refresh</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading && instances.length === 0" class="flex items-center justify-center p-16">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <!-- Instance list -->
+    <div class="p-6 md:p-8 space-y-3" *ngIf="instances.length > 0">
+        <div *ngFor="let instance of instances"
+             class="bg-card rounded-xl shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
+             (click)="toggleExpand(instance)">
+            <!-- Row summary -->
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <mat-icon [class]="statusColors[instance.runtimeStatus]"
+                              class="rounded-full p-0.5"
+                              style="font-size: 20px; width: 20px; height: 20px;">
+                        {{statusIcons[instance.runtimeStatus]}}
+                    </mat-icon>
+                    <span class="px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap"
+                          [ngClass]="statusColors[instance.runtimeStatus]">
+                        {{statusLabels[instance.runtimeStatus]}}
+                    </span>
+                    <span class="font-medium text-sm truncate">{{instance.name}}</span>
+                    <span class="text-xs text-secondary font-mono hidden sm:inline">{{instance.instanceId | slice:0:12}}...</span>
+                    <span *ngIf="getInputSummary(instance)" class="text-xs text-secondary hidden md:inline">
+                        ({{getInputSummary(instance)}})
+                    </span>
+                </div>
+                <div class="flex items-center gap-4 text-xs text-secondary whitespace-nowrap">
+                    <span class="hidden sm:inline">{{instance.createdAt | date:'short'}}</span>
+                    <mat-icon style="font-size: 18px; width: 18px; height: 18px;">
+                        {{expandedInstanceId === instance.instanceId ? 'expand_less' : 'expand_more'}}
+                    </mat-icon>
+                </div>
+            </div>
+
+            <!-- Expanded detail -->
+            <div *ngIf="expandedInstanceId === instance.instanceId" class="mt-4 pt-4 border-t">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="font-semibold mb-1">Details</div>
+                        <div class="space-y-1 text-secondary">
+                            <div>Instance ID: <span class="font-mono text-xs">{{instance.instanceId}}</span></div>
+                            <div>Created: {{instance.createdAt | date:'medium'}}</div>
+                            <div>Last Updated: {{instance.lastUpdatedAt | date:'medium'}}</div>
+                        </div>
+                    </div>
+                    <div *ngIf="parseJson(instance.serializedInput) as input">
+                        <div class="font-semibold mb-1">Input</div>
+                        <div class="text-secondary space-y-1">
+                            <div *ngIf="input['AlbumId']">Album: {{input['AlbumId']}}</div>
+                            <div *ngIf="input['SelectedItemsList']">Items: {{input['SelectedItemsList'].length}}</div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="instance.serializedOutput" class="mt-4">
+                    <div class="font-semibold mb-1 text-sm">Output</div>
+                    <pre class="text-xs bg-gray-50 p-3 rounded overflow-auto max-h-40">{{instance.serializedOutput}}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!loading && instances.length === 0 && !error"
+         class="flex flex-auto flex-col items-center justify-center">
+        <mat-icon class="text-hint" style="font-size: 96px; width: 96px; height: 96px;">hourglass_empty</mat-icon>
+        <div class="mt-4 text-2xl font-semibold tracking-tight text-secondary">No processes found</div>
+        <div class="mt-2 text-secondary">Start a migration from the File Manager to see processes here.</div>
+    </div>
+
+</div>

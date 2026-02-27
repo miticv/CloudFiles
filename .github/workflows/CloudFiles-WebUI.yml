@@ -25,6 +25,16 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: Web.UI/package-lock.json
+      - name: Generate environment files
+        working-directory: Web.UI/src/environments
+        run: |
+          sed -e "s|__PRODUCTION_API_URL__|${{ secrets.PRODUCTION_API_URL }}|g" \
+              -e "s|__GOOGLE_CLIENT_ID__|${{ secrets.GOOGLE_CLIENT_ID }}|g" \
+              -e "s|__GOOGLE_CLIENT_SECRET__|${{ secrets.GOOGLE_CLIENT_SECRET }}|g" \
+              -e "s|__AZURE_TENANT_ID__|${{ secrets.AZURE_TENANT_ID }}|g" \
+              -e "s|__AZURE_CLIENT_ID__|${{ secrets.AZURE_CLIENT_ID }}|g" \
+              environment.prod.template.ts > environment.prod.ts
+          cp environment.prod.ts environment.ts
       - name: Install dependencies
         working-directory: Web.UI
         run: npm ci

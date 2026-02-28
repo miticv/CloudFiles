@@ -150,8 +150,9 @@ import { RouterModule } from '@angular/router';
             <section>
                 <h2>10. Contact</h2>
                 <p>
-                    If you have any questions about this Privacy Policy or your data, please open an issue on
-                    our GitHub repository or contact the application maintainer.
+                    If you have any questions about this Privacy Policy or your data, please
+                    <a href="https://github.com/miticv/CloudFiles/issues" target="_blank" rel="noopener noreferrer">open an issue</a>
+                    on our GitHub repository.
                 </p>
             </section>
         </div>

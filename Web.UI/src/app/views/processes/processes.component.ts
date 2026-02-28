@@ -138,7 +138,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const items = input['ListItemsPrepared'] as { ItemFilename?: string; ItemPath?: string }[] | undefined;
         if (!items) return [];
         const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
-        return items.map(i => {
+        return items.map((i) => {
             const name = i.ItemFilename || i.ItemPath || 'unknown';
             const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
             return { name, path: i.ItemPath || '', isImage: imageExts.has(ext) };
@@ -215,9 +215,9 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const other = sorted.filter(i => !PARENT_NAMES.has(i.name) && !CHILD_NAMES.has(i.name));
         const usedChildIds = new Set<string>();
 
-        const groups: ProcessGroup[] = parents.map(parent => {
+        const groups: ProcessGroup[] = parents.map((parent) => {
             const parentTime = new Date(parent.createdAt).getTime();
-            const matched = children.filter(child => {
+            const matched = children.filter((child) => {
                 if (usedChildIds.has(child.instanceId)) return false;
                 // Match by instanceId prefix (durable functions pattern) or creation time proximity
                 if (child.instanceId.startsWith(parent.instanceId)) return true;
@@ -229,10 +229,10 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         });
 
         // Unmatched children and other instances become standalone groups
-        children.filter(c => !usedChildIds.has(c.instanceId)).forEach(c => {
+        children.filter(c => !usedChildIds.has(c.instanceId)).forEach((c) => {
             groups.push({ parent: c, children: [] });
         });
-        other.forEach(o => {
+        other.forEach((o) => {
             groups.push({ parent: o, children: [] });
         });
 

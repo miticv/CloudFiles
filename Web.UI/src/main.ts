@@ -7,7 +7,7 @@ import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
-import { provideAuth, LogLevel, withAppInitializerAuthCheck } from 'angular-auth-oidc-client';
+import { provideAuth, LogLevel, withAppInitializerAuthCheck, AbstractSecurityStorage, DefaultLocalStorageService } from 'angular-auth-oidc-client';
 
 import { AppComponent } from './app/app.component';
 import { rootRouterConfig } from './app/app.routing';
@@ -24,6 +24,7 @@ bootstrapApplication(AppComponent, {
         provideAnimations(),
         provideHttpClient(withInterceptorsFromDi()),
         { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+        { provide: AbstractSecurityStorage, useClass: DefaultLocalStorageService },
         provideStore({ router: routerReducer }),
         provideEffects([]),
         provideRouterStore(),
@@ -54,6 +55,9 @@ bootstrapApplication(AppComponent, {
                         prompt: 'consent'
                     },
                     customParamsCodeRequest: {
+                        client_secret: environment.googleClientSecret
+                    },
+                    customParamsRefreshTokenRequest: {
                         client_secret: environment.googleClientSecret
                     },
                     postLoginRoute: '/sessions/signin',

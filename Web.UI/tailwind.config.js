@@ -14,13 +14,13 @@ module.exports = {
           base: 'rgb(var(--bg-base))',
           card: 'rgb(var(--bg-card))',
           dialog: 'rgb(var(--bg-dialog))',
-          hover: 'rgba(var(--bg-hover))',
+          hover: 'rgb(var(--bg-hover))',
         },
         fg: {
-          base: 'rgba(var(--fg-base))',
-          secondary: 'rgba(var(--fg-secondary))',
-          hint: 'rgba(var(--fg-hint))',
-          divider: 'rgba(var(--fg-divider))',
+          base: 'rgb(var(--fg-base))',
+          secondary: 'rgb(var(--fg-secondary))',
+          hint: 'rgb(var(--fg-hint))',
+          divider: 'rgb(var(--fg-divider))',
         },
         // Sidebar theme colors
         'sidebar': {

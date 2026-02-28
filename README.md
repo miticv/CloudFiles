@@ -199,6 +199,20 @@ The HTTP interceptor (`auth.interceptor.ts`) attaches the correct Bearer token b
 | GET | `ping` | Health check |
 | GET | `google/tokenvalidate` | Validate Google token |
 
+## Inspecting Process History in Azure Storage Explorer
+
+Durable Functions orchestration history persists indefinitely (until explicitly purged via the UI). The task hub is **`CloudFilesTaskHub`**.
+
+Connect Azure Storage Explorer to the storage account used by the Function App and look under:
+
+| Location | What you'll find |
+|---|---|
+| **Tables → `CloudFilesTaskHubInstances`** | One row per orchestration instance — status, created/updated timestamps, serialized input & output |
+| **Tables → `CloudFilesTaskHubHistory`** | Full event log for each instance (every activity call, retry, completion event) |
+| **Blob Containers → `cloudfilestaskhub-largemessages`** | Overflow storage for inputs/outputs too large for table rows (e.g. large file lists) |
+
+> **Note:** Processes created before Feb 2026 (when the `StartedBy` field was added to orchestration inputs) do not appear in the Processes UI for regular users, but are fully visible here.
+
 ## Deployment
 
 CI/CD via GitHub Actions:

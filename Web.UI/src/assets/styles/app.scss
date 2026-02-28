@@ -9,7 +9,7 @@
 $theme: mat.define-theme((
     color: (
         theme-type: light,
-        primary: mat.$azure-palette,
+        primary: mat.$indigo-palette,
     )
 ));
 
@@ -34,9 +34,25 @@ html {
 :root {
     --font-family-base: 'Inter var', 'Roboto', 'Helvetica Neue', sans-serif;
     --font-family-mono: 'Roboto Mono', monospace;
+    /* Background tokens */
+    --bg-base: 249 250 251;        /* slate-50  */
     --bg-card: 255 255 255;
-    --fg-secondary: 0 0 0 / 0.54;
-    --fg-hint: 0 0 0 / 0.38;
+    --bg-dialog: 255 255 255;
+    --bg-hover: 243 244 247;       /* slate-100 */
+    /* Foreground / text tokens */
+    --fg-base: 31 41 55;           /* slate-800 */
+    --fg-secondary: 75 85 99;      /* slate-600 */
+    --fg-hint: 107 114 128;        /* slate-500 */
+    --fg-divider: 229 231 235;     /* slate-200 */
+    /* 5-level shadow system */
+    --shadow-1: 0 2px 6px rgba(100, 116, 139, 0.04), 0 1px 3px rgba(100, 116, 139, 0.08);
+    --shadow-2: 0 4px 8px rgba(100, 116, 139, 0.04), 0 2px 6px rgba(100, 116, 139, 0.12);
+    --shadow-3: 0 6px 12px rgba(100, 116, 139, 0.04), 0 3px 8px rgba(100, 116, 139, 0.16);
+    --shadow-4: 0 8px 12px rgba(100, 116, 139, 0.04), 0 4px 10px rgba(100, 116, 139, 0.20);
+    --shadow-5: 0 10px 20px rgba(100, 116, 139, 0.04), 0 5px 16px rgba(100, 116, 139, 0.24);
+    --shadow-card: 0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12);
+    /* Card radius */
+    --card-rounded: 16px;
 }
 
 html, body {
@@ -51,23 +67,23 @@ app-root {
 }
 
 .text-primary {
-    color: var(--mat-sys-primary, #1976d2);
+    color: var(--mat-sys-primary, #3f51b5);
 }
 
 .text-secondary {
-    color: rgba(0, 0, 0, 0.54);
+    color: rgb(var(--fg-secondary));
 }
 
 .text-hint {
-    color: rgba(0, 0, 0, 0.38);
+    color: rgb(var(--fg-hint));
 }
 
 .bg-card {
-    background-color: white;
+    background-color: rgb(var(--bg-card));
 }
 
 .border-divider {
-    border-color: rgba(0, 0, 0, 0.12);
+    border-color: rgb(var(--fg-divider));
 }
 
 // ─── Global Material tooltip polish ───
@@ -89,10 +105,15 @@ app-root {
     border-color: #cbd5e1 !important;
 }
 
+// ─── Global 16px card radius (Egret design language) ───
+.mat-mdc-card {
+    border-radius: var(--card-rounded) !important;
+}
+
 // ─── Processes filter dropdown panel (rendered in CDK overlay, outside component) ───
 .filter-panel {
     background: white !important;
-    border-radius: 12px !important;
+    border-radius: var(--card-rounded) !important;
     margin-top: 4px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06) !important;
     border: 1px solid #e2e8f0;

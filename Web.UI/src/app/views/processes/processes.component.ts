@@ -143,6 +143,24 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return (input['albumTitle'] as string) || (input['AlbumTitle'] as string) || '';
     }
 
+    getMigrationSummary(instance: OrchestrationInstance): { from: string; to: string } | null {
+        const input = this.parseJson(instance.serializedInput);
+        if (!input) return null;
+        const account = (input['accountName'] || input['AccountName']) as string;
+        const container = (input['containerName'] || input['ContainerName']) as string;
+        const bucket = (input['bucketName'] || input['BucketName']) as string;
+        const album = this.getAlbumTitle(instance)
+            || (input['albumId'] as string) || (input['AlbumId'] as string);
+        if (!album) return null;
+
+        let from = '';
+        if (account && container) from = `Azure (Account: ${account}, Container: ${container})`;
+        else if (bucket) from = `Google Storage (Bucket: ${bucket})`;
+        if (!from) return null;
+
+        return { from, to: `Google Photos (Album: ${album})` };
+    }
+
     getExpandedFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
         const output = this.parseJson(instance.serializedOutput);
         if (!output) return [];
@@ -216,6 +234,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
     purgeInstance(instanceId: string, event: Event): void {
         event.stopPropagation();
+        if (!confirm('Delete this process instance?')) return;
         this.deletingInstanceIds.add(instanceId);
         this.processService.purgeInstance(instanceId).subscribe({
             next: () => {
@@ -232,6 +251,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     purgeGroup(group: ProcessGroup, event: Event): void {
         event.stopPropagation();
         const allIds = [group.parent.instanceId, ...group.children.map(c => c.instanceId)];
+        if (!confirm(`Delete this process group (${allIds.length} instances)?`)) return;
         allIds.forEach(id => this.deletingInstanceIds.add(id));
         forkJoin(allIds.map(id => this.processService.purgeInstance(id))).subscribe({
             next: () => {

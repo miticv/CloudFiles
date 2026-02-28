@@ -106,14 +106,11 @@
                             </div>
                         </div>
                     </div>
-                    <div *ngIf="parseJson(group.parent.serializedInput) as input">
-                        <div class="font-semibold mb-1">Input</div>
+                    <div *ngIf="getMigrationSummary(group.parent) as summary">
+                        <div class="font-semibold mb-1">Migration</div>
                         <div class="text-secondary space-y-1">
-                            <div *ngIf="getAlbumTitle(group.parent) as title">Album: {{title}}</div>
-                            <div *ngIf="!getAlbumTitle(group.parent) && (input['albumId'] || input['AlbumId'])">Album: {{input['albumId'] || input['AlbumId']}}</div>
-                            <div *ngIf="input['accountName'] || input['AccountName']">Account: {{input['accountName'] || input['AccountName']}}</div>
-                            <div *ngIf="input['containerName'] || input['ContainerName']">Container: {{input['containerName'] || input['ContainerName']}}</div>
-                            <div *ngIf="input['bucketName'] || input['BucketName']">Bucket: {{input['bucketName'] || input['BucketName']}}</div>
+                            <div>From {{summary.from}}</div>
+                            <div>To {{summary.to}}</div>
                         </div>
                     </div>
                 </div>

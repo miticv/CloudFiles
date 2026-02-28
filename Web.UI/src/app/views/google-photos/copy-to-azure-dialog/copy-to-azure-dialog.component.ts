@@ -8,6 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { forkJoin } from 'rxjs';
@@ -32,7 +34,7 @@ export interface CopyToAzureDialogData {
         CommonModule, FormsModule,
         MatDialogModule, MatIconModule, MatButtonModule,
         MatSelectModule, MatFormFieldModule, MatInputModule,
-        MatProgressSpinnerModule
+        MatProgressSpinnerModule, MatMenuModule, MatTooltipModule
     ],
     selector: 'app-copy-to-azure-dialog',
     styles: [`
@@ -66,7 +68,35 @@ export interface CopyToAzureDialogData {
                 </div>
 
                 <!-- Azure Destination -->
-                <div class="text-sm font-semibold mb-3" style="color: #424242;">Azure Destination</div>
+                <div class="text-sm font-semibold mb-2" style="color: #424242;">Azure Destination</div>
+                <div class="mb-3 flex items-center gap-1 text-xs text-secondary">
+                    <mat-icon style="font-size: 15px; width: 15px; height: 15px;">info</mat-icon>
+                    <span>Requires <strong>Storage Blob Data Contributor</strong> role on the target storage account.</span>
+                    <span [matMenuTriggerFor]="roleHelpMenu"
+                          matTooltip="How to assign this role"
+                          class="cursor-pointer inline-flex items-center text-secondary hover:text-fg-base transition-colors duration-150">
+                        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">help_outline</mat-icon>
+                    </span>
+                </div>
+
+                <mat-menu #roleHelpMenu xPosition="after">
+                    <div class="p-4" style="max-width: 320px;" (click)="$event.stopPropagation()">
+                        <p class="text-sm font-semibold mb-2">How to assign the role</p>
+                        <ol class="list-decimal list-inside space-y-1 text-secondary text-xs leading-relaxed">
+                            <li>Go to the <strong>Azure Portal</strong> &rarr; your Storage Account</li>
+                            <li>Click <strong>Access Control (IAM)</strong> in the left menu</li>
+                            <li>Click <strong>+ Add</strong> &rarr; <strong>Add role assignment</strong></li>
+                            <li>Search for <strong>Storage Blob Data Contributor</strong> and select it</li>
+                            <li>Click <strong>Members</strong>, then <strong>+ Select members</strong></li>
+                            <li>Search for your user account and select it</li>
+                            <li>Click <strong>Review + assign</strong></li>
+                        </ol>
+                        <p class="text-xs text-secondary mt-3 flex items-center gap-1">
+                            <mat-icon style="font-size: 14px; width: 14px; height: 14px;" class="text-amber-500">schedule</mat-icon>
+                            Role assignments can take up to 5 minutes to take effect.
+                        </p>
+                    </div>
+                </mat-menu>
 
                 <!-- Loading subscriptions -->
                 <div *ngIf="loadingStep === 'subscriptions'" class="flex items-center justify-center gap-3 py-8 text-sm text-secondary">

@@ -58,23 +58,35 @@ import { MatButtonModule } from '@angular/material/button';
                     </p>
                 </div>
 
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 class="font-semibold mb-2 flex items-center gap-1">
+                        <mat-icon class="text-blue-600" style="font-size: 18px; width: 18px; height: 18px;">upload</mat-icon>
+                        Migrating photos to Azure (Copy to Azure)
+                    </h3>
+                    <p class="text-secondary">
+                        Copying files <strong>into</strong> a container (e.g. from Google Photos) requires the
+                        <strong>Storage Blob Data Contributor</strong> role — not just Reader.
+                        Assign it on the target storage account the same way as above.
+                    </p>
+                </div>
+
                 <div>
                     <h3 class="font-semibold text-base mb-1">Available data-plane roles</h3>
                     <table class="w-full text-secondary text-xs">
                         <thead>
                             <tr class="border-b">
                                 <th class="text-left py-1 pr-2">Role</th>
-                                <th class="text-left py-1">Permissions</th>
+                                <th class="text-left py-1">Use case</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr class="border-b">
                                 <td class="py-1 pr-2 font-medium">Storage Blob Data Reader</td>
-                                <td class="py-1">Read blobs and containers</td>
+                                <td class="py-1">Browse &amp; download files</td>
                             </tr>
                             <tr class="border-b">
                                 <td class="py-1 pr-2 font-medium">Storage Blob Data Contributor</td>
-                                <td class="py-1">Read, write, and delete blobs</td>
+                                <td class="py-1">Browse, download, <strong>and upload</strong> files (required for Copy to Azure)</td>
                             </tr>
                             <tr>
                                 <td class="py-1 pr-2 font-medium">Storage Blob Data Owner</td>

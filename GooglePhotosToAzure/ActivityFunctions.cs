@@ -1,3 +1,4 @@
+using Azure;
 using CloudFiles.Models;
 using CloudFiles.Utilities;
 using Microsoft.Azure.Functions.Worker;
@@ -67,27 +68,23 @@ namespace CloudFiles.GooglePhotosToAzure
                     Success = true
                 };
             }
+            catch (RequestFailedException ex)
+            {
+                var msg = ex.Status == 403
+                    ? $"Access denied (HTTP 403). Ensure your Azure account has the 'Storage Blob Data Contributor' role on the target container. Detail: {ex.Message}"
+                    : ex.Message;
+                log.LogError($"{Constants.CopyGooglePhotoToAzureBlob}: Azure error copying {item.Filename}: {msg}");
+                return new BlobCopyResult { Filename = item.Filename, BlobPath = item.DestinationPath, Success = false, ErrorMessage = msg };
+            }
             catch (InvalidOperationException ex)
             {
                 log.LogError($"{Constants.CopyGooglePhotoToAzureBlob}: Error copying {item.Filename}: {ex.Message}");
-                return new BlobCopyResult
-                {
-                    Filename = item.Filename,
-                    BlobPath = item.DestinationPath,
-                    Success = false,
-                    ErrorMessage = ex.Message
-                };
+                return new BlobCopyResult { Filename = item.Filename, BlobPath = item.DestinationPath, Success = false, ErrorMessage = ex.Message };
             }
             catch (HttpRequestException ex)
             {
                 log.LogError($"{Constants.CopyGooglePhotoToAzureBlob}: Error copying {item.Filename}: {ex.Message}");
-                return new BlobCopyResult
-                {
-                    Filename = item.Filename,
-                    BlobPath = item.DestinationPath,
-                    Success = false,
-                    ErrorMessage = ex.Message
-                };
+                return new BlobCopyResult { Filename = item.Filename, BlobPath = item.DestinationPath, Success = false, ErrorMessage = ex.Message };
             }
         }
     }

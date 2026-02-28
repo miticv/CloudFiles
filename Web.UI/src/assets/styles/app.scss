@@ -9,7 +9,7 @@
 $theme: mat.define-theme((
     color: (
         theme-type: light,
-        primary: mat.$indigo-palette,
+        primary: mat.$violet-palette,
     )
 ));
 
@@ -67,7 +67,7 @@ app-root {
 }
 
 .text-primary {
-    color: var(--mat-sys-primary, #3f51b5);
+    color: var(--mat-sys-primary, #6750a4);
 }
 
 .text-secondary {

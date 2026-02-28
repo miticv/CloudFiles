@@ -249,10 +249,10 @@ export class MigrateDialogComponent implements OnInit {
             azureUser: this.oidcSecurityService.getUserData('azure').pipe(take(1))
         }).pipe(
             switchMap(({ azureToken, googleUser, azureUser }) => {
-                const emails: string[] = [];
-                if (googleUser?.email) emails.push(googleUser.email);
-                if (azureUser?.preferred_username) emails.push(azureUser.preferred_username);
-                else if (azureUser?.email) emails.push(azureUser.email);
+                const emails: { provider: string; email: string }[] = [];
+                if (googleUser?.email) emails.push({ provider: 'google', email: googleUser.email });
+                if (azureUser?.preferred_username) emails.push({ provider: 'azure', email: azureUser.preferred_username });
+                else if (azureUser?.email) emails.push({ provider: 'azure', email: azureUser.email });
                 const album = this.albums.find(a => a.id === this.selectedAlbumId);
                 return this.processService.startMigration({
                     albumId: this.selectedAlbumId,
@@ -261,7 +261,7 @@ export class MigrateDialogComponent implements OnInit {
                     accountName: this.data.account,
                     containerName: this.data.container,
                     azureAccessToken: azureToken,
-                    startedBy: emails.join(', ')
+                    startedBy: emails.map(e => `${e.provider}:${e.email}`).join('|')
                 });
             })
         ).subscribe({

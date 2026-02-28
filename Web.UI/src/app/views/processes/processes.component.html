@@ -71,10 +71,19 @@
                         </span>
                     </div>
                     <div class="flex items-center gap-2 text-xs text-secondary whitespace-nowrap">
-                        <span *ngIf="getStartedBy(group.parent)" class="hidden lg:flex items-center gap-1">
-                            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">person</mat-icon>
-                            {{getStartedBy(group.parent)}}
-                        </span>
+                        <ng-container *ngFor="let entry of getStartedByEntries(group.parent); trackBy: trackByEmail">
+                            <span class="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                                  [ngClass]="entry.provider === 'azure'
+                                      ? 'bg-sky-100 text-sky-800'
+                                      : 'bg-blue-100 text-blue-800'"
+                                  [matTooltip]="entry.provider === 'google' ? 'Google' : entry.provider === 'azure' ? 'Microsoft Azure' : ''">
+                                <mat-icon *ngIf="entry.provider === 'google'" svgIcon="eg_google"
+                                          style="font-size: 12px; width: 12px; height: 12px;"></mat-icon>
+                                <mat-icon *ngIf="entry.provider === 'azure'"
+                                          style="font-size: 12px; width: 12px; height: 12px;">business</mat-icon>
+                                {{entry.email}}
+                            </span>
+                        </ng-container>
                         <span class="hidden sm:inline">{{group.parent.createdAt | date:'short'}}</span>
                         <button mat-icon-button
                                 class="delete-btn"
@@ -101,8 +110,20 @@
                             <div>Instance ID: <span class="font-mono text-xs">{{group.parent.instanceId}}</span></div>
                             <div>Created: {{group.parent.createdAt | date:'medium'}}</div>
                             <div>Last Updated: {{group.parent.lastUpdatedAt | date:'medium'}}</div>
-                            <div *ngIf="getStartedBy(group.parent)">
-                                Started by: {{getStartedBy(group.parent)}}
+                            <div *ngIf="getStartedByEntries(group.parent).length > 0" class="flex items-center gap-2 flex-wrap">
+                                Started by:
+                                <span *ngFor="let entry of getStartedByEntries(group.parent); trackBy: trackByEmail"
+                                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                                      [ngClass]="entry.provider === 'azure'
+                                          ? 'bg-sky-100 text-sky-800'
+                                          : 'bg-blue-100 text-blue-800'"
+                                      [matTooltip]="entry.provider === 'google' ? 'Google' : entry.provider === 'azure' ? 'Microsoft Azure' : ''">
+                                    <mat-icon *ngIf="entry.provider === 'google'" svgIcon="eg_google"
+                                              style="font-size: 12px; width: 12px; height: 12px;"></mat-icon>
+                                    <mat-icon *ngIf="entry.provider === 'azure'"
+                                              style="font-size: 12px; width: 12px; height: 12px;">business</mat-icon>
+                                    {{entry.email}}
+                                </span>
                             </div>
                         </div>
                     </div>

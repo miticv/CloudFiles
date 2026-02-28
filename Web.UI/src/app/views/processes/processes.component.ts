@@ -94,6 +94,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
             next: (data) => {
                 this.instances = data;
                 this.groups = this.buildGroups(data);
+                this.startedByCache.clear();
                 this.loading = false;
             },
             error: (err) => {
@@ -148,6 +149,36 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const input = this.parseJson(instance.serializedInput);
         if (!input) return '';
         return (input['startedBy'] as string) || (input['StartedBy'] as string) || '';
+    }
+
+    private startedByCache = new Map<string, { provider: 'google' | 'azure' | null; email: string }[]>();
+
+    getStartedByEntries(instance: OrchestrationInstance): { provider: 'google' | 'azure' | null; email: string }[] {
+        const cached = this.startedByCache.get(instance.instanceId);
+        if (cached) return cached;
+
+        const raw = this.getStartedBy(instance);
+        if (!raw) return [];
+
+        // Split by | (new format) or , (legacy format)
+        const parts = raw.includes('|') ? raw.split('|') : raw.split(',');
+        const defaultProvider = this.getProvider(instance);
+
+        const entries = parts.map(part => {
+            const trimmed = part.trim();
+            // Check for provider prefix: "google:email" or "azure:email"
+            const colonIdx = trimmed.indexOf(':');
+            if (colonIdx > 0) {
+                const prefix = trimmed.substring(0, colonIdx);
+                if (prefix === 'google' || prefix === 'azure') {
+                    return { provider: prefix as 'google' | 'azure', email: trimmed.substring(colonIdx + 1) };
+                }
+            }
+            return { provider: defaultProvider, email: trimmed };
+        }).filter(e => e.email);
+
+        this.startedByCache.set(instance.instanceId, entries);
+        return entries;
     }
 
     getAlbumTitle(instance: OrchestrationInstance): string {
@@ -265,6 +296,23 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         if (imageExts.has(ext)) return 'image';
         if (videoExts.has(ext)) return 'videocam';
         return 'insert_drive_file';
+    }
+
+    trackByEmail(_index: number, entry: { provider: string | null; email: string }): string {
+        return `${entry.provider}:${entry.email}`;
+    }
+
+    getProvider(instance: OrchestrationInstance): 'google' | 'azure' | null {
+        const name = instance.name;
+        if (name === 'azureStorageToGooglePhotosOrchestrator') return 'azure';
+        if (name === 'gooleStorageToGooglePhotosOrchestrator') return 'google';
+        if (name === 'googlePhotosToAzureOrchestrator') return 'google';
+        return null;
+    }
+
+    getProviderLabel(instance: OrchestrationInstance): string {
+        const p = this.getProvider(instance);
+        return p === 'google' ? 'Google' : p === 'azure' ? 'Microsoft Azure' : '';
     }
 
     getDisplayName(name: string): string {

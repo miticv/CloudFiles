@@ -251,10 +251,10 @@ export class CopyToAzureDialogComponent implements OnInit {
             azureUser: this.oidcSecurityService.getUserData('azure').pipe(take(1))
         }).pipe(
             switchMap(({ azureToken, googleUser, azureUser }) => {
-                const emails: string[] = [];
-                if (googleUser?.email) emails.push(googleUser.email);
-                if (azureUser?.preferred_username) emails.push(azureUser.preferred_username);
-                else if (azureUser?.email) emails.push(azureUser.email);
+                const emails: { provider: string; email: string }[] = [];
+                if (googleUser?.email) emails.push({ provider: 'google', email: googleUser.email });
+                if (azureUser?.preferred_username) emails.push({ provider: 'azure', email: azureUser.preferred_username });
+                else if (azureUser?.email) emails.push({ provider: 'azure', email: azureUser.email });
 
                 return this.processService.startGooglePhotosToAzure({
                     photoItems,
@@ -262,7 +262,7 @@ export class CopyToAzureDialogComponent implements OnInit {
                     containerName: this.selectedContainer,
                     destinationFolder: this.destinationFolder.trim(),
                     azureAccessToken: azureToken,
-                    startedBy: emails.join(', ')
+                    startedBy: emails.map(e => `${e.provider}:${e.email}`).join('|')
                 });
             })
         ).subscribe({

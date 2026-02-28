@@ -31,10 +31,18 @@ html {
     border-left: none !important;
 }
 
+:root {
+    --font-family-base: 'Inter var', 'Roboto', 'Helvetica Neue', sans-serif;
+    --font-family-mono: 'Roboto Mono', monospace;
+    --bg-card: 255 255 255;
+    --fg-secondary: 0 0 0 / 0.54;
+    --fg-hint: 0 0 0 / 0.38;
+}
+
 html, body {
     height: 100%;
     margin: 0;
-    font-family: Roboto, "Helvetica Neue", sans-serif;
+    font-family: var(--font-family-base);
 }
 
 app-root {

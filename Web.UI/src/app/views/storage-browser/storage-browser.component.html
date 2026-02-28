@@ -2,7 +2,7 @@
 
     <!-- Not connected state -->
     <div *ngIf="!isAzureConnected" class="flex flex-auto flex-col items-center justify-center py-16">
-        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">cloud_off</mat-icon>
+        <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">cloud_off</mat-icon>
         <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">Azure Not Connected</div>
         <div class="mt-2 text-sm text-secondary mb-6">Connect your Azure account to browse your storage resources.</div>
         <button mat-flat-button color="primary" (click)="connectAzure()">
@@ -15,7 +15,7 @@
     <ng-container *ngIf="isAzureConnected">
 
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card sticky top-0 z-10">
             <div>
                 <div class="text-3xl font-bold tracking-tight leading-none">Storage Browser</div>
                 <div class="mt-1 font-medium text-secondary">{{levelTitle}}</div>
@@ -47,14 +47,13 @@
         <!-- Loading -->
         <div *ngIf="loading" class="flex flex-auto flex-col items-center justify-center gap-4">
             <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
-            <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading...</p>
+            <p class="text-sm font-medium text-secondary">Loading...</p>
         </div>
 
         <!-- Error -->
-        <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
-             style="background: #fef2f2; border: 1px solid #fecaca;">
-            <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-            <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+        <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200">
+            <mat-icon class="text-red-600 !text-[20px] !w-5 !h-5">error_outline</mat-icon>
+            <span class="flex-1 text-sm text-red-800">{{error}}</span>
             <button mat-icon-button (click)="loadSubscriptions()" matTooltip="Retry">
                 <mat-icon>refresh</mat-icon>
             </button>

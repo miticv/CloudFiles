@@ -3,7 +3,7 @@
     <!-- Loading state (before any data arrives) -->
     <div *ngIf="isLoading$ | async" class="flex flex-col flex-auto items-center justify-center gap-4">
         <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
-        <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading files...</p>
+        <p class="text-sm font-medium text-secondary">Loading files...</p>
     </div>
 
     <ng-container *ngIf="(isLoading$ | async) === false">
@@ -29,11 +29,11 @@
                 <!-- Storage hierarchy breadcrumbs -->
                 <nav class="flex items-center px-6 md:px-8 pt-4 text-sm" *ngIf="storageBrowserPath.length > 0">
                     <button mat-button class="px-2 min-w-0" (click)="navigateToStorageBrowser('root')">
-                        <mat-icon class="mr-1" style="font-size: 18px; width: 18px; height: 18px;">storage</mat-icon>
+                        <mat-icon class="mr-1" class="!text-[18px] !w-[18px] !h-[18px]">storage</mat-icon>
                         Storage Browser
                     </button>
                     <ng-container *ngFor="let crumb of storageBrowserPath; let last = last">
-                        <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: rgba(0,0,0,0.25);">chevron_right</mat-icon>
+                        <mat-icon class="text-gray-300 !text-[18px] !w-[18px] !h-[18px]">chevron_right</mat-icon>
                         <button mat-button class="px-2 min-w-0" [disabled]="last" (click)="navigateToStorageBrowser(crumb.level)">
                             {{crumb.label}}
                         </button>
@@ -96,15 +96,14 @@
                 </div>
 
                 <!-- Error -->
-                <div *ngIf="error$ | async as error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
-                     style="background: #fef2f2; border: 1px solid #fecaca;">
-                    <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-                    <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+                <div *ngIf="error$ | async as error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200">
+                    <mat-icon class="text-red-600 !text-[20px] !w-5 !h-5">error_outline</mat-icon>
+                    <span class="flex-1 text-sm text-red-800">{{error}}</span>
                     <button mat-icon-button (click)="getFolder()" matTooltip="Retry">
                         <mat-icon>refresh</mat-icon>
                     </button>
                     <button mat-button color="primary" class="text-sm" (click)="openHelp()">
-                        <mat-icon class="mr-1" style="font-size: 16px; width: 16px; height: 16px;">help_outline</mat-icon>
+                        <mat-icon class="mr-1" class="!text-base !w-4 !h-4">help_outline</mat-icon>
                         Learn more
                     </button>
                 </div>
@@ -199,7 +198,7 @@
                 <!-- No items template -->
                 <ng-template #noItems>
                     <div *ngIf="(error$ | async) === null" class="flex flex-auto flex-col items-center justify-center">
-                        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">folder_open</mat-icon>
+                        <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">folder_open</mat-icon>
                         <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No items found</div>
                         <div class="mt-2 text-sm text-secondary">This folder is empty.</div>
                     </div>

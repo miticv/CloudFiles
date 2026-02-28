@@ -10,6 +10,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { ProcessesComponent } from './processes.component';
 
 const routes: Route[] = [
@@ -29,7 +31,9 @@ const routes: Route[] = [
         MatSelectModule,
         MatFormFieldModule,
         MatDialogModule,
-        MatInputModule
+        MatInputModule,
+        MatDatepickerModule,
+        MatNativeDateModule
     ]
 })
 export class ProcessesModule {}

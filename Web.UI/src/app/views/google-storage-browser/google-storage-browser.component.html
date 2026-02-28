@@ -2,7 +2,7 @@
 
     <!-- Not connected state -->
     <div *ngIf="!isGoogleConnected" class="flex flex-auto flex-col items-center justify-center py-16">
-        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">cloud_off</mat-icon>
+        <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">cloud_off</mat-icon>
         <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">Google Not Connected</div>
         <div class="mt-2 text-sm text-secondary mb-6">Connect your Google account to browse cloud storage.</div>
         <button mat-flat-button color="primary" (click)="connectGoogle()">
@@ -27,16 +27,14 @@
             </div>
 
             <!-- Error -->
-            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
-                 style="background: #fef2f2; border: 1px solid #fecaca;">
-                <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-                <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200">
+                <mat-icon class="text-red-600 !text-[20px] !w-5 !h-5">error_outline</mat-icon>
+                <span class="flex-1 text-sm text-red-800">{{error}}</span>
             </div>
 
             <div class="p-6 md:p-8 space-y-4" style="max-width: 520px !important; width: 100%;">
                 <!-- Browse by bucket -->
-                <div class="p-5 rounded-xl bg-card"
-                     style="border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                <div class="p-5 rounded-xl bg-card border border-slate-200 shadow-sm">
                     <div class="font-semibold text-sm mb-3">Browse by Bucket</div>
                     <div class="flex items-center gap-3">
                         <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
@@ -51,8 +49,7 @@
                 </div>
 
                 <!-- Find by project -->
-                <div class="p-5 rounded-xl bg-card"
-                     style="border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                <div class="p-5 rounded-xl bg-card border border-slate-200 shadow-sm">
                     <div class="font-semibold text-sm mb-3">Find Buckets by Project</div>
                     <div class="flex items-center gap-3">
                         <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
@@ -71,7 +68,7 @@
         <!-- ==================== BUCKETS VIEW ==================== -->
         <ng-container *ngIf="currentView === 'buckets'">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card sticky top-0 z-10">
                 <div>
                     <div class="text-3xl font-bold tracking-tight leading-none">Google Storage</div>
                     <div class="mt-1 font-medium text-secondary">Buckets in project</div>
@@ -89,14 +86,13 @@
             <!-- Loading -->
             <div *ngIf="loading" class="flex flex-col items-center justify-center gap-4 py-16">
                 <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
-                <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading buckets...</p>
+                <p class="text-sm font-medium text-secondary">Loading buckets...</p>
             </div>
 
             <!-- Error -->
-            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
-                 style="background: #fef2f2; border: 1px solid #fecaca;">
-                <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-                <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200">
+                <mat-icon class="text-red-600 !text-[20px] !w-5 !h-5">error_outline</mat-icon>
+                <span class="flex-1 text-sm text-red-800">{{error}}</span>
                 <button mat-icon-button (click)="refresh()" matTooltip="Retry">
                     <mat-icon>refresh</mat-icon>
                 </button>
@@ -123,11 +119,11 @@
         <!-- ==================== BROWSE VIEW ==================== -->
         <ng-container *ngIf="currentView === 'browse'">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card sticky top-0 z-10">
                 <div>
                     <div class="text-3xl font-bold tracking-tight leading-none">Google Storage</div>
                     <div class="mt-1 font-medium text-secondary">
-                        <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: text-bottom;">cloud_circle</mat-icon>
+                        <mat-icon class="!text-base !w-4 !h-4" style="vertical-align: text-bottom;">cloud_circle</mat-icon>
                         {{currentBucket}}
                     </div>
                 </div>
@@ -144,11 +140,11 @@
             <!-- Breadcrumbs -->
             <nav class="flex items-center mx-6 md:mx-8 mt-4 mb-4 text-sm">
                 <button mat-button class="px-2 min-w-0" (click)="navigateToBreadcrumb(-1)">
-                    <mat-icon class="mr-1" style="font-size: 18px; width: 18px; height: 18px;">home</mat-icon>
+                    <mat-icon class="mr-1 !text-[18px] !w-[18px] !h-[18px]">home</mat-icon>
                     Root
                 </button>
                 <ng-container *ngFor="let segment of currentPath; let i = index; let last = last">
-                    <mat-icon class="text-gray-400" style="font-size: 18px; width: 18px; height: 18px;">chevron_right</mat-icon>
+                    <mat-icon class="text-gray-300 !text-[18px] !w-[18px] !h-[18px]">chevron_right</mat-icon>
                     <button mat-button class="px-2 min-w-0" [disabled]="last" (click)="navigateToBreadcrumb(i)">
                         {{segment}}
                     </button>
@@ -158,14 +154,13 @@
             <!-- Loading -->
             <div *ngIf="loading" class="flex flex-col items-center justify-center gap-4 py-16">
                 <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
-                <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading...</p>
+                <p class="text-sm font-medium text-secondary">Loading...</p>
             </div>
 
             <!-- Error -->
-            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
-                 style="background: #fef2f2; border: 1px solid #fecaca;">
-                <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-                <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200">
+                <mat-icon class="text-red-600 !text-[20px] !w-5 !h-5">error_outline</mat-icon>
+                <span class="flex-1 text-sm text-red-800">{{error}}</span>
                 <button mat-icon-button (click)="refresh()" matTooltip="Retry">
                     <mat-icon>refresh</mat-icon>
                 </button>
@@ -201,7 +196,7 @@
 
                 <ng-template #noItems>
                     <div *ngIf="!error" class="flex flex-col items-center justify-center py-16">
-                        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">folder_open</mat-icon>
+                        <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">folder_open</mat-icon>
                         <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No items found</div>
                         <div class="mt-2 text-sm text-secondary">This folder is empty.</div>
                     </div>

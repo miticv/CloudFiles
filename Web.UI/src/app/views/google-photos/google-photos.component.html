@@ -2,7 +2,7 @@
 
     <!-- Not connected state -->
     <div *ngIf="!isGoogleConnected" class="flex flex-auto flex-col items-center justify-center">
-        <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">photo_library</mat-icon>
+        <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">photo_library</mat-icon>
         <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">Google Not Connected</div>
         <div class="mt-2 text-sm text-secondary mb-6">Connect your Google account to browse your photos.</div>
         <button mat-flat-button color="primary" (click)="connectGoogle()">
@@ -29,7 +29,7 @@
                 </button>
                 <button mat-flat-button (click)="openCopyToAzure()"
                         [disabled]="loading || polling || pickedItems.length === 0"
-                        style="background: #0078d4; color: white;">
+                        class="btn-azure">
                     <mat-icon>cloud_download</mat-icon>
                     Copy to Azure
                 </button>
@@ -39,21 +39,20 @@
         <!-- Polling state -->
         <div *ngIf="polling" class="spinner-wrapper">
             <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
-            <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Waiting for photo selection...</p>
+            <p class="text-sm font-medium text-secondary">Waiting for photo selection...</p>
             <p class="text-xs text-secondary">Select photos in the Google Photos picker window</p>
         </div>
 
         <!-- Loading -->
         <div *ngIf="loading && !polling" class="spinner-wrapper">
             <mat-spinner diameter="44" strokeWidth="4"></mat-spinner>
-            <p class="text-sm font-medium" style="color: rgba(0,0,0,0.6);">Loading photos...</p>
+            <p class="text-sm font-medium text-secondary">Loading photos...</p>
         </div>
 
         <!-- Error -->
-        <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
-             style="background: #fef2f2; border: 1px solid #fecaca;">
-            <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-            <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+        <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200">
+            <mat-icon class="text-red-600 !text-[20px] !w-5 !h-5">error_outline</mat-icon>
+            <span class="flex-1 text-sm text-red-800">{{error}}</span>
             <button mat-icon-button (click)="selectPhotos()" matTooltip="Retry">
                 <mat-icon>refresh</mat-icon>
             </button>
@@ -62,7 +61,7 @@
         <!-- Empty state -->
         <div *ngIf="!loading && !polling && pickedItems.length === 0 && !error"
              class="flex flex-auto flex-col items-center justify-center">
-            <mat-icon style="font-size: 80px; width: 80px; height: 80px; color: rgba(0,0,0,0.15);">collections</mat-icon>
+            <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">collections</mat-icon>
             <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No photos selected</div>
             <div class="mt-2 text-sm text-secondary">Click the button above to pick photos from Google.</div>
         </div>

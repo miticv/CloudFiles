@@ -45,8 +45,8 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     deletingInstanceIds = new Set<string>();
     isAdmin = false;
     showAll = false;
-    fromDate = '';
-    toDate = '';
+    fromDate: Date | null = (() => { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0, 0, 0, 0); return d; })();
+    toDate: Date | null = new Date();
     private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
     readonly statusLabels: Record<number, string> = {
@@ -107,8 +107,8 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         if (this.showAll && this.isAdmin) {
             params.all = true;
         }
-        if (this.fromDate) params.from = this.fromDate;
-        if (this.toDate) params.to = this.toDate;
+        if (this.fromDate) params.from = this.formatDate(this.fromDate);
+        if (this.toDate) params.to = this.formatDate(this.toDate);
         this.processService.listInstances(params).subscribe({
             next: (data) => {
                 this.instances = data;
@@ -454,6 +454,13 @@ export class ProcessesComponent implements OnInit, OnDestroy {
             clearInterval(this.refreshTimer);
             this.refreshTimer = null;
         }
+    }
+
+    private formatDate(date: Date): string {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     }
 
     private extractError(error: unknown): string {

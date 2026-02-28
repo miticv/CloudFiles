@@ -63,7 +63,7 @@ bootstrapApplication(AppComponent, {
                     postLoginRoute: '/sessions/signin',
                     forbiddenRoute: '/sessions/signin',
                     unauthorizedRoute: '/sessions/signin',
-                    logLevel: LogLevel.Error,
+                    logLevel: environment.production ? LogLevel.Error : LogLevel.Debug,
                 },
                 {
                     configId: 'azure',
@@ -81,7 +81,7 @@ bootstrapApplication(AppComponent, {
                     maxIdTokenIatOffsetAllowedInSeconds: 600,
                     issValidationOff: false,
                     autoUserInfo: false,
-                    logLevel: LogLevel.Error,
+                    logLevel: environment.production ? LogLevel.Error : LogLevel.Debug,
                 },
                 {
                     configId: 'azure-storage',
@@ -99,7 +99,7 @@ bootstrapApplication(AppComponent, {
                     maxIdTokenIatOffsetAllowedInSeconds: 600,
                     issValidationOff: false,
                     autoUserInfo: false,
-                    logLevel: LogLevel.Error,
+                    logLevel: environment.production ? LogLevel.Error : LogLevel.Debug,
                 }
             ]
         }, withAppInitializerAuthCheck()),

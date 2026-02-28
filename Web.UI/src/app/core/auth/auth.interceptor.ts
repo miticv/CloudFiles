@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 
@@ -20,12 +20,20 @@ export class AuthInterceptor implements HttpInterceptor {
 
         return this.oidcSecurityService.getAccessToken(configId).pipe(
             switchMap((token) => {
+                if (!token) {
+                    console.warn(`[Auth Interceptor] no token for "${configId}" — request may fail:`, req.url);
+                }
                 const newReq = token
                     ? req.clone({ headers: req.headers.set('Authorization', 'Bearer ' + token) })
                     : req;
                 return next.handle(newReq);
             }),
             catchError((error) => {
+                if (error instanceof HttpErrorResponse && error.status === 401) {
+                    console.warn(`[Auth Interceptor] 401 from "${configId}" — token expired or invalid:`, req.url);
+                    this.oidcSecurityService.logoffLocal(configId);
+                    this.router.navigateByUrl('/sessions/signin');
+                }
                 return throwError(() => error);
             })
         );

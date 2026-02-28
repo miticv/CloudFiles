@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Observable, first, map } from 'rxjs';
-import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { Injectable, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
+import { Observable, Subject, first, map, takeUntil } from 'rxjs';
+import { OidcSecurityService, PublicEventsService, EventTypes } from 'angular-auth-oidc-client';
 
 export interface ProviderStatus {
     configId: string;
@@ -10,24 +11,39 @@ export interface ProviderStatus {
 }
 
 @Injectable({ providedIn: 'root' })
-export class MultiAuthService {
+export class MultiAuthService implements OnDestroy {
     static readonly PROVIDERS = ['google', 'azure', 'azure-storage'] as const;
+    private destroy$ = new Subject<void>();
 
-    constructor(private oidcSecurityService: OidcSecurityService) {}
+    constructor(
+        private oidcSecurityService: OidcSecurityService,
+        private eventService: PublicEventsService,
+        private router: Router
+    ) {
+        this.subscribeToAuthEvents();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
 
     getAccessToken(configId: string): Observable<string> {
         return this.oidcSecurityService.getAccessToken(configId);
     }
 
     login(configId: string): void {
+        console.log(`[Auth] login initiated for "${configId}"`);
         this.oidcSecurityService.authorize(configId);
     }
 
     logout(configId: string): void {
+        console.log(`[Auth] logout for "${configId}"`);
         this.oidcSecurityService.logoffLocal(configId);
     }
 
     logoutAll(): void {
+        console.log('[Auth] logout all providers');
         this.oidcSecurityService.logoffLocalMultiple();
     }
 
@@ -59,5 +75,41 @@ export class MultiAuthService {
                 }))
             )
         );
+    }
+
+    private subscribeToAuthEvents(): void {
+        this.eventService.registerForEvents().pipe(
+            takeUntil(this.destroy$)
+        ).subscribe((event) => {
+            switch (event.type) {
+                case EventTypes.NewAuthenticationResult:
+                    console.log('[Auth] new authentication result:', event.value);
+                    break;
+                case EventTypes.TokenExpired:
+                    console.warn('[Auth] access token expired — silent renew should trigger');
+                    break;
+                case EventTypes.IdTokenExpired:
+                    console.warn('[Auth] ID token expired');
+                    break;
+                case EventTypes.SilentRenewStarted:
+                    console.log('[Auth] silent renew started');
+                    break;
+                case EventTypes.SilentRenewFailed:
+                    console.error('[Auth] silent renew FAILED:', event.value);
+                    this.handleSilentRenewFailure();
+                    break;
+                case EventTypes.CheckingAuthFinishedWithError:
+                    console.error('[Auth] checking auth finished with error:', event.value);
+                    break;
+            }
+        });
+    }
+
+    private handleSilentRenewFailure(): void {
+        // When refresh fails (e.g. refresh token revoked or missing), clear local state
+        // and redirect to sign-in so the user can re-authenticate with a fresh consent.
+        console.warn('[Auth] clearing local auth state and redirecting to sign-in');
+        this.oidcSecurityService.logoffLocalMultiple();
+        this.router.navigateByUrl('/sessions/signin');
     }
 }

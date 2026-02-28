@@ -47,6 +47,13 @@ export class FileManagerPageComponent implements OnInit {
     ngOnInit(): void {
         const params = this.route.snapshot.queryParams;
         const provider = (params['provider'] as 'azure' | 'google') || 'azure';
+        
+        // Redirect to storage browser if account or container is missing
+        if (!params['account'] || !params['container']) {
+            this.router.navigate(['/storage-browser']);
+            return;
+        }
+        
         const context: StorageContext = {
             provider,
             account: params['account'],

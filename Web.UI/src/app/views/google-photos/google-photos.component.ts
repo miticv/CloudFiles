@@ -35,10 +35,7 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
             const google = providers.find(p => p.configId === 'google');
             this.isGoogleConnected = google?.authenticated ?? false;
             if (this.isGoogleConnected && this.pickedItems.length === 0) {
-                const saved = sessionStorage.getItem('googlePhotosPickedItems');
-                if (saved) {
-                    try { this.pickedItems = JSON.parse(saved); } catch { /* ignore */ }
-                }
+                this.restoreCachedItems();
             }
         });
     }
@@ -142,16 +139,55 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
             next: (items) => {
                 this.pickedItems = items;
                 this.loading = false;
-                sessionStorage.setItem('googlePhotosPickedItems', JSON.stringify(items));
-                // Clean up session
-                this.googlePhotosService.deleteSession(sessionId).subscribe();
-                this.activeSessionId = null;
+                // Keep session alive so we can re-fetch fresh baseUrls later
+                sessionStorage.setItem('googlePhotosPickedItems', JSON.stringify({
+                    sessionId,
+                    items
+                }));
+                this.activeSessionId = sessionId;
             },
             error: (err) => {
                 this.error = this.extractError(err, 'Failed to load selected photos');
                 this.loading = false;
             }
         });
+    }
+
+    private restoreCachedItems(): void {
+        const saved = sessionStorage.getItem('googlePhotosPickedItems');
+        if (!saved) return;
+
+        try {
+            const data = JSON.parse(saved);
+
+            // Handle legacy format (plain array)
+            if (Array.isArray(data)) {
+                this.pickedItems = data;
+                return;
+            }
+
+            const { sessionId, items } = data;
+            if (!sessionId || !items?.length) return;
+
+            // Re-fetch from the session to get fresh baseUrls
+            this.loading = true;
+            this.googlePhotosService.listPickedItems(sessionId).subscribe({
+                next: (freshItems) => {
+                    this.pickedItems = freshItems;
+                    this.loading = false;
+                    sessionStorage.setItem('googlePhotosPickedItems', JSON.stringify({
+                        sessionId,
+                        items: freshItems
+                    }));
+                },
+                error: () => {
+                    // Session expired — clear cache and show empty state
+                    sessionStorage.removeItem('googlePhotosPickedItems');
+                    this.pickedItems = [];
+                    this.loading = false;
+                }
+            });
+        } catch { /* ignore */ }
     }
 
     private stopPolling(): void {

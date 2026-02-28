@@ -38,7 +38,7 @@ export class AppComponent implements OnInit {
         this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((statuses) => {
             const anyAuthenticated = statuses.some(s => s.authenticated);
             if (!anyAuthenticated) {
-                const currentPath = window.location.pathname;
+                const currentPath = window.location.pathname + window.location.search;
                 if (!currentPath.startsWith('/sessions')) {
                     if (!localStorage.getItem('redirect')) {
                         localStorage.setItem('redirect', JSON.stringify(currentPath));

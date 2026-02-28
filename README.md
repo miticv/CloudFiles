@@ -67,7 +67,32 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    cp Web.UI/src/environments/environment.template.ts Web.UI/src/environments/environment.ts
    ```
 
-3. **Run locally**:
+3. **Updating Bitwarden secrets**:
+
+   When you need to rotate or change a secret (e.g. new Google Client ID), update the field in Bitwarden and re-run the setup script:
+
+   ```bash
+   # 1. Edit the "CloudFiles" item in Bitwarden (web vault or desktop app)
+   #    Custom fields: GoogleClientId, GoogleClientSecret, AzureTenantId, AzureClientId, ProductionApiUrl
+
+   # 2. Sync and regenerate local config files
+   bw sync                   # pull latest vault changes
+   bash setup-secrets.sh     # regenerates local.settings.json, environment.ts, environment.prod.ts
+   ```
+
+   If using the `bw` CLI directly to update a field:
+   ```bash
+   # Get the item ID
+   bw get item CloudFiles --session "$BW_SESSION" | jq '.id'
+
+   # Edit the item (opens in $EDITOR)
+   bw edit item <item-id> --session "$BW_SESSION" "$(bw get item CloudFiles --session "$BW_SESSION" | jq '.fields = [.fields[] | if .name == "GoogleClientId" then .value = "NEW_VALUE" else . end]' | bw encode)"
+
+   # Re-run setup to apply
+   bash setup-secrets.sh
+   ```
+
+4. **Run locally**:
    ```bash
    # Terminal 1: Storage emulator
    npx azurite --silent --location .azurite

@@ -38,7 +38,7 @@ bootstrapApplication(AppComponent, {
                     clientId: environment.googleClientId,
                     responseType: 'code',
                     scope: [
-                        'openid email profile',
+                        'openid email profile offline_access',
                         'https://www.googleapis.com/auth/photoslibrary.appendonly',
                         'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
                         'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',

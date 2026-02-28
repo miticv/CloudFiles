@@ -21,6 +21,7 @@ export class MultiAuthService implements OnDestroy {
         private router: Router
     ) {
         this.subscribeToAuthEvents();
+        this.processAuthChain();
     }
 
     ngOnDestroy(): void {
@@ -34,6 +35,10 @@ export class MultiAuthService implements OnDestroy {
 
     login(configId: string): void {
         console.log(`[Auth] login initiated for "${configId}"`);
+        // Azure needs separate tokens for management and storage APIs
+        if (configId === 'azure') {
+            localStorage.setItem('auth_chain', 'azure-storage');
+        }
         this.oidcSecurityService.authorize(configId);
     }
 
@@ -101,6 +106,19 @@ export class MultiAuthService implements OnDestroy {
                 case EventTypes.CheckingAuthFinishedWithError:
                     console.error('[Auth] checking auth finished with error:', event.value);
                     break;
+            }
+        });
+    }
+
+    private processAuthChain(): void {
+        const chain = localStorage.getItem('auth_chain');
+        if (!chain) return;
+        localStorage.removeItem('auth_chain');
+
+        this.oidcSecurityService.getAccessToken(chain).pipe(first()).subscribe(token => {
+            if (!token) {
+                console.log(`[Auth] chaining auth for "${chain}"`);
+                this.oidcSecurityService.authorize(chain);
             }
         });
     }

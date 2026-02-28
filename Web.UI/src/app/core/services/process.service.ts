@@ -69,6 +69,7 @@ export interface ProcessListParams {
     from?: string;
     to?: string;
     statusList?: number[];
+    all?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -106,6 +107,7 @@ export class ProcessService extends HttpService {
         if (params?.from) httpParams = httpParams.set('from', params.from);
         if (params?.to) httpParams = httpParams.set('to', params.to);
         if (params?.statusList?.length) httpParams = httpParams.set('statusList', params.statusList.join(','));
+        if (params?.all) httpParams = httpParams.set('all', 'true');
 
         return this.http.get<OrchestrationInstance[]>(
             `${this.baseUrl}process/instances`,

@@ -58,14 +58,18 @@ namespace CloudFiles
                 var (_, userEmail) = await GoogleUtility.VerifyGoogleHeaderTokenWithEmail(req).ConfigureAwait(false);
                 var statuses = new List<OrchestrationRuntimeStatus>();
 
-                int pageSizeInt = 500;
+                int pageSizeInt = 50;
                 var intSuccess = string.IsNullOrEmpty(req.Query["pageSize"]) || int.TryParse(req.Query["pageSize"], out pageSizeInt);
                 if (!intSuccess)
                 {
                     throw new InvalidOperationException("pageSize must be int.");
                 }
 
-                var fromDate = DateTime.MinValue;
+                // Default to the last 90 days when no date is provided.
+                // Fetching all history exceeds the Durable Task gRPC message size limit.
+                var fromDate = string.IsNullOrEmpty(req.Query["from"])
+                    ? DateTime.UtcNow.AddDays(-90)
+                    : DateTime.MinValue;
                 var dateSuccess = string.IsNullOrEmpty(req.Query["from"]) || DateTime.TryParse(req.Query["from"], out fromDate);
                 if (!dateSuccess)
                 {
@@ -121,6 +125,12 @@ namespace CloudFiles
                     allInstances.Add(instance);
                 }
 
+                // Check admin privileges.
+                var adminEmails = (Environment.GetEnvironmentVariable("ADMIN_EMAILS") ?? "")
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var isAdmin = adminEmails.Any(e => string.Equals(e, userEmail, StringComparison.OrdinalIgnoreCase));
+                var showAll = isAdmin && string.Equals(req.Query["all"], "true", StringComparison.OrdinalIgnoreCase);
+
                 // Top-level orchestrator names. Sub-orchestrators are matched by instanceId prefix.
                 var parentOrchestratorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -130,7 +140,24 @@ namespace CloudFiles
                 };
 
                 List<OrchestrationMetadata> instances;
-                if (!string.IsNullOrEmpty(userEmail))
+                if (showAll)
+                {
+                    // Admin viewing all: fetch inputs for parent instances to populate detail fields.
+                    var parentInstances = allInstances
+                        .Where(i => parentOrchestratorNames.Contains(i.Name))
+                        .ToList();
+                    var detailTasks = parentInstances
+                        .Select(p => starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true))
+                        .ToList();
+                    var details = await Task.WhenAll(detailTasks);
+                    var detailById = details
+                        .Where(d => d != null)
+                        .ToDictionary(d => d!.InstanceId, d => d!);
+                    instances = allInstances
+                        .Select(i => detailById.TryGetValue(i.InstanceId, out var d) ? d : i)
+                        .ToList();
+                }
+                else if (!string.IsNullOrEmpty(userEmail))
                 {
                     // Fetch serialized inputs only for top-level orchestrators to identify the owner.
                     var parentInstances = allInstances

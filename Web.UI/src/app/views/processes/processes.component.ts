@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import { first } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
+import { OidcSecurityService } from 'angular-auth-oidc-client';
 import {
     ProcessService,
     OrchestrationInstance,
@@ -8,6 +10,7 @@ import {
     ProcessListParams
 } from 'app/core/services/process.service';
 import { ConfirmDialogComponent } from 'app/shared/components/confirm-dialog/confirm-dialog.component';
+import { environment } from 'environments/environment';
 
 export interface ProcessGroup {
     parent: OrchestrationInstance;
@@ -40,6 +43,10 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     statusFilter: number[] = [];
     expandedInstanceId: string | null = null;
     deletingInstanceIds = new Set<string>();
+    isAdmin = false;
+    showAll = false;
+    fromDate = '';
+    toDate = '';
     private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
     readonly statusLabels: Record<number, string> = {
@@ -72,9 +79,16 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         [OrchestrationRuntimeStatus.Pending]: 'schedule'
     };
 
-    constructor(private processService: ProcessService, private dialog: MatDialog) {}
+    constructor(
+        private processService: ProcessService,
+        private dialog: MatDialog,
+        private oidcService: OidcSecurityService
+    ) {}
 
     ngOnInit(): void {
+        this.oidcService.getUserData('google').pipe(first()).subscribe((userData: Record<string, unknown>) => {
+            this.isAdmin = (userData?.['email'] as string) === environment.adminEmail;
+        });
         this.loadInstances();
         this.startAutoRefresh();
     }
@@ -90,6 +104,11 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         if (this.statusFilter.length > 0) {
             params.statusList = this.statusFilter;
         }
+        if (this.showAll && this.isAdmin) {
+            params.all = true;
+        }
+        if (this.fromDate) params.from = this.fromDate;
+        if (this.toDate) params.to = this.toDate;
         this.processService.listInstances(params).subscribe({
             next: (data) => {
                 this.instances = data;
@@ -105,6 +124,15 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     }
 
     onFilterChange(): void {
+        this.loadInstances();
+    }
+
+    onDateChange(): void {
+        this.loadInstances();
+    }
+
+    toggleShowAll(): void {
+        this.showAll = !this.showAll;
         this.loadInstances();
     }
 

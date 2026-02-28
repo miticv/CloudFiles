@@ -9,6 +9,18 @@
             </div>
         </div>
         <div class="flex items-center gap-3 mt-4 sm:mt-0 flex-shrink-0 ml-auto">
+            <!-- From date -->
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                            style="width: 150px;" floatLabel="never">
+                <input matInput type="date" [(ngModel)]="fromDate"
+                       (change)="onDateChange()" placeholder="From">
+            </mat-form-field>
+            <!-- To date -->
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                            style="width: 150px;" floatLabel="never">
+                <input matInput type="date" [(ngModel)]="toDate"
+                       (change)="onDateChange()" placeholder="To">
+            </mat-form-field>
             <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic"
                             style="width: 180px; min-width: 180px;" floatLabel="never">
                 <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()" multiple
@@ -20,6 +32,12 @@
                     <mat-option [value]="5">Terminated</mat-option>
                 </mat-select>
             </mat-form-field>
+            <button *ngIf="isAdmin" mat-stroked-button (click)="toggleShowAll()"
+                    [color]="showAll ? 'primary' : ''"
+                    [matTooltip]="showAll ? 'Showing all users\' processes' : 'Showing your processes only'">
+                <mat-icon>{{ showAll ? 'supervisor_account' : 'person' }}</mat-icon>
+                {{ showAll ? 'All Users' : 'My Processes' }}
+            </button>
             <button mat-icon-button class="toolbar-btn" (click)="loadInstances()" matTooltip="Refresh">
                 <mat-icon>refresh</mat-icon>
             </button>

@@ -9,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatInputModule } from '@angular/material/input';
 import { ProcessesComponent } from './processes.component';
 
 const routes: Route[] = [
@@ -27,7 +28,8 @@ const routes: Route[] = [
         MatTooltipModule,
         MatSelectModule,
         MatFormFieldModule,
-        MatDialogModule
+        MatDialogModule,
+        MatInputModule
     ]
 })
 export class ProcessesModule {}

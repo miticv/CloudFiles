@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialogModule } from '@angular/material/dialog';
 import { ProcessesComponent } from './processes.component';
 
 const routes: Route[] = [
@@ -25,7 +26,8 @@ const routes: Route[] = [
         MatProgressSpinnerModule,
         MatTooltipModule,
         MatSelectModule,
-        MatFormFieldModule
+        MatFormFieldModule,
+        MatDialogModule
     ]
 })
 export class ProcessesModule {}

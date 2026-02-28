@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full min-w-0 overflow-auto">
+<div class="flex flex-col w-full h-full min-w-0 overflow-auto">
 
     <!-- Not connected state -->
     <div *ngIf="!isGoogleConnected" class="flex flex-auto flex-col items-center justify-center py-16">
@@ -16,50 +16,54 @@
 
         <!-- ==================== SETUP VIEW ==================== -->
         <ng-container *ngIf="currentView === 'setup'">
-            <div class="flex flex-auto flex-col items-center justify-center p-6">
-                <mat-icon style="font-size: 64px; width: 64px; height: 64px;" class="text-teal-400">cloud_circle</mat-icon>
-                <div class="mt-4 text-2xl font-bold tracking-tight">Google Cloud Storage</div>
-                <div class="mt-1 text-sm text-secondary mb-8">Enter a bucket name to browse, or a project ID to discover buckets.</div>
-
-                <div class="setup-card space-y-6">
-                    <!-- Browse by bucket -->
-                    <div class="p-5 rounded-xl border border-gray-200 bg-card">
-                        <div class="font-semibold text-sm mb-3">Browse by Bucket</div>
-                        <div class="flex items-end gap-3">
-                            <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
-                                <mat-label>Bucket name</mat-label>
-                                <input matInput [(ngModel)]="bucketInput" placeholder="my-bucket"
-                                       (keydown.enter)="browseBucket()">
-                            </mat-form-field>
-                            <button mat-flat-button color="primary"
-                                    [disabled]="!bucketInput.trim()" (click)="browseBucket()">
-                                Browse
-                            </button>
-                        </div>
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between p-6 sm:py-8 md:px-8 border-b bg-card sticky top-0 z-10">
+                <div class="flex-1 min-w-0">
+                    <div class="text-3xl font-bold tracking-tight leading-none">Google Storage</div>
+                    <div class="mt-1 font-medium text-secondary">
+                        Enter a bucket name to browse, or a project ID to discover buckets.
                     </div>
+                </div>
+            </div>
 
-                    <!-- Find by project -->
-                    <div class="p-5 rounded-xl border border-gray-200 bg-card">
-                        <div class="font-semibold text-sm mb-3">Find Buckets by Project</div>
-                        <div class="flex items-end gap-3">
-                            <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
-                                <mat-label>Project ID</mat-label>
-                                <input matInput [(ngModel)]="projectInput" placeholder="my-gcp-project"
-                                       (keydown.enter)="findBuckets()">
-                            </mat-form-field>
-                            <button mat-flat-button color="accent"
-                                    [disabled]="!projectInput.trim() || loading" (click)="findBuckets()">
-                                {{loading ? 'Loading...' : 'List Buckets'}}
-                            </button>
-                        </div>
+            <!-- Error -->
+            <div *ngIf="error" class="mx-6 md:mx-8 mt-4 p-4 rounded-xl flex items-center gap-3"
+                 style="background: #fef2f2; border: 1px solid #fecaca;">
+                <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
+                <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+            </div>
+
+            <div class="p-6 md:p-8 space-y-4" style="max-width: 520px !important; width: 100%;">
+                <!-- Browse by bucket -->
+                <div class="p-5 rounded-xl bg-card"
+                     style="border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <div class="font-semibold text-sm mb-3">Browse by Bucket</div>
+                    <div class="flex items-center gap-3">
+                        <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
+                            <mat-label>Bucket name</mat-label>
+                            <input matInput [(ngModel)]="bucketInput" placeholder="my-bucket"
+                                   (keydown.enter)="browseBucket()">
+                        </mat-form-field>
+                        <button mat-flat-button color="primary" (click)="browseBucket()" [disabled]="!bucketInput.trim()">
+                            Browse
+                        </button>
                     </div>
                 </div>
 
-                <!-- Error -->
-                <div *ngIf="error" class="mt-6 p-4 rounded-xl flex items-center gap-3 setup-card"
-                     style="background: #fef2f2; border: 1px solid #fecaca;">
-                    <mat-icon style="color: #dc2626; font-size: 20px; width: 20px; height: 20px;">error_outline</mat-icon>
-                    <span class="flex-1 text-sm" style="color: #991b1b;">{{error}}</span>
+                <!-- Find by project -->
+                <div class="p-5 rounded-xl bg-card"
+                     style="border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <div class="font-semibold text-sm mb-3">Find Buckets by Project</div>
+                    <div class="flex items-center gap-3">
+                        <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
+                            <mat-label>Project ID</mat-label>
+                            <input matInput [(ngModel)]="projectInput" placeholder="my-gcp-project"
+                                   (keydown.enter)="findBuckets()">
+                        </mat-form-field>
+                        <button mat-flat-button color="primary" (click)="findBuckets()" [disabled]="!projectInput.trim() || loading">
+                            {{loading ? 'Loading...' : 'List Buckets'}}
+                        </button>
+                    </div>
                 </div>
             </div>
         </ng-container>

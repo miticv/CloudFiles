@@ -1,11 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import {
     ProcessService,
     OrchestrationInstance,
     OrchestrationRuntimeStatus,
     ProcessListParams
 } from 'app/core/services/process.service';
+import { ConfirmDialogComponent } from 'app/shared/components/confirm-dialog/confirm-dialog.component';
 
 export interface ProcessGroup {
     parent: OrchestrationInstance;
@@ -68,7 +70,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         [OrchestrationRuntimeStatus.Pending]: 'schedule'
     };
 
-    constructor(private processService: ProcessService) {}
+    constructor(private processService: ProcessService, private dialog: MatDialog) {}
 
     ngOnInit(): void {
         this.loadInstances();
@@ -234,35 +236,45 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
     purgeInstance(instanceId: string, event: Event): void {
         event.stopPropagation();
-        if (!confirm('Delete this process instance?')) return;
-        this.deletingInstanceIds.add(instanceId);
-        this.processService.purgeInstance(instanceId).subscribe({
-            next: () => {
-                this.deletingInstanceIds.delete(instanceId);
-                this.instances = this.instances.filter(i => i.instanceId !== instanceId);
-                this.groups = this.buildGroups(this.instances);
-            },
-            error: () => {
-                this.deletingInstanceIds.delete(instanceId);
-            }
+        this.dialog.open(ConfirmDialogComponent, {
+            width: '400px',
+            data: { title: 'Delete Process', message: 'Delete this process instance?' }
+        }).afterClosed().subscribe(confirmed => {
+            if (!confirmed) return;
+            this.deletingInstanceIds.add(instanceId);
+            this.processService.purgeInstance(instanceId).subscribe({
+                next: () => {
+                    this.deletingInstanceIds.delete(instanceId);
+                    this.instances = this.instances.filter(i => i.instanceId !== instanceId);
+                    this.groups = this.buildGroups(this.instances);
+                },
+                error: () => {
+                    this.deletingInstanceIds.delete(instanceId);
+                }
+            });
         });
     }
 
     purgeGroup(group: ProcessGroup, event: Event): void {
         event.stopPropagation();
         const allIds = [group.parent.instanceId, ...group.children.map(c => c.instanceId)];
-        if (!confirm(`Delete this process group (${allIds.length} instances)?`)) return;
-        allIds.forEach(id => this.deletingInstanceIds.add(id));
-        forkJoin(allIds.map(id => this.processService.purgeInstance(id))).subscribe({
-            next: () => {
-                allIds.forEach(id => this.deletingInstanceIds.delete(id));
-                this.instances = this.instances.filter(i => !allIds.includes(i.instanceId));
-                this.groups = this.buildGroups(this.instances);
-            },
-            error: () => {
-                allIds.forEach(id => this.deletingInstanceIds.delete(id));
-                this.loadInstances();
-            }
+        this.dialog.open(ConfirmDialogComponent, {
+            width: '400px',
+            data: { title: 'Delete Process Group', message: `Delete this process group (${allIds.length} instances)?` }
+        }).afterClosed().subscribe(confirmed => {
+            if (!confirmed) return;
+            allIds.forEach(id => this.deletingInstanceIds.add(id));
+            forkJoin(allIds.map(id => this.processService.purgeInstance(id))).subscribe({
+                next: () => {
+                    allIds.forEach(id => this.deletingInstanceIds.delete(id));
+                    this.instances = this.instances.filter(i => !allIds.includes(i.instanceId));
+                    this.groups = this.buildGroups(this.instances);
+                },
+                error: () => {
+                    allIds.forEach(id => this.deletingInstanceIds.delete(id));
+                    this.loadInstances();
+                }
+            });
         });
     }
 

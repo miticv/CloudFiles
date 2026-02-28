@@ -4,6 +4,33 @@
 @tailwind components;
 @tailwind utilities;
 
+// Material theme AFTER Tailwind base — Tailwind's Preflight resets border-width
+// to 0 on all elements, which breaks Material's notched-outline form fields.
+$theme: mat.define-theme((
+    color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+    )
+));
+
+html {
+    @include mat.all-component-themes($theme);
+}
+
+// Fix Tailwind Preflight breaking Material notched-outline form fields.
+// Preflight sets `*, ::before, ::after { border-style: solid }` but Material
+// expects default border-style on internal edges, causing visible seams.
+.mdc-notched-outline__leading {
+    border-right: none !important;
+}
+.mdc-notched-outline__notch {
+    border-left: none !important;
+    border-right: none !important;
+}
+.mdc-notched-outline__trailing {
+    border-left: none !important;
+}
+
 html, body {
     height: 100%;
     margin: 0;

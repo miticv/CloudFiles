@@ -6,8 +6,8 @@ namespace CloudFiles.Models.Azure
 {
     public class AzureResource
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Location { get; set; }
+        public string Id { get; set; } = default!;
+        public string Name { get; set; } = default!;
+        public string Location { get; set; } = default!;
     }
 }

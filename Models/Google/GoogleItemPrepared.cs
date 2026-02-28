@@ -8,7 +8,7 @@ namespace CloudFiles.Models.Google
     {
         public GoogleItemPrepared() { }
 
-        public string MediaLInk { get; set; }
+        public string MediaLInk { get; set; } = default!;
 
         public GoogleItemPrepared(GoogleItem item, string accessToken, string albumId): base(item, accessToken, albumId)
         {

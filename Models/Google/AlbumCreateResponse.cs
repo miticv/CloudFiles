@@ -6,15 +6,15 @@ namespace CloudFiles.Models.Google
     public class AlbumCreateResponse
     {
         [JsonProperty("productUrl")]
-        public string ProductUrl { get; set; }
+        public string ProductUrl { get; set; } = default!;
 
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("title")]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [JsonProperty("isWriteable")]
-        public string IsWriteable { get; set; }
+        public string IsWriteable { get; set; } = default!;
     }
 }

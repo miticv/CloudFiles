@@ -11,30 +11,30 @@ namespace CloudFiles.Models
             IsFolder = isFolder;
         }
 
-        public string ItemPath { get; set; }
+        public string ItemPath { get; set; } = default!;
         public bool IsFolder { get; set; }
     }
 
     public class ItemUI
     {
-        public string ItemPath { get; set; }
+        public string ItemPath { get; set; } = default!;
         public bool IsFolder { get; set; }
-        public string ItemName { get; set; }
-        public string ItemType { get; set; }
+        public string ItemName { get; set; } = default!;
+        public string ItemType { get; set; } = default!;
     }
 
     public class ItemJsonUI
     {
-        public string LastModified { get; set; }
+        public string LastModified { get; set; } = default!;
         public long ContentLength { get; set; }
-        public string ContentLengthFriendly { get; set; }
+        public string ContentLengthFriendly { get; set; } = default!;
 
-        public string ContentType { get; set; }
-        public IDictionary<string, string> Metadata { get; set; }
+        public string ContentType { get; set; } = default!;
+        public IDictionary<string, string> Metadata { get; set; } = default!;
 
-        public string ItemPath { get; set; }
-        public string ItemName { get; set; }
-        public string ItemType { get; set; }
-        public string ImageContent { get; set; }
+        public string ItemPath { get; set; } = default!;
+        public string ItemName { get; set; } = default!;
+        public string ItemType { get; set; } = default!;
+        public string ImageContent { get; set; } = default!;
     }
 }

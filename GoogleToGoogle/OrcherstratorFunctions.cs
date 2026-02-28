@@ -26,7 +26,7 @@ namespace CloudFiles.GoogleToGoogle
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
 
-            var request = context.GetInput<FilesCopyRequest>();
+            var request = context.GetInput<FilesCopyRequest>()!;
 
             log.LogInformation($"{Constants.GooleStorageToGooglePhotosOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<GoogleItemsPrepared>(
@@ -49,7 +49,7 @@ namespace CloudFiles.GoogleToGoogle
             [OrchestrationTrigger] TaskOrchestrationContext context)
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
-            var filesCopyItemsPrepared = context.GetInput<GoogleItemsPrepared>();
+            var filesCopyItemsPrepared = context.GetInput<GoogleItemsPrepared>()!;
 
             var taskToFile = new Dictionary<Task<NewMediaItemResultRoot>, string>();
             log.LogInformation("Fan-Out CopyPhotoUrlToGoogle");

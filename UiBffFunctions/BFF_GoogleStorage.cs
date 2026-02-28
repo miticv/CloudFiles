@@ -22,18 +22,18 @@ namespace CloudFiles
             try
             {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
-                string path = req.Query["path"];
-                string bucket = req.Query["bucket"];
+                string? path = req.Query["path"];
+                string? bucket = req.Query["bucket"];
 
                 if (string.IsNullOrEmpty(bucket))
                 {
                     return new BadRequestObjectResult("bucket query parameter is required.");
                 }
 
-                var googleUtility = GoogleUtility.Create(accessToken, bucket);
+                var googleUtility = GoogleUtility.Create(accessToken, bucket!);
 
                 log.LogInformation($"{Constants.GoogleFileList} function processing a request for bucket=`{bucket}`, path=`{path}`.");
-                var fileList = await googleUtility.ItemShallowListingAsync(path).ConfigureAwait(false);
+                var fileList = await googleUtility.ItemShallowListingAsync(path!).ConfigureAwait(false);
 
                 var uiObject = fileList.Select(s => new ItemUI
                 {
@@ -66,7 +66,7 @@ namespace CloudFiles
             try
             {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
-                string projectId = req.Query["projectId"];
+                string? projectId = req.Query["projectId"];
 
                 if (string.IsNullOrEmpty(projectId))
                 {
@@ -75,7 +75,7 @@ namespace CloudFiles
 
                 var googleUtility = GoogleUtility.Create(accessToken);
                 log.LogInformation($"{Constants.GoogleStorageBucketList} function listing buckets for project=`{projectId}`.");
-                var buckets = await googleUtility.ListBucketsAsync(projectId).ConfigureAwait(false);
+                var buckets = await googleUtility.ListBucketsAsync(projectId!).ConfigureAwait(false);
 
                 return new OkObjectResult(buckets);
             }

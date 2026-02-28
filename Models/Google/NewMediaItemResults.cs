@@ -8,7 +8,7 @@ namespace CloudFiles.Models.Google
     public class Status
     {
         [JsonProperty("message")]
-        public string Message { get; set; }
+        public string Message { get; set; } = default!;
     }
 
     public class MediaMetadata
@@ -17,51 +17,51 @@ namespace CloudFiles.Models.Google
         public DateTime CreationTime { get; set; }
 
         [JsonProperty("width")]
-        public string Width { get; set; }
+        public string Width { get; set; } = default!;
 
         [JsonProperty("height")]
-        public string Height { get; set; }
+        public string Height { get; set; } = default!;
     }
 
     public class MediaItem
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("description")]
-        public string Description { get; set; }
+        public string Description { get; set; } = default!;
 
         [JsonProperty("baseUrl")]
-        public string BaseUrl { get; set; }
+        public string BaseUrl { get; set; } = default!;
 
         [JsonProperty("productUrl")]
-        public string ProductUrl { get; set; }
+        public string ProductUrl { get; set; } = default!;
 
         [JsonProperty("mimeType")]
-        public string MimeType { get; set; }
+        public string MimeType { get; set; } = default!;
 
         [JsonProperty("mediaMetadata")]
-        public MediaMetadata MediaMetadata { get; set; }
+        public MediaMetadata MediaMetadata { get; set; } = default!;
 
         [JsonProperty("filename")]
-        public string Filename { get; set; }
+        public string Filename { get; set; } = default!;
     }
 
     public class NewMediaItemResult
     {
         [JsonProperty("uploadToken")]
-        public string UploadToken { get; set; }
+        public string UploadToken { get; set; } = default!;
 
         [JsonProperty("status")]
-        public Status Status { get; set; }
+        public Status Status { get; set; } = default!;
 
         [JsonProperty("mediaItem")]
-        public MediaItem MediaItem { get; set; }
+        public MediaItem MediaItem { get; set; } = default!;
     }
 
     public class NewMediaItemResultRoot
     {
         [JsonProperty("newMediaItemResults")]
-        public List<NewMediaItemResult> NewMediaItemResults { get; set; }
+        public List<NewMediaItemResult> NewMediaItemResults { get; set; } = default!;
     }
 }

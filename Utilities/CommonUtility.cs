@@ -37,11 +37,11 @@ namespace CloudFiles.Utilities
         public static string GetTokenFromHeaders(HttpRequest req)
         {
             var success = req.Headers.TryGetValue("Authorization", out StringValues values);
-            if (!success || values.Count == 0 || String.IsNullOrEmpty(values.FirstOrDefault()) || values.FirstOrDefault().Length < 20)
+            if (!success || values.Count == 0 || String.IsNullOrEmpty(values.FirstOrDefault()) || values.FirstOrDefault()!.Length < 20)
             {
                 throw new UnauthorizedAccessException("Please include Authorization header with bearer token");
             }
-            return values.FirstOrDefault()?.Replace("Bearer ", "").Replace("bearer ", "");
+            return values.FirstOrDefault()!.Replace("Bearer ", "").Replace("bearer ", "");
         }
 
         public static string ToFileSize(this double value)
@@ -82,6 +82,6 @@ namespace CloudFiles.Utilities
     }
 
     public class UiErrorFormat {
-        public string Message { get; set; }
+        public string Message { get; set; } = default!;
     }
 }

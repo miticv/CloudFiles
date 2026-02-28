@@ -10,7 +10,7 @@
             MedialLink = medialLink;
         }
 
-        public string ContentType { get; set; }
-        public string MedialLink { get; set; }
+        public string ContentType { get; set; } = default!;
+        public string MedialLink { get; set; } = default!;
     }
 }

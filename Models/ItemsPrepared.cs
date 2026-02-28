@@ -6,6 +6,6 @@ namespace CloudFiles.Models
 {
     public class ItemsPrepared
     {
-        public List<ItemPrepared> ListItemsPrepared;
+        public List<ItemPrepared> ListItemsPrepared = default!;
     }
 }

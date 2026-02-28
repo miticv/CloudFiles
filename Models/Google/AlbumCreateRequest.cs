@@ -6,12 +6,12 @@ namespace CloudFiles.Models.Google
     public class AlbumCreate
     {
         [JsonProperty("title")]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
     }
 
     public class AlbumCreateRequest
     {
         [JsonProperty("album")]
-        public AlbumCreate Album { get; set; }
+        public AlbumCreate Album { get; set; } = default!;
     }
 }

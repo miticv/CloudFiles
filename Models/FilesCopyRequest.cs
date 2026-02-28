@@ -5,26 +5,26 @@ namespace CloudFiles.Models
 {
     public class FilesCopyRequest
     {
-        public string AccessToken { get; set; }
-        public string AlbumId { get; set; }
-        public string AlbumTitle { get; set; }
-        public List<Item> SelectedItemsList { get; set; }
-        public string AccountName { get; set; }
-        public string ContainerName { get; set; }
-        public string AzureAccessToken { get; set; }
-        public string StartedBy { get; set; }
-        public string BucketName { get; set; }
+        public string AccessToken { get; set; } = default!;
+        public string AlbumId { get; set; } = default!;
+        public string AlbumTitle { get; set; } = default!;
+        public List<Item> SelectedItemsList { get; set; } = default!;
+        public string AccountName { get; set; } = default!;
+        public string ContainerName { get; set; } = default!;
+        public string AzureAccessToken { get; set; } = default!;
+        public string StartedBy { get; set; } = default!;
+        public string BucketName { get; set; } = default!;
     }
 
     public class FilesCopyRequestUI
     {
-        public string AlbumId { get; set; }
-        public string AlbumTitle { get; set; }
-        public List<Item> SelectedItemsList { get; set; }
-        public string AccountName { get; set; }
-        public string ContainerName { get; set; }
-        public string AzureAccessToken { get; set; }
-        public string StartedBy { get; set; }
-        public string BucketName { get; set; }
+        public string AlbumId { get; set; } = default!;
+        public string AlbumTitle { get; set; } = default!;
+        public List<Item> SelectedItemsList { get; set; } = default!;
+        public string AccountName { get; set; } = default!;
+        public string ContainerName { get; set; } = default!;
+        public string AzureAccessToken { get; set; } = default!;
+        public string StartedBy { get; set; } = default!;
+        public string BucketName { get; set; } = default!;
     }
 }

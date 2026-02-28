@@ -47,7 +47,7 @@ namespace CloudFiles.AzureToGoogle
             {
                 log.LogInformation($"{Constants.CopyAzureBlobToGooglePhotos}: Copy image {item.ItemPath}.");
 
-                var azureUtility = new AzureUtility(item.AccountName, item.ContainerName, item.AzureAccessToken);
+                var azureUtility = new AzureUtility(item.AccountName!, item.ContainerName!, item.AzureAccessToken!);
 
                 var blobData = await azureUtility.GetBlobItemAsync(item.ItemPath).ConfigureAwait(false);
 

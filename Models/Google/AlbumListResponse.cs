@@ -7,30 +7,30 @@ namespace CloudFiles.Models.Google
     public class Album
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("title")]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [JsonProperty("productUrl")]
-        public string ProductUrl { get; set; }
+        public string ProductUrl { get; set; } = default!;
 
         [JsonProperty("mediaItemsCount")]
-        public string MediaItemsCount { get; set; }
+        public string MediaItemsCount { get; set; } = default!;
 
         [JsonProperty("coverPhotoBaseUrl")]
-        public string CoverPhotoBaseUrl { get; set; }
+        public string CoverPhotoBaseUrl { get; set; } = default!;
 
         [JsonProperty("coverPhotoMediaItemId")]
-        public string CoverPhotoMediaItemId { get; set; }
+        public string CoverPhotoMediaItemId { get; set; } = default!;
     }
 
     public class AlbumListResponse
     {
         [JsonProperty("albums")]
-        public List<Album> Albums { get; set; }
+        public List<Album> Albums { get; set; } = default!;
 
         [JsonProperty("nextPageToken")]
-        public string NextPageToken { get; set; }
+        public string NextPageToken { get; set; } = default!;
     }
 }

@@ -24,7 +24,7 @@ namespace CloudFiles.Utilities
 {
     public class AzureUtility
     {
-        private string ConnectionString { get; }
+        private string ConnectionString { get; } = default!;
         private string ContainerName { get; }
         private BlobContainerClient ContainerClient { get; }
 
@@ -119,9 +119,9 @@ namespace CloudFiles.Utilities
                 {
                     Id = sub.Id.ToString(),
                     SubscriptionId = sub.Data.SubscriptionId,
-                    DisplayName = sub.Data.DisplayName,
-                    TenantId = sub.Data.TenantId?.ToString(),
-                    State = sub.Data.State?.ToString()
+                    DisplayName = sub.Data.DisplayName ?? "",
+                    TenantId = sub.Data.TenantId?.ToString() ?? "",
+                    State = sub.Data.State?.ToString() ?? ""
                 });
             }
             return result.OrderBy(x => x.DisplayName).ToList();
@@ -157,7 +157,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                var rawResult = JsonConvert.DeserializeObject<RawAzureResourceGroups>(data);
+                var rawResult = JsonConvert.DeserializeObject<RawAzureResourceGroups>(data)!;
                 foreach (var item in rawResult.Value)
                 {
                     result.Add(new AzureResource()
@@ -187,7 +187,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                var rawResult = JsonConvert.DeserializeObject<RawAzureBlobContainers>(data);
+                var rawResult = JsonConvert.DeserializeObject<RawAzureBlobContainers>(data)!;
                 foreach (var item in rawResult.Value) {
                     result.Add(new AzureStorageAccount()
                     {
@@ -221,7 +221,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                var rawResult = JsonConvert.DeserializeObject<RawAzureContainer>(data);
+                var rawResult = JsonConvert.DeserializeObject<RawAzureContainer>(data)!;
                 foreach (var item in rawResult.Value)
                 {
                     result.Add(new AzureContainer()

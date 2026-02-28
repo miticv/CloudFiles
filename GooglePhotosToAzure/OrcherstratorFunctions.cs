@@ -15,7 +15,7 @@ namespace CloudFiles.GooglePhotosToAzure
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
 
-            var request = context.GetInput<GooglePhotosToAzureRequest>();
+            var request = context.GetInput<GooglePhotosToAzureRequest>()!;
 
             log.LogInformation($"{Constants.GooglePhotosToAzureOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<PhotoToAzureItemsPrepared>(
@@ -38,7 +38,7 @@ namespace CloudFiles.GooglePhotosToAzure
             [OrchestrationTrigger] TaskOrchestrationContext context)
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
-            var itemsPrepared = context.GetInput<PhotoToAzureItemsPrepared>();
+            var itemsPrepared = context.GetInput<PhotoToAzureItemsPrepared>()!;
 
             var taskToFile = new Dictionary<Task<BlobCopyResult>, string>();
             log.LogInformation("Fan-Out CopyGooglePhotoToAzureBlob");

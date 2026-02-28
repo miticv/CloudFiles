@@ -25,7 +25,7 @@ namespace CloudFiles.GooglePhotosToAzure
             {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
-                var request = JsonConvert.DeserializeObject<GooglePhotosToAzureRequest>(requestBody);
+                var request = JsonConvert.DeserializeObject<GooglePhotosToAzureRequest>(requestBody)!;
 
                 if (request.PhotoItems == null || request.PhotoItems.Count == 0)
                 {

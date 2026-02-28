@@ -26,7 +26,7 @@ namespace CloudFiles.GoogleToGoogle
             try {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
-                var request = JsonConvert.DeserializeObject<FilesCopyRequest>(requestBody);
+                var request = JsonConvert.DeserializeObject<FilesCopyRequest>(requestBody)!;
 
                 if (request.SelectedItemsList == null || request.SelectedItemsList.Count == 0)
                 {

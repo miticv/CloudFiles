@@ -6,63 +6,63 @@ namespace CloudFiles.Models.Google
     public class PickingSession
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("pickerUri")]
-        public string PickerUri { get; set; }
+        public string PickerUri { get; set; } = default!;
 
         [JsonProperty("pollingConfig")]
-        public PollingConfig PollingConfig { get; set; }
+        public PollingConfig PollingConfig { get; set; } = default!;
 
         [JsonProperty("mediaItemsSet")]
         public bool MediaItemsSet { get; set; }
 
         [JsonProperty("expireTime")]
-        public string ExpireTime { get; set; }
+        public string ExpireTime { get; set; } = default!;
     }
 
     public class PollingConfig
     {
         [JsonProperty("pollInterval")]
-        public string PollInterval { get; set; }
+        public string PollInterval { get; set; } = default!;
 
         [JsonProperty("timeoutIn")]
-        public string TimeoutIn { get; set; }
+        public string TimeoutIn { get; set; } = default!;
     }
 
     public class PickedMediaItem
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("createTime")]
-        public string CreateTime { get; set; }
+        public string CreateTime { get; set; } = default!;
 
         [JsonProperty("type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = default!;
 
         [JsonProperty("mediaFile")]
-        public MediaFile MediaFile { get; set; }
+        public MediaFile MediaFile { get; set; } = default!;
     }
 
     public class MediaFile
     {
         [JsonProperty("baseUrl")]
-        public string BaseUrl { get; set; }
+        public string BaseUrl { get; set; } = default!;
 
         [JsonProperty("mimeType")]
-        public string MimeType { get; set; }
+        public string MimeType { get; set; } = default!;
 
         [JsonProperty("filename")]
-        public string Filename { get; set; }
+        public string Filename { get; set; } = default!;
     }
 
     public class PickedMediaItemsResponse
     {
         [JsonProperty("mediaItems")]
-        public List<PickedMediaItem> MediaItems { get; set; }
+        public List<PickedMediaItem> MediaItems { get; set; } = default!;
 
         [JsonProperty("nextPageToken")]
-        public string NextPageToken { get; set; }
+        public string NextPageToken { get; set; } = default!;
     }
 }

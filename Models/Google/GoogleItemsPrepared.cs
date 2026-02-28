@@ -6,6 +6,6 @@ namespace CloudFiles.Models.Google
 {
     public class GoogleItemsPrepared
     {
-        public List<GoogleItemPrepared> ListItemsPrepared;
+        public List<GoogleItemPrepared> ListItemsPrepared = default!;
     }
 }

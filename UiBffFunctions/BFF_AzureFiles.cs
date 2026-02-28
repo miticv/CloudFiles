@@ -15,14 +15,14 @@ namespace CloudFiles
 {
     public static class BFF_AzureFiles
     {
-        private static IActionResult ValidatePath(string path)
+        private static IActionResult? ValidatePath(string? path)
         {
             if (!string.IsNullOrEmpty(path) && (path.Contains("..") || path.Contains("\\") || path.StartsWith("/")))
                 return new BadRequestObjectResult("Invalid path");
             return null;
         }
 
-        private static IActionResult ValidateAccountAndContainer(string account, string container)
+        private static IActionResult? ValidateAccountAndContainer(string? account, string? container)
         {
             if (string.IsNullOrEmpty(account) || string.IsNullOrEmpty(container))
                 return new BadRequestObjectResult("You must include `account` and `container` query parameters");
@@ -56,9 +56,9 @@ namespace CloudFiles
             FunctionContext executionContext)
         {
             var log = executionContext.GetLogger(nameof(GetItem));
-            string path = req.Query["path"];
-            string account = req.Query["account"];
-            string container = req.Query["container"];
+            string? path = req.Query["path"];
+            string? account = req.Query["account"];
+            string? container = req.Query["container"];
             try
             {
                 var accessToken = await AzureUtility.VerifyAzureStorageHeaderTokenIsValid(req).ConfigureAwait(false);
@@ -69,9 +69,9 @@ namespace CloudFiles
                 if (string.IsNullOrEmpty(path))
                     return new BadRequestObjectResult("You must include `path` in the query parameter");
 
-                var azureUtility = new AzureUtility(account, container, accessToken);
+                var azureUtility = new AzureUtility(account!, container!, accessToken);
                 log.LogInformation($"{Constants.AzureFileGetItem} call for account=`{account}`, container=`{container}`, path=`{path}`.");
-                return await azureUtility.GetHttpItemAsync(path).ConfigureAwait(false);
+                return await azureUtility.GetHttpItemAsync(path!).ConfigureAwait(false);
             }
             catch (UnauthorizedAccessException ex) {
                 log.LogError(ex.Message);
@@ -108,9 +108,9 @@ namespace CloudFiles
             FunctionContext executionContext)
         {
             var log = executionContext.GetLogger(nameof(GetItemJson));
-            string path = req.Query["path"];
-            string account = req.Query["account"];
-            string container = req.Query["container"];
+            string? path = req.Query["path"];
+            string? account = req.Query["account"];
+            string? container = req.Query["container"];
             try
             {
                 var accessToken = await AzureUtility.VerifyAzureStorageHeaderTokenIsValid(req).ConfigureAwait(false);
@@ -121,9 +121,9 @@ namespace CloudFiles
                 if (string.IsNullOrEmpty(path))
                     return new BadRequestObjectResult("You must include `path` in the query parameter");
 
-                var azureUtility = new AzureUtility(account, container, accessToken);
+                var azureUtility = new AzureUtility(account!, container!, accessToken);
                 log.LogInformation($"{Constants.AzureFileGetItemJson} call for account=`{account}`, container=`{container}`, path=`{path}`.");
-                return await azureUtility.GetHttpItemJsonAsync(path).ConfigureAwait(false);
+                return await azureUtility.GetHttpItemJsonAsync(path!).ConfigureAwait(false);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -164,18 +164,18 @@ namespace CloudFiles
             try
             {
                 var accessToken = await AzureUtility.VerifyAzureStorageHeaderTokenIsValid(req).ConfigureAwait(false);
-                string account = req.Query["account"];
-                string container = req.Query["container"];
-                string path = req.Query["path"];
+                string? account = req.Query["account"];
+                string? container = req.Query["container"];
+                string? path = req.Query["path"];
 
-                var acError = ValidateAccountAndContainer(account, container);
+                var acError = ValidateAccountAndContainer(account!, container!);
                 if (acError != null) return acError;
-                var pathError = ValidatePath(path);
+                var pathError = ValidatePath(path!);
                 if (pathError != null) return pathError;
 
-                var azureUtility = new AzureUtility(account, container, accessToken);
+                var azureUtility = new AzureUtility(account!, container!, accessToken);
                 log.LogInformation($"{Constants.AzureFileList} request for account=`{account}`, container=`{container}`, path=`{path}`");
-                var fileList = await azureUtility.ItemShallowListingAsync(path, 5000).ConfigureAwait(false);
+                var fileList = await azureUtility.ItemShallowListingAsync(path!, 5000).ConfigureAwait(false);
 
                 var UIObject = fileList.Select(s => new ItemUI{
                     IsFolder = s.IsFolder,

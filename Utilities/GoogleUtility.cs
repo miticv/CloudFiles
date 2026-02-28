@@ -1,4 +1,4 @@
-﻿using CloudFiles.Models;
+using CloudFiles.Models;
 using CloudFiles.Models.Google;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
@@ -18,8 +18,8 @@ namespace CloudFiles.Utilities
     // it needs this scope: https://www.googleapis.com/auth/photoslibrary
     public sealed class GoogleUtility
     {
-        private string GoogleBucket { get; set; }
-        private string GoogleToken { get; set; }
+        private string GoogleBucket { get; set; } = default!;
+        private string GoogleToken { get; set; } = default!;
 
         private GoogleUtility() {}
 
@@ -83,7 +83,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<NewMediaItemResultRoot>(result);
+                return JsonConvert.DeserializeObject<NewMediaItemResultRoot>(result)!;
             }
             else
             {
@@ -95,7 +95,7 @@ namespace CloudFiles.Utilities
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            if (!client.DefaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
             {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
@@ -107,7 +107,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<AlbumListResponse>(result);
+                return JsonConvert.DeserializeObject<AlbumListResponse>(result)!;
             }
             else
             {
@@ -119,7 +119,7 @@ namespace CloudFiles.Utilities
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            if (!client.DefaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
             {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
@@ -133,7 +133,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<AlbumCreateResponse>(result);
+                return JsonConvert.DeserializeObject<AlbumCreateResponse>(result)!;
             }
             else
             {
@@ -145,7 +145,7 @@ namespace CloudFiles.Utilities
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            if (!client.DefaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
             {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
@@ -154,7 +154,7 @@ namespace CloudFiles.Utilities
             {
                 AlbumId = albumId,
                 PageSize = 50,
-                PageToken = string.IsNullOrEmpty(nextPageToken) ? null : nextPageToken
+                PageToken = string.IsNullOrEmpty(nextPageToken) ? null! : nextPageToken
             };
             var serializedBody = JsonConvert.SerializeObject(body, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
@@ -164,7 +164,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<MediaItemSearchResponse>(result);
+                return JsonConvert.DeserializeObject<MediaItemSearchResponse>(result)!;
             }
             else
             {
@@ -184,7 +184,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<VerifyToken>(result);
+                return JsonConvert.DeserializeObject<VerifyToken>(result)!;
             }
             else
             {
@@ -304,7 +304,7 @@ namespace CloudFiles.Utilities
             // Call the listing operation and return pages of the specified size.
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this.GoogleToken);
-            if (client.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            if (!client.DefaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
             {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
@@ -315,7 +315,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<GoogleStorageFileRoot>(result);
+                return JsonConvert.DeserializeObject<GoogleStorageFileRoot>(result)!;
             }
             else
             {
@@ -337,7 +337,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<PickingSession>(result);
+                return JsonConvert.DeserializeObject<PickingSession>(result)!;
             }
             else
             {
@@ -356,7 +356,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<PickingSession>(result);
+                return JsonConvert.DeserializeObject<PickingSession>(result)!;
             }
             else
             {
@@ -378,7 +378,7 @@ namespace CloudFiles.Utilities
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<PickedMediaItemsResponse>(result);
+                return JsonConvert.DeserializeObject<PickedMediaItemsResponse>(result)!;
             }
             else
             {
@@ -428,7 +428,7 @@ namespace CloudFiles.Utilities
         {
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            if (httpClient.DefaultRequestHeaders.Accept?.Any(m => m.MediaType == "application/json") != true)
+            if (!httpClient.DefaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
             {
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }

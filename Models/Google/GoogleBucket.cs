@@ -6,21 +6,21 @@ namespace CloudFiles.Models.Google
     public class GoogleBucketListResponse
     {
         [JsonProperty("items")]
-        public List<GoogleBucketItem> Items { get; set; }
+        public List<GoogleBucketItem> Items { get; set; } = default!;
     }
 
     public class GoogleBucketItem
     {
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
         [JsonProperty("location")]
-        public string Location { get; set; }
+        public string Location { get; set; } = default!;
 
         [JsonProperty("storageClass")]
-        public string StorageClass { get; set; }
+        public string StorageClass { get; set; } = default!;
 
         [JsonProperty("timeCreated")]
-        public string TimeCreated { get; set; }
+        public string TimeCreated { get; set; } = default!;
     }
 }

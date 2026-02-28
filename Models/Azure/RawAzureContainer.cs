@@ -15,19 +15,19 @@ namespace CloudFiles.Models.Azure
         public int RemainingRetentionDays { get; set; }
 
         [JsonProperty("defaultEncryptionScope")]
-        public string DefaultEncryptionScope { get; set; }
+        public string DefaultEncryptionScope { get; set; } = default!;
 
         [JsonProperty("denyEncryptionScopeOverride")]
         public bool DenyEncryptionScopeOverride { get; set; }
 
         [JsonProperty("publicAccess")]
-        public string PublicAccess { get; set; }
+        public string PublicAccess { get; set; } = default!;
 
         [JsonProperty("leaseStatus")]
-        public string LeaseStatus { get; set; }
+        public string LeaseStatus { get; set; } = default!;
 
         [JsonProperty("leaseState")]
-        public string LeaseState { get; set; }
+        public string LeaseState { get; set; } = default!;
 
         [JsonProperty("lastModifiedTime")]
         public DateTime LastModifiedTime { get; set; }
@@ -39,30 +39,30 @@ namespace CloudFiles.Models.Azure
         public bool HasLegalHold { get; set; }
 
         [JsonProperty("leaseDuration")]
-        public string LeaseDuration { get; set; }
+        public string LeaseDuration { get; set; } = default!;
     }
 
     public class RawAzureContainerValue
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
         [JsonProperty("type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = default!;
 
         [JsonProperty("etag")]
-        public string Etag { get; set; }
+        public string Etag { get; set; } = default!;
 
         [JsonProperty("properties")]
-        public RawAzureContainerProperties Properties { get; set; }
+        public RawAzureContainerProperties Properties { get; set; } = default!;
     }
 
     public class RawAzureContainer
     {
         [JsonProperty("value")]
-        public List<RawAzureContainerValue> Value { get; set; }
+        public List<RawAzureContainerValue> Value { get; set; } = default!;
     }
 }

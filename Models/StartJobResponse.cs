@@ -6,21 +6,21 @@ namespace CloudFiles.Models
     public class StartJobResponse
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [JsonProperty("statusQueryGetUri")]
-        public string StatusQueryGetUri { get; set; }
+        public string StatusQueryGetUri { get; set; } = default!;
 
         [JsonProperty("sendEventPostUri")]
-        public string SendEventPostUri { get; set; }
+        public string SendEventPostUri { get; set; } = default!;
 
         [JsonProperty("terminatePostUri")]
-        public string TerminatePostUri { get; set; }
+        public string TerminatePostUri { get; set; } = default!;
 
         [JsonProperty("purgeHistoryDeleteUri")]
-        public string PurgeHistoryDeleteUri { get; set; }
+        public string PurgeHistoryDeleteUri { get; set; } = default!;
 
         [JsonProperty("restartPostUri")]
-        public string RestartPostUri { get; set; }
+        public string RestartPostUri { get; set; } = default!;
     }
 }

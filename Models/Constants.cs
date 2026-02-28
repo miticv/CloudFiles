@@ -42,5 +42,12 @@ public const string GoogleFileList = "googleFileList";
         public const string GoogleStorageToGooglePhotosPrepareList = "googleStorageToGooglePhotosPrepareList";
         public const string CopyGoogleStorageToGooglePhotosOrchestrator = "copyGoogleStorageToGooglePhotosOrchestrator";
         public const string CopyPhotoUrlToGooglePhotos = "copyPhotoUrlToGooglePhotos";
+
+        // automation google photos to azure
+        public const string ProcessGooglePhotosToAzure_Start = "processGooglePhotosToAzure_Start";
+        public const string GooglePhotosToAzureOrchestrator = "googlePhotosToAzureOrchestrator";
+        public const string GooglePhotosToAzurePrepareList = "googlePhotosToAzurePrepareList";
+        public const string CopyGooglePhotosToAzureOrchestrator = "copyGooglePhotosToAzureOrchestrator";
+        public const string CopyGooglePhotoToAzureBlob = "copyGooglePhotoToAzureBlob";
     }
 }

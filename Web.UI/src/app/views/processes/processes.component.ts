@@ -16,12 +16,14 @@ export interface ProcessGroup {
 
 const PARENT_NAMES = new Set([
     'azureStorageToGooglePhotosOrchestrator',
-    'gooleStorageToGooglePhotosOrchestrator'
+    'gooleStorageToGooglePhotosOrchestrator',
+    'googlePhotosToAzureOrchestrator'
 ]);
 
 const CHILD_NAMES = new Set([
     'copyAzureBlobsToGooglePhotosOrchestrator',
-    'copyGoogleStorageToGooglePhotosOrchestrator'
+    'copyGoogleStorageToGooglePhotosOrchestrator',
+    'copyGooglePhotosToAzureOrchestrator'
 ]);
 
 @Component({
@@ -122,6 +124,15 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     }
 
     getInputSummary(instance: OrchestrationInstance): string {
+        // Google Photos → Azure: show photo count
+        const input = this.parseJson(instance.serializedInput);
+        if (input) {
+            const photoItems = (input['photoItems'] || input['PhotoItems']) as unknown[];
+            if (photoItems) {
+                return `${photoItems.length} photo${photoItems.length !== 1 ? 's' : ''}`;
+            }
+        }
+
         const selected = this.getSelectedItems(instance);
         if (!selected.length) return '';
         if (selected.length === 1) return selected[0].isFolder ? selected[0].name : selected[0].name;
@@ -153,6 +164,18 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const bucket = (input['bucketName'] || input['BucketName']) as string;
         const album = this.getAlbumTitle(instance)
             || (input['albumId'] as string) || (input['AlbumId'] as string);
+
+        // Google Photos → Azure direction
+        const photoItems = (input['photoItems'] || input['PhotoItems']) as unknown[];
+        if (photoItems && account && container) {
+            const folder = (input['destinationFolder'] || input['DestinationFolder']) as string;
+            const dest = folder
+                ? `Azure (${account}/${container}/${folder})`
+                : `Azure (${account}/${container})`;
+            return { from: `Google Photos (${photoItems.length} photos)`, to: dest };
+        }
+
+        // Azure/Google Storage → Google Photos direction
         if (!album) return null;
 
         let from = '';
@@ -166,6 +189,20 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     getExpandedFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
         const output = this.parseJson(instance.serializedOutput);
         if (!output) return [];
+
+        // Google Photos → Azure: results use filename/blobPath
+        const results = (output['results'] ?? output['Results']) as
+            { filename?: string; Filename?: string; blobPath?: string; BlobPath?: string }[] | undefined;
+        if (results) {
+            const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+            return results.map((r) => {
+                const name = r.filename || r.Filename || 'unknown';
+                const path = r.blobPath || r.BlobPath || '';
+                const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+                return { name, path, isImage: imageExts.has(ext) };
+            });
+        }
+
         const items = (output['listItemsPrepared'] ?? output['ListItemsPrepared']) as
             { itemFilename?: string; itemPath?: string; ItemFilename?: string; ItemPath?: string }[] | undefined;
         if (!items) return [];
@@ -196,14 +233,18 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     getChildFiles(child: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
         const input = this.parseJson(child.serializedInput);
         if (!input) return [];
-        const items = (input['listItemsPrepared'] ?? input['ListItemsPrepared']) as
-            { itemFilename?: string; itemPath?: string; ItemFilename?: string; ItemPath?: string }[] | undefined;
-        if (!items) return [];
+
+        // Google Photos → Azure child: listItemsPrepared uses filename/destinationPath
+        const prepared = (input['listItemsPrepared'] ?? input['ListItemsPrepared']) as
+            { filename?: string; Filename?: string; destinationPath?: string; DestinationPath?: string;
+              itemFilename?: string; itemPath?: string; ItemFilename?: string; ItemPath?: string }[] | undefined;
+        if (!prepared) return [];
         const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
-        return items.map((i) => {
-            const name = i.itemFilename || i.ItemFilename || i.itemPath || i.ItemPath || 'unknown';
+        return prepared.map((i) => {
+            const name = i.filename || i.Filename || i.itemFilename || i.ItemFilename || i.itemPath || i.ItemPath || 'unknown';
+            const path = i.destinationPath || i.DestinationPath || i.itemPath || i.ItemPath || '';
             const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-            return { name, path: i.itemPath || i.ItemPath || '', isImage: imageExts.has(ext) };
+            return { name, path, isImage: imageExts.has(ext) };
         });
     }
 
@@ -229,8 +270,10 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     getDisplayName(name: string): string {
         if (name === 'azureStorageToGooglePhotosOrchestrator') return 'Azure to Google Photos';
         if (name === 'gooleStorageToGooglePhotosOrchestrator') return 'Google Storage to Photos';
+        if (name === 'googlePhotosToAzureOrchestrator') return 'Google Photos to Azure';
         if (name === 'copyAzureBlobsToGooglePhotosOrchestrator') return 'Copy Blobs';
         if (name === 'copyGoogleStorageToGooglePhotosOrchestrator') return 'Copy Storage';
+        if (name === 'copyGooglePhotosToAzureOrchestrator') return 'Copy Photos';
         return name;
     }
 

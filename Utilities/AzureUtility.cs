@@ -318,6 +318,17 @@ namespace CloudFiles.Utilities
             return await blobClient.DownloadAsync().ConfigureAwait(false);
         }
 
+        public async Task UploadBlobAsync(string blobPath, byte[] data, string contentType)
+        {
+            BlobClient blobClient = ContainerClient.GetBlobClient(blobPath);
+            using var stream = new MemoryStream(data);
+            var options = new BlobUploadOptions
+            {
+                HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
+            };
+            await blobClient.UploadAsync(stream, options).ConfigureAwait(false);
+        }
+
         // filePath = "2011 PhotoShoot Feng/Feng-1.jpg"
         public async Task<IActionResult> GetHttpItemAsync(string filePath)
         {

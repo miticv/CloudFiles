@@ -18,6 +18,22 @@ export interface StartMigrationRequest {
     startedBy: string;
 }
 
+export interface PhotoCopyItem {
+    id: string;
+    baseUrl: string;
+    mimeType: string;
+    filename: string;
+}
+
+export interface StartGooglePhotosToAzureRequest {
+    photoItems: PhotoCopyItem[];
+    accountName: string;
+    containerName: string;
+    destinationFolder: string;
+    azureAccessToken: string;
+    startedBy: string;
+}
+
 export interface StartJobResponse {
     id: string;
     statusQueryGetUri: string;
@@ -64,6 +80,14 @@ export class ProcessService extends HttpService {
     startMigration(request: StartMigrationRequest): Observable<StartJobResponse> {
         return this.http.post<StartJobResponse>(
             `${this.baseUrl}process/AzureStorageToGooglePhotos/start`,
+            request,
+            this.getRequestOptions(true)
+        );
+    }
+
+    startGooglePhotosToAzure(request: StartGooglePhotosToAzureRequest): Observable<StartJobResponse> {
+        return this.http.post<StartJobResponse>(
+            `${this.baseUrl}process/GooglePhotosToAzure/start`,
             request,
             this.getRequestOptions(true)
         );

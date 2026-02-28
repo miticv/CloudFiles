@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialogModule } from '@angular/material/dialog';
 import { GooglePhotosComponent } from './google-photos.component';
 import { SecureImageDirective } from './secure-image.directive';
 
@@ -23,7 +24,8 @@ const routes: Route[] = [
         MatIconModule,
         MatButtonModule,
         MatProgressSpinnerModule,
-        MatTooltipModule
+        MatTooltipModule,
+        MatDialogModule
     ]
 })
 export class GooglePhotosModule {}

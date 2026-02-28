@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { first } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { GooglePhotosService, PickedMediaItem, PickingSession } from 'app/core/services/google-photos.service';
 import { MultiAuthService } from 'app/core/auth/multi-auth.service';
+import { CopyToAzureDialogComponent, CopyToAzureDialogData } from './copy-to-azure-dialog/copy-to-azure-dialog.component';
 
 @Component({
     standalone: false,
@@ -24,7 +26,8 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
     constructor(
         private googlePhotosService: GooglePhotosService,
         private multiAuthService: MultiAuthService,
-        private http: HttpClient
+        private http: HttpClient,
+        private dialog: MatDialog
     ) {}
 
     ngOnInit(): void {
@@ -163,6 +166,16 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
         // Parse Go-style duration like "5s", "10s"
         const match = duration.match(/^(\d+)s$/);
         return match ? parseInt(match[1], 10) * 1000 : null;
+    }
+
+    openCopyToAzure(): void {
+        const data: CopyToAzureDialogData = {
+            pickedItems: this.pickedItems
+        };
+        this.dialog.open(CopyToAzureDialogComponent, {
+            width: '520px',
+            data
+        });
     }
 
     private extractError(error: unknown, fallback: string): string {

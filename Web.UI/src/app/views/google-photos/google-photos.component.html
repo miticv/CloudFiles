@@ -27,6 +27,12 @@
                     <mat-icon>photo_library</mat-icon>
                     {{ pickedItems.length > 0 ? 'Select More' : 'Select Photos' }}
                 </button>
+                <button mat-flat-button (click)="openCopyToAzure()"
+                        [disabled]="loading || polling || pickedItems.length === 0"
+                        style="background: #0078d4; color: white;">
+                    <mat-icon>cloud_download</mat-icon>
+                    Copy to Azure
+                </button>
             </div>
         </div>
 

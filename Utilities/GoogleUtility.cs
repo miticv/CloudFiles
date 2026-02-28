@@ -417,6 +417,13 @@ namespace CloudFiles.Utilities
             }
         }
 
+        public static async Task<(byte[] Data, string ContentType)> DownloadPickerPhotoAsync(string baseUrl, string accessToken)
+        {
+            // Append =d for original-quality download if no params present
+            var downloadUrl = baseUrl.Contains("=") ? baseUrl : baseUrl + "=d";
+            return await ProxyPickerImageAsync(downloadUrl, accessToken).ConfigureAwait(false);
+        }
+
         public static async Task<byte[]> GetImageFromUrlAsync(string mediaUrl, string accessToken)
         {
             using var httpClient = new HttpClient();

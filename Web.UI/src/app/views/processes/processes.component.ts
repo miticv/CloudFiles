@@ -164,7 +164,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const parts = raw.includes('|') ? raw.split('|') : raw.split(',');
         const defaultProvider = this.getProvider(instance);
 
-        const entries = parts.map(part => {
+        const entries = parts.map((part) => {
             const trimmed = part.trim();
             // Check for provider prefix: "google:email" or "azure:email"
             const colonIdx = trimmed.indexOf(':');
@@ -330,7 +330,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         this.dialog.open(ConfirmDialogComponent, {
             width: '400px',
             data: { title: 'Delete Process', message: 'Delete this process instance?' }
-        }).afterClosed().subscribe(confirmed => {
+        }).afterClosed().subscribe((confirmed) => {
             if (!confirmed) return;
             this.deletingInstanceIds.add(instanceId);
             this.processService.purgeInstance(instanceId).subscribe({
@@ -352,7 +352,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         this.dialog.open(ConfirmDialogComponent, {
             width: '400px',
             data: { title: 'Delete Process Group', message: `Delete this process group (${allIds.length} instances)?` }
-        }).afterClosed().subscribe(confirmed => {
+        }).afterClosed().subscribe((confirmed) => {
             if (!confirmed) return;
             allIds.forEach(id => this.deletingInstanceIds.add(id));
             forkJoin(allIds.map(id => this.processService.purgeInstance(id))).subscribe({

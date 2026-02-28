@@ -115,7 +115,7 @@ export class MultiAuthService implements OnDestroy {
         if (!chain) return;
         localStorage.removeItem('auth_chain');
 
-        this.oidcSecurityService.getAccessToken(chain).pipe(first()).subscribe(token => {
+        this.oidcSecurityService.getAccessToken(chain).pipe(first()).subscribe((token) => {
             if (!token) {
                 console.log(`[Auth] chaining auth for "${chain}"`);
                 this.oidcSecurityService.authorize(chain);

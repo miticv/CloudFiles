@@ -43,6 +43,11 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
 - .NET 8 SDK
 - Azure Functions Core Tools v4
 
+```bash
+winget install Microsoft.DotNet.SDK.8
+
+```
+
 ### Setup
 
 1. **Clone and install**:

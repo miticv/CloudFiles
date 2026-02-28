@@ -1,8 +1,7 @@
-<div class="flex min-h-screen bg-card relative overflow-hidden screen-bottom-left-gradient screen-bottom-right-gradient">
-  <div class="container flex min-h-screen mx-auto relative z-10" [@animate]="{value:'*',params:{y:'40px',opacity:'0',delay:'100ms', duration: '400ms'}}">
-
-    <!-- Left Column -->
-    <div class="flex-1 flex flex-col items-center justify-center p-8">
+<div class="min-h-screen bg-card relative overflow-hidden screen-bottom-left-gradient screen-bottom-right-gradient">
+  <!-- Centered content -->
+  <div class="grid place-items-center min-h-screen relative z-10" [@animate]="{value:'*',params:{y:'40px',opacity:'0',delay:'100ms', duration: '400ms'}}">
+    <div class="flex flex-col items-center p-8">
       <div class="flex items-center gap-2 mb-8">
         <mat-icon class="text-primary" style="font-size: 36px; width: 36px; height: 36px;">cloud</mat-icon>
         <span class="text-2xl font-bold text-primary">CloudFiles</span>
@@ -70,19 +69,19 @@
         </p>
       </div>
     </div>
+  </div>
 
-    <!-- Right Column -->
-    <div class="hidden lg:flex w-1/2 p-8">
-      <div class="flex flex-col justify-center items-center max-w-lg mx-auto">
-        <mat-icon class="text-primary mb-6" style="font-size: 120px; width: 120px; height: 120px;">cloud_queue</mat-icon>
-        <h1 class="font-medium text-2xl leading-tight text-center mb-4">
-          Browse your cloud files from
-          <span class="text-primary font-bold">one place</span>
-        </h1>
-        <p class="text-secondary text-center">
-          Connect Google and Azure accounts to browse, preview, and manage your files across cloud providers.
-        </p>
-      </div>
+  <!-- Right Column (decorative, out of flow) -->
+  <div class="hidden lg:flex absolute right-0 top-0 bottom-0 w-1/2 p-8 z-0">
+    <div class="flex flex-col justify-center items-center max-w-lg mx-auto">
+      <mat-icon class="text-primary mb-6" style="font-size: 120px; width: 120px; height: 120px;">cloud_queue</mat-icon>
+      <h1 class="font-medium text-2xl leading-tight text-center mb-4">
+        Browse your cloud files from
+        <span class="text-primary font-bold">one place</span>
+      </h1>
+      <p class="text-secondary text-center">
+        Connect Google and Azure accounts to browse, preview, and manage your files across cloud providers.
+      </p>
     </div>
   </div>
 

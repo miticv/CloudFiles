@@ -1,7 +1,8 @@
 :host {
-    display: flex;
-    flex: 1 1 auto;
-    height: 100%;
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 // Provider cards — lift on hover

@@ -37,6 +37,11 @@ html, body {
     font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
+app-root {
+    display: block;
+    height: 100%;
+}
+
 .text-primary {
     color: var(--mat-sys-primary, #1976d2);
 }

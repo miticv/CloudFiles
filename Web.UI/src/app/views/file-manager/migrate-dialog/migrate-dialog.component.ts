@@ -253,8 +253,10 @@ export class MigrateDialogComponent implements OnInit {
                 if (googleUser?.email) emails.push(googleUser.email);
                 if (azureUser?.preferred_username) emails.push(azureUser.preferred_username);
                 else if (azureUser?.email) emails.push(azureUser.email);
+                const album = this.albums.find(a => a.id === this.selectedAlbumId);
                 return this.processService.startMigration({
                     albumId: this.selectedAlbumId,
+                    albumTitle: album?.title || '',
                     selectedItemsList: items,
                     accountName: this.data.account,
                     containerName: this.data.container,

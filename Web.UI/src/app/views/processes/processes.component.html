@@ -109,10 +109,49 @@
                     <div *ngIf="parseJson(group.parent.serializedInput) as input">
                         <div class="font-semibold mb-1">Input</div>
                         <div class="text-secondary space-y-1">
-                            <div *ngIf="input['AlbumId']">Album: {{input['AlbumId']}}</div>
-                            <div *ngIf="input['SelectedItemsList']">Items: {{input['SelectedItemsList'].length}}</div>
-                            <div *ngIf="input['AccountName']">Account: {{input['AccountName']}}</div>
-                            <div *ngIf="input['ContainerName']">Container: {{input['ContainerName']}}</div>
+                            <div *ngIf="getAlbumTitle(group.parent) as title">Album: {{title}}</div>
+                            <div *ngIf="!getAlbumTitle(group.parent) && (input['albumId'] || input['AlbumId'])">Album: {{input['albumId'] || input['AlbumId']}}</div>
+                            <div *ngIf="input['accountName'] || input['AccountName']">Account: {{input['accountName'] || input['AccountName']}}</div>
+                            <div *ngIf="input['containerName'] || input['ContainerName']">Container: {{input['containerName'] || input['ContainerName']}}</div>
+                            <div *ngIf="input['bucketName'] || input['BucketName']">Bucket: {{input['bucketName'] || input['BucketName']}}</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Copied files -->
+                <div *ngIf="getExpandedFiles(group.parent).length > 0" class="mt-4">
+                    <div class="font-semibold mb-2 text-sm flex items-center gap-1">
+                        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">content_copy</mat-icon>
+                        Copied Files ({{getExpandedFiles(group.parent).length}})
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <div *ngFor="let file of getExpandedFiles(group.parent)"
+                             class="flex items-center gap-1 px-2 py-1 rounded-md text-xs"
+                             style="background: #f8f9fa; border: 1px solid #e2e8f0;"
+                             [matTooltip]="file.path">
+                            <mat-icon [style.color]="file.isImage ? '#3b82f6' : '#94a3b8'"
+                                      style="font-size: 14px; width: 14px; height: 14px;">
+                                {{getFileIcon(file.name)}}
+                            </mat-icon>
+                            <span class="truncate" style="max-width: 200px;">{{file.name}}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Selected items (fallback when output not yet available) -->
+                <div *ngIf="getExpandedFiles(group.parent).length === 0 && getSelectedItems(group.parent).length > 0" class="mt-4">
+                    <div class="font-semibold mb-2 text-sm flex items-center gap-1">
+                        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">content_copy</mat-icon>
+                        Selected ({{getSelectedItems(group.parent).length}})
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <div *ngFor="let item of getSelectedItems(group.parent)"
+                             class="flex items-center gap-1 px-2 py-1 rounded-md text-xs"
+                             style="background: #f8f9fa; border: 1px solid #e2e8f0;"
+                             [matTooltip]="item.path">
+                            <mat-icon [style.color]="item.isFolder ? '#f59e0b' : item.isImage ? '#3b82f6' : '#94a3b8'"
+                                      style="font-size: 14px; width: 14px; height: 14px;">
+                                {{item.isFolder ? 'folder' : getFileIcon(item.name)}}
+                            </mat-icon>
+                            <span class="truncate" style="max-width: 200px;">{{item.name}}</span>
                         </div>
                     </div>
                 </div>

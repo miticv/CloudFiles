@@ -10,6 +10,7 @@ export interface MigrationItem {
 
 export interface StartMigrationRequest {
     albumId: string;
+    albumTitle: string;
     selectedItemsList: MigrationItem[];
     accountName: string;
     containerName: string;

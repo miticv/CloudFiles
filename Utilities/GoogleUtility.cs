@@ -194,6 +194,12 @@ namespace CloudFiles.Utilities
 
         public static async Task<string> VerifyGoogleHeaderTokenIsValid(HttpRequest req)
         {
+            var (accessToken, _) = await VerifyGoogleHeaderTokenWithEmail(req).ConfigureAwait(false);
+            return accessToken;
+        }
+
+        public static async Task<(string accessToken, string email)> VerifyGoogleHeaderTokenWithEmail(HttpRequest req)
+        {
             var accessToken = CommonUtility.GetTokenFromHeaders(req);
             var result = await VerifyAccessToken(accessToken).ConfigureAwait(false);
 
@@ -206,7 +212,7 @@ namespace CloudFiles.Utilities
                expiration < 0 ) {
                 throw new UnauthorizedAccessException("Google token did not pass validation");
             }
-            return accessToken;
+            return (accessToken, result.Email ?? "");
         }
 
         /**

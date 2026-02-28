@@ -7,6 +7,7 @@ namespace CloudFiles.Models
     {
         public string AccessToken { get; set; }
         public string AlbumId { get; set; }
+        public string AlbumTitle { get; set; }
         public List<Item> SelectedItemsList { get; set; }
         public string AccountName { get; set; }
         public string ContainerName { get; set; }
@@ -18,6 +19,7 @@ namespace CloudFiles.Models
     public class FilesCopyRequestUI
     {
         public string AlbumId { get; set; }
+        public string AlbumTitle { get; set; }
         public List<Item> SelectedItemsList { get; set; }
         public string AccountName { get; set; }
         public string ContainerName { get; set; }

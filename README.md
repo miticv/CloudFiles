@@ -108,17 +108,18 @@ All cloud operations use the **logged-in user's own OAuth token**. No service ac
 | Azure | `azure` | `management.azure.com/user_impersonation` | Subscriptions, resource groups, storage accounts |
 | Azure Storage | `azure-storage` | `storage.azure.com/user_impersonation` | Blob file read/download |
 
+`azure` and `azure-storage` share the same Azure AD authority and client ID. They are separate configs because Azure AD issues tokens scoped to a single resource audience — a token for `management.azure.com` won't be accepted by the Blob Storage API and vice versa.
+
 ### Token Routing
 
-The HTTP interceptor attaches the correct Bearer token based on request URL:
+The HTTP interceptor (`auth.interceptor.ts`) attaches the correct Bearer token based on request URL. The backend validates each token before forwarding it to the respective cloud API.
 
-| URL pattern | Token |
-|-------------|-------|
-| `/azure/files/*` | `azure-storage` |
-| `/azure/*` | `azure` |
-| `/google/*`, `/process/*` | `google` |
-
-The backend validates each token and forwards it to the respective cloud API.
+| URL pattern | OIDC Config | Backend Validation | Forwarded To |
+|-------------|-------------|-------------------|--------------|
+| `/azure/files/*` | `azure-storage` | JWT validation (audience: `storage.azure.com`, issuer: Azure AD tenant) | Azure Blob Storage API |
+| `/azure/*` | `azure` | JWT validation (audience: `management.azure.com`, issuer: Azure AD tenant) | Azure Resource Manager API |
+| `/google/*` | `google` | Google tokeninfo introspection (scope, audience, expiry) | Google Photos / GCS API |
+| `/process/*` | `google` | Google tokeninfo introspection (scope, audience, expiry) | Durable Functions orchestrator |
 
 ## API Endpoints
 

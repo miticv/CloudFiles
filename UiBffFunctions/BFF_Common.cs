@@ -55,7 +55,7 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(DurableFunctionsInstances));
             try
             {
-                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                var (_, userEmail) = await GoogleUtility.VerifyGoogleHeaderTokenWithEmail(req).ConfigureAwait(false);
                 var statuses = new List<OrchestrationRuntimeStatus>();
 
                 int pageSizeInt = 500;
@@ -107,6 +107,7 @@ namespace CloudFiles
                     CreatedTo = toDate == DateTime.MaxValue ? null : toDate,
                     Statuses = statuses,
                     PageSize = pageSizeInt,
+                    FetchInputsAndOutputs = true,
                     ContinuationToken = req.Query["continueToken"],
                     InstanceIdPrefix = req.Query["prefix"]
                 };
@@ -117,6 +118,28 @@ namespace CloudFiles
                 {
                     instances.Add(instance);
                 }
+
+                // Filter to only show instances belonging to the current user.
+                // Parent orchestrators have StartedBy in their input; sub-orchestrators
+                // are matched by instanceId prefix (Durable Functions naming convention).
+                if (!string.IsNullOrEmpty(userEmail))
+                {
+                    var parentIds = new HashSet<string>();
+                    foreach (var inst in instances)
+                    {
+                        if (!string.IsNullOrEmpty(inst.SerializedInput) &&
+                            inst.SerializedInput.Contains($"\"StartedBy\"", StringComparison.OrdinalIgnoreCase) &&
+                            inst.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
+                        {
+                            parentIds.Add(inst.InstanceId);
+                        }
+                    }
+                    instances = instances.Where(i =>
+                        parentIds.Contains(i.InstanceId) ||
+                        parentIds.Any(pid => i.InstanceId.StartsWith(pid))
+                    ).ToList();
+                }
+
                 return new OkObjectResult(instances);
             }
             catch (UnauthorizedAccessException ex)

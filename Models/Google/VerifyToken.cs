@@ -10,5 +10,6 @@ namespace CloudFiles.Models.Google
         public string Exp { get; set; }
         public string ExpiresIn { get; set; }
         public string AccessType { get; set; }
+        public string Email { get; set; }
     }
 }

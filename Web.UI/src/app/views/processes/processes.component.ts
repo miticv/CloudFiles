@@ -120,28 +120,70 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     }
 
     getInputSummary(instance: OrchestrationInstance): string {
-        const input = this.parseJson(instance.serializedInput);
-        if (!input) return '';
-        const items = input['SelectedItemsList'] as unknown[] | undefined;
-        return items ? `${items.length} items` : '';
+        const selected = this.getSelectedItems(instance);
+        if (!selected.length) return '';
+        if (selected.length === 1) return selected[0].isFolder ? selected[0].name : selected[0].name;
+        const folders = selected.filter(i => i.isFolder).length;
+        const files = selected.length - folders;
+        const parts: string[] = [];
+        if (folders) parts.push(`${folders} folder${folders > 1 ? 's' : ''}`);
+        if (files) parts.push(`${files} file${files > 1 ? 's' : ''}`);
+        return parts.join(', ');
     }
 
     getStartedBy(instance: OrchestrationInstance): string {
         const input = this.parseJson(instance.serializedInput);
         if (!input) return '';
-        return (input['StartedBy'] as string) || '';
+        return (input['startedBy'] as string) || (input['StartedBy'] as string) || '';
+    }
+
+    getAlbumTitle(instance: OrchestrationInstance): string {
+        const input = this.parseJson(instance.serializedInput);
+        if (!input) return '';
+        return (input['albumTitle'] as string) || (input['AlbumTitle'] as string) || '';
+    }
+
+    getExpandedFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
+        const output = this.parseJson(instance.serializedOutput);
+        if (!output) return [];
+        const items = (output['listItemsPrepared'] ?? output['ListItemsPrepared']) as
+            { itemFilename?: string; itemPath?: string; ItemFilename?: string; ItemPath?: string }[] | undefined;
+        if (!items) return [];
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+        return items.map((i) => {
+            const name = i.itemFilename || i.ItemFilename || i.itemPath || i.ItemPath || 'unknown';
+            const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+            return { name, path: i.itemPath || i.ItemPath || '', isImage: imageExts.has(ext) };
+        });
+    }
+
+    getSelectedItems(instance: OrchestrationInstance): { name: string; path: string; isFolder: boolean; isImage: boolean }[] {
+        const input = this.parseJson(instance.serializedInput);
+        if (!input) return [];
+        const items = (input['selectedItemsList'] ?? input['SelectedItemsList']) as
+            { itemPath?: string; ItemPath?: string; isFolder?: boolean; IsFolder?: boolean }[] | undefined;
+        if (!items) return [];
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+        return items.map((i) => {
+            const path = i.itemPath || i.ItemPath || '';
+            const name = path.includes('/') ? path.substring(path.lastIndexOf('/') + 1) : path;
+            const isFolder = i.isFolder ?? i.IsFolder ?? false;
+            const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+            return { name: name || path, path, isFolder, isImage: !isFolder && imageExts.has(ext) };
+        });
     }
 
     getChildFiles(child: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
         const input = this.parseJson(child.serializedInput);
         if (!input) return [];
-        const items = input['ListItemsPrepared'] as { ItemFilename?: string; ItemPath?: string }[] | undefined;
+        const items = (input['listItemsPrepared'] ?? input['ListItemsPrepared']) as
+            { itemFilename?: string; itemPath?: string; ItemFilename?: string; ItemPath?: string }[] | undefined;
         if (!items) return [];
         const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
         return items.map((i) => {
-            const name = i.ItemFilename || i.ItemPath || 'unknown';
+            const name = i.itemFilename || i.ItemFilename || i.itemPath || i.ItemPath || 'unknown';
             const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-            return { name, path: i.ItemPath || '', isImage: imageExts.has(ext) };
+            return { name, path: i.itemPath || i.ItemPath || '', isImage: imageExts.has(ext) };
         });
     }
 

@@ -17,6 +17,16 @@ export const rootRouterConfig: Routes = [
                 path: 'sessions',
                 loadChildren: () => import('./views/sessions/sessions.module').then(m => m.SessionsModule),
                 data: { title: 'Session' }
+            },
+            {
+                path: 'privacy',
+                loadComponent: () => import('./views/legal/privacy-statement.component').then(c => c.PrivacyStatementComponent),
+                data: { title: 'Privacy Policy' }
+            },
+            {
+                path: 'terms',
+                loadComponent: () => import('./views/legal/terms-of-service.component').then(c => c.TermsOfServiceComponent),
+                data: { title: 'Terms of Service' }
             }
         ]
     },

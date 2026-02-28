@@ -203,7 +203,9 @@ namespace CloudFiles.Utilities
             var accessToken = CommonUtility.GetTokenFromHeaders(req);
             var result = await VerifyAccessToken(accessToken).ConfigureAwait(false);
 
-            if (result.Aud != result.Azp ||
+            if (result == null ||
+               result.Aud != result.Azp ||
+               string.IsNullOrEmpty(result.Scope) ||
                !(result.Scope.Contains("photoslibrary") ||
                  result.Scope.Contains("photospicker.mediaitems.readonly") ||
                  result.Scope.Contains("devstorage")) ||

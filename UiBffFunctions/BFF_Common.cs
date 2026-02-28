@@ -110,7 +110,7 @@ namespace CloudFiles
                 var queryFilter = new OrchestrationQuery
                 {
                     CreatedFrom = fromDate == DateTime.MinValue ? null : fromDate,
-                    CreatedTo = toDate == DateTime.MaxValue ? null : toDate,
+                    CreatedTo = toDate == DateTime.MaxValue ? null : toDate.AddDays(1),
                     Statuses = statuses,
                     PageSize = pageSizeInt,
                     FetchInputsAndOutputs = false,

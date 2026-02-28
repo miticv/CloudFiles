@@ -36,7 +36,7 @@ bootstrapApplication(AppComponent, {
                     redirectUrl: window.location.origin,
                     clientId: environment.googleClientId,
                     responseType: 'code',
-                    scope: 'openid email profile https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+                    scope: 'openid email profile https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata https://www.googleapis.com/auth/photospicker.mediaitems.readonly https://www.googleapis.com/auth/devstorage.read_only',
                     triggerAuthorizationResultEvent: true,
                     postLogoutRedirectUri: window.location.origin,
                     startCheckSession: false,

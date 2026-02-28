@@ -67,8 +67,6 @@ GOOGLE_CLIENT_ID=$(get_field "$ITEM_JSON" "GoogleClientId")
 GOOGLE_CLIENT_SECRET=$(get_field "$ITEM_JSON" "GoogleClientSecret")
 AZURE_TENANT_ID=$(get_field "$ITEM_JSON" "AzureTenantId")
 AZURE_CLIENT_ID=$(get_field "$ITEM_JSON" "AzureClientId")
-GOOGLE_BUCKET=$(get_field "$ITEM_JSON" "GoogleBucket")
-GOOGLE_SERVICE_JSON=$(get_field "$ITEM_JSON" "GoogleServiceJsonFileName")
 PRODUCTION_API_URL=$(get_field "$ITEM_JSON" "ProductionApiUrl")
 
 # Validate required fields
@@ -96,8 +94,6 @@ cat > "$LOCAL_SETTINGS" <<EOF
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "GoogleBucket": "${GOOGLE_BUCKET:-<gcs-bucket-name>}",
-    "GoogleServiceJsonFileName": "${GOOGLE_SERVICE_JSON:-<path-to-service-account-key.json>}",
     "GooglePhotoClientId": "$GOOGLE_CLIENT_ID",
     "AzureTenantId": "$AZURE_TENANT_ID",
     "IS_RUNNING_LOCALLY": "true"

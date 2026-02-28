@@ -21,7 +21,7 @@ namespace CloudFiles.GoogleToGoogle
         {
             ILogger log = executionContext.GetLogger(nameof(ActivityFunctions));
 
-            var googleUtility = await GoogleUtility.CreateAsync().ConfigureAwait(false);
+            var googleUtility = GoogleUtility.Create(request.AccessToken, request.BucketName);
 
             log.LogInformation($"{Constants.GoogleStorageToGooglePhotosPrepareList}: Getting full list from {request.SelectedItemsList.Count} selections...");
             var expandedItemsList = await googleUtility.SelectionToHierarchicalDeepListingAsync(request.SelectedItemsList.ToList()).ConfigureAwait(false);

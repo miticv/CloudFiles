@@ -10,7 +10,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Google.Apis.Auth.OAuth2;
 using System.Net;
 
 namespace CloudFiles.Utilities
@@ -24,37 +23,12 @@ namespace CloudFiles.Utilities
 
         private GoogleUtility() {}
 
-        public static async Task<GoogleUtility> CreateAsync() {
-            var newInstance = new GoogleUtility
-            {
-                GoogleBucket = Environment.GetEnvironmentVariable("GoogleBucket")
-            };
-            newInstance.GoogleToken = await GetServiceAccessTokenFromJSONKey(Environment.GetEnvironmentVariable("GoogleServiceJsonFileName")).ConfigureAwait(false);
-
-            return newInstance;
+        public static GoogleUtility Create(string accessToken) {
+            return new GoogleUtility { GoogleToken = accessToken };
         }
 
-        public string GetServiceToken()
-        {
-            return this.GoogleToken;
-            // return  await GetServiceAccessTokenFromJSONKeyAsync("service_account.secret.json").ConfigureAwait(false);
-        }
-
-        private static async Task<string> GetServiceAccessTokenFromJSONKey(string jsonKeyFilePath)
-        {
-            var scopes = new string[] {
-                "https://www.googleapis.com/auth/userinfo.profile",
-                "https://www.googleapis.com/auth/devstorage.read_only",
-                "https://www.googleapis.com/auth/photoslibrary" };
-
-            using var stream = new FileStream(jsonKeyFilePath, FileMode.Open, FileAccess.Read);
-            return (await GoogleCredential
-                .FromStream(stream) // Loads key file
-                .CreateScoped(scopes) // Gathers scopes requested
-                .UnderlyingCredential // Gets the credentials
-                .GetAccessTokenForRequestAsync()
-                .ConfigureAwait(false)) // Gets the Access Token
-                .Trim(new char[] { '.' });
+        public static GoogleUtility Create(string accessToken, string bucket) {
+            return new GoogleUtility { GoogleToken = accessToken, GoogleBucket = bucket };
         }
 
         public static async Task<string> CopyBytesToGooglePhotosAsync(MemoryStream blobDataStream, string accessToken, string contentType)
@@ -224,9 +198,9 @@ namespace CloudFiles.Utilities
             var result = await VerifyAccessToken(accessToken).ConfigureAwait(false);
 
             if (result.Aud != result.Azp ||
-               !(result.Scope.Contains("https://www.googleapis.com/auth/photoslibrary") ||
-                 result.Scope.Contains("https://www.googleapis.com/auth/photospicker.mediaitems.readonly") ||
-                 result.Scope.Contains("https://www.googleapis.com/auth/photoslibrary.appendonly")) ||
+               !(result.Scope.Contains("photoslibrary") ||
+                 result.Scope.Contains("photospicker.mediaitems.readonly") ||
+                 result.Scope.Contains("devstorage")) ||
                result.Aud != Environment.GetEnvironmentVariable("GooglePhotoClientId") ||
                !int.TryParse(result.Exp, out int expiration) ||
                expiration < 0 ) {
@@ -265,6 +239,28 @@ namespace CloudFiles.Utilities
                 result.AddRange(await ItemsHierarchicalDeepListingAsync(item.ItemPath).ConfigureAwait(false));
             }
             return result;
+        }
+
+        // https://storage.googleapis.com/storage/v1/b?project={projectId}
+        public async Task<List<GoogleBucketItem>> ListBucketsAsync(string projectId)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this.GoogleToken);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var getUrl = $"https://storage.googleapis.com/storage/v1/b?project={Uri.EscapeDataString(projectId)}";
+            var response = await client.GetAsync(getUrl).ConfigureAwait(false);
+            var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var parsed = JsonConvert.DeserializeObject<GoogleBucketListResponse>(result);
+                return parsed?.Items ?? new List<GoogleBucketItem>();
+            }
+            else
+            {
+                throw new InvalidOperationException($"ListBucketsAsync error: {result}");
+            }
         }
 
         // https://storage.googleapis.com/storage/v1/b/vlad-test123/o
@@ -424,7 +420,6 @@ namespace CloudFiles.Utilities
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
 
-            var bucketName = Environment.GetEnvironmentVariable("GoogleBucket");
             using var httpResponse = await httpClient.GetAsync(mediaUrl).ConfigureAwait(false);
             if (httpResponse.StatusCode == HttpStatusCode.OK)
             {

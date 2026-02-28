@@ -22,8 +22,8 @@
         public const string GooglePhotosSessionMedia = "googlePhotosSessionMedia";
         public const string GooglePhotosDeleteSession = "googlePhotosDeleteSession";
         public const string GooglePhotosImageProxy = "googlePhotosImageProxy";
-        public const string GoogleGetServiceToken = "googleGetServiceToken";
-        public const string GoogleFileList = "googleFileList";
+public const string GoogleFileList = "googleFileList";
+        public const string GoogleStorageBucketList = "googleStorageBucketList";
 
         // public
         public const string ProcessAzureToGooglePhotos_Start = "processAzureToGooglePhotos_Start";

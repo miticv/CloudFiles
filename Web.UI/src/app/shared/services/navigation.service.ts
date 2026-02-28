@@ -18,6 +18,12 @@ export class NavigationService {
             state: 'storage-browser'
         },
         {
+            name: 'Google Storage',
+            type: 'link',
+            icon: 'cloud_circle',
+            state: 'google-storage'
+        },
+        {
             name: 'Google Photos',
             type: 'link',
             icon: 'photo_library',

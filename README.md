@@ -35,7 +35,6 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
 | Azure Functions v4 (isolated worker) | Serverless API |
 | Azure.Storage.Blobs | Azure Blob Storage access |
 | Azure.ResourceManager | Azure subscription/resource browsing |
-| Google.Apis.Auth | Google OAuth token validation |
 | Durable Functions | Long-running file copy orchestrations |
 
 ## Getting Started
@@ -45,7 +44,6 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
 - .NET 8 SDK
 - Azure Functions Core Tools v4
 - Azure CLI (`az`)
-- Google Cloud SDK (`gcloud`) — optional, for Google Cloud Storage
 
 ### Environment Setup
 
@@ -74,8 +72,6 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    | `GoogleClientSecret` | Google OAuth Client Secret |
    | `AzureTenantId` | Azure AD Tenant ID |
    | `AzureClientId` | Azure App Registration Client ID |
-   | `GoogleBucket` | Google Cloud Storage bucket name |
-   | `GoogleServiceJsonFileName` | Path to Google service account key JSON |
    | `ProductionApiUrl` | Production API base URL |
 
 3. **Or configure manually** — copy templates and fill in values:
@@ -103,26 +99,29 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    cd Web.UI && ng serve
    ```
 
-### Google Cloud SDK Setup
-
-If not already installed, download from https://cloud.google.com/sdk/docs/install
-
-```bash
-gcloud auth login
-gcloud config set project <your-project-id>
-gcloud auth application-default login
-```
-
 ## Authentication
 
-CloudFiles supports simultaneous authentication with multiple cloud providers:
+CloudFiles uses **per-user OAuth tokens** for all cloud operations — no service accounts. Each user sees only their own resources.
 
-- **Google** — OIDC authorization code flow (`code`), scopes: `openid email profile https://www.googleapis.com/auth/photospicker.mediaitems.readonly`
-- **Azure** — OIDC authorization code flow (`code`), scopes: `openid profile https://management.azure.com/user_impersonation`
+### Providers
 
-The sign-in page shows provider cards with Connect/Disconnect buttons. Users can be logged into both providers at the same time. The HTTP interceptor automatically attaches the correct Bearer token based on the request URL:
-- Requests to `/azure/*` endpoints get the Azure access token
-- Requests to `/google/*` endpoints get the Google access token
+| Provider | OIDC Config | Scopes | Resources |
+|----------|-------------|--------|-----------|
+| Google | `google` | `openid email profile`, `photoslibrary.appendonly`, `photoslibrary.readonly.appcreateddata`, `photospicker.mediaitems.readonly`, `devstorage.read_only` | Google Photos, Google Cloud Storage |
+| Azure (Management) | `azure` | `openid profile`, `management.azure.com/user_impersonation` | Subscriptions, resource groups, storage accounts |
+| Azure (Storage) | `azure-storage` | `openid profile`, `storage.azure.com/user_impersonation` | Blob file read/download |
+
+### How it works
+
+The sign-in page shows provider cards with Connect/Disconnect buttons. Users can be logged into multiple providers simultaneously. The HTTP interceptor automatically attaches the correct Bearer token based on the request URL:
+
+| URL pattern | Token used |
+|-------------|------------|
+| `/azure/files/*` | `azure-storage` |
+| `/azure/*` | `azure` |
+| `/google/*`, `/process/*` | `google` |
+
+The backend validates each token and forwards it to the respective cloud API. No secrets or service accounts are stored on the server — the user's own OAuth token provides access to their cloud resources.
 
 ## API Endpoints
 
@@ -132,7 +131,7 @@ The sign-in page shows provider cards with Connect/Disconnect buttons. Users can
 | GET | `azure/files/list?path=` | List files/folders in Azure Blob Storage |
 | GET | `azure/files/item?path=` | Download a file from Azure Blob Storage |
 | GET | `azure/files/json?path=` | Get file metadata + base64 content |
-| GET | `google/files/list?path=` | List files in Google Cloud Storage |
+| GET | `google/files/list?bucket=&path=` | List files in Google Cloud Storage |
 
 ### Azure Resource Browsing
 | Method | Route | Description |
@@ -141,6 +140,11 @@ The sign-in page shows provider cards with Connect/Disconnect buttons. Users can
 | GET | `azure/subscription/{id}/list` | List resource groups |
 | GET | `azure/subscription/{id}/ResourceGroup/{rg}/list` | List storage accounts |
 | GET | `azure/subscription/{id}/ResourceGroup/{rg}/accountName/{name}/list` | List blob containers |
+
+### Google Cloud Storage
+| Method | Route | Description |
+|---|---|---|
+| GET | `google/storage/buckets?projectId=` | List buckets in a GCP project |
 
 ### Google Photos (Picker API)
 | Method | Route | Description |
@@ -200,9 +204,10 @@ CloudFiles/
 │       │   ├── shared/       # Layout components, navigation
 │       │   └── views/        # Feature modules
 │       │       ├── file-manager/     # File browsing + detail view
-│       │       ├── storage-browser/  # Azure hierarchy browser
-│       │       ├── google-photos/   # Google Photos picker browser
-│       │       └── sessions/         # Sign-in, 404, error pages
+│       │       ├── storage-browser/        # Azure hierarchy browser
+│       │       ├── google-storage-browser/# Google Cloud Storage browser
+│       │       ├── google-photos/         # Google Photos picker browser
+│       │       └── sessions/              # Sign-in, 404, error pages
 │       └── environments/     # Environment configs (gitignored, use setup-secrets.sh)
 ├── CloudFiles.csproj         # .NET project
 ├── Program.cs                # Azure Functions host setup

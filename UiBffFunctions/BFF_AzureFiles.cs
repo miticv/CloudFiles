@@ -47,25 +47,6 @@ namespace CloudFiles
                 && !name.Contains("--");
         }
 
-        [Function(Constants.GoogleGetServiceToken)]
-        public static async Task<IActionResult> GetServiceToken(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/files/getServiceToken")] HttpRequest req,
-            FunctionContext executionContext)
-        {
-            var log = executionContext.GetLogger(nameof(GetServiceToken));
-            if (Environment.GetEnvironmentVariable("IS_RUNNING_LOCALLY") != "true")
-            {
-                return new BadRequestObjectResult("This API is only allowed for local debugging");
-            }
-
-            log.LogInformation($"{Constants.GoogleGetServiceToken} call {req.Path}");
-
-            var googleUtility = await GoogleUtility.CreateAsync().ConfigureAwait(false);
-
-            var token  = googleUtility.GetServiceToken();
-            return new OkObjectResult(token);
-        }
-
         /********************************************************************************************************************************************/
 
         // ?path=2011 PhotoShoot Feng/Feng-2.jpg&account=myaccount&container=mycontainer

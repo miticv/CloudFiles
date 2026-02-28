@@ -101,43 +101,70 @@ namespace CloudFiles
                     }
                 }
 
+                // Fetch metadata without serialized inputs/outputs to avoid gRPC message-size limits.
+                // Large orchestration inputs (e.g. file lists) cause ResourceExhausted when fetched in bulk.
                 var queryFilter = new OrchestrationQuery
                 {
                     CreatedFrom = fromDate == DateTime.MinValue ? null : fromDate,
                     CreatedTo = toDate == DateTime.MaxValue ? null : toDate,
                     Statuses = statuses,
                     PageSize = pageSizeInt,
-                    FetchInputsAndOutputs = true,
+                    FetchInputsAndOutputs = false,
                     ContinuationToken = req.Query["continueToken"],
                     InstanceIdPrefix = req.Query["prefix"]
                 };
 
                 log.LogInformation("List orchestration instances.");
-                var instances = new List<OrchestrationMetadata>();
+                var allInstances = new List<OrchestrationMetadata>();
                 await foreach (var instance in starter.GetAllInstancesAsync(queryFilter))
                 {
-                    instances.Add(instance);
+                    allInstances.Add(instance);
                 }
 
-                // Filter to only show instances belonging to the current user.
-                // Parent orchestrators have StartedBy in their input; sub-orchestrators
-                // are matched by instanceId prefix (Durable Functions naming convention).
+                // Top-level orchestrator names. Sub-orchestrators are matched by instanceId prefix.
+                var parentOrchestratorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "azureStorageToGooglePhotosOrchestrator",
+                    "gooleStorageToGooglePhotosOrchestrator",
+                    "googlePhotosToAzureOrchestrator"
+                };
+
+                List<OrchestrationMetadata> instances;
                 if (!string.IsNullOrEmpty(userEmail))
                 {
+                    // Fetch serialized inputs only for top-level orchestrators to identify the owner.
+                    var parentInstances = allInstances
+                        .Where(i => parentOrchestratorNames.Contains(i.Name))
+                        .ToList();
+
+                    var detailTasks = parentInstances
+                        .Select(p => starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true))
+                        .ToList();
+                    var details = await Task.WhenAll(detailTasks);
+
                     var parentIds = new HashSet<string>();
-                    foreach (var inst in instances)
+                    var detailById = new Dictionary<string, OrchestrationMetadata>();
+                    foreach (var detail in details)
                     {
-                        if (!string.IsNullOrEmpty(inst.SerializedInput) &&
-                            inst.SerializedInput.Contains($"\"StartedBy\"", StringComparison.OrdinalIgnoreCase) &&
-                            inst.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
+                        if (detail == null) continue;
+                        if (!string.IsNullOrEmpty(detail.SerializedInput) &&
+                            detail.SerializedInput.Contains("\"StartedBy\"", StringComparison.OrdinalIgnoreCase) &&
+                            detail.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
                         {
-                            parentIds.Add(inst.InstanceId);
+                            parentIds.Add(detail.InstanceId);
+                            detailById[detail.InstanceId] = detail!;
                         }
                     }
-                    instances = instances.Where(i =>
-                        parentIds.Contains(i.InstanceId) ||
-                        parentIds.Any(pid => i.InstanceId.StartsWith(pid))
-                    ).ToList();
+
+                    instances = allInstances
+                        .Where(i => parentIds.Contains(i.InstanceId) ||
+                                    parentIds.Any(pid => i.InstanceId.StartsWith(pid)))
+                        .Select(i => detailById.TryGetValue(i.InstanceId, out var d) ? d : i)
+                        .ToList();
+                }
+                else
+                {
+                    instances = allInstances;
                 }
 
                 return new OkObjectResult(instances);

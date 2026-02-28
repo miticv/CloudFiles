@@ -107,3 +107,10 @@ Azure requires separate tokens per resource audience. The HTTP interceptor in `a
 - **`.github/workflows/CloudFiles-WebUI.yml`** — Frontend: lint, build, deploy to Azure Static Web Apps
 - **`.github/workflows/CloudFiles-Api.yml`** — Backend: build, publish, deploy to Azure Functions
 - Environment secrets are substituted into `environment.prod.ts` at build time
+
+# Design Tokens (Tailwind)
+- Border radius: rounded-lg (cards), rounded-md (buttons/inputs)
+- Shadows: shadow-sm (cards), shadow-none (flat elements)
+- Spacing: p-4 (card padding), gap-4 (grid gaps), space-y-2 (form fields)
+- Colors: slate palette for neutrals, indigo for primary actions
+- Transitions: transition-colors duration-150

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { appAnimations } from 'app/shared/animations/animations';
 
 @Component({
@@ -8,11 +8,5 @@ import { appAnimations } from 'app/shared/animations/animations';
     animations: appAnimations,
     standalone: false
 })
-export class NotFoundComponent implements OnInit {
-
-  constructor() { }
-
-  ngOnInit() {
-  }
-
+export class NotFoundComponent {
 }

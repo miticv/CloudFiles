@@ -48,7 +48,7 @@ namespace CloudFiles
 
         [Function(Constants.ProcessListInstances)]
         public static async Task<IActionResult> DurableFunctionsInstances(
-           [HttpTrigger(AuthorizationLevel.Function, "get", Route = "process/instances")] HttpRequest req,
+           [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "process/instances")] HttpRequest req,
            [DurableClient] DurableTaskClient starter,
            FunctionContext executionContext)
         {
@@ -137,7 +137,7 @@ namespace CloudFiles
 
         [Function(Constants.ProcessPurgeInstance)]
         public static async Task<IActionResult> PurgeInstance(
-           [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "process/instances/{instanceId}")] HttpRequest req,
+           [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "process/instances/{instanceId}")] HttpRequest req,
            [DurableClient] DurableTaskClient starter,
            string instanceId,
            FunctionContext executionContext)

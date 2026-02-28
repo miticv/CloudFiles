@@ -1,6 +1,6 @@
 # CloudFiles
 
-Multi-cloud file browser for Azure Blob Storage and Google Cloud Storage. Browse, view, and manage files across multiple cloud providers from a single interface.
+Multi-cloud file browser for Azure Blob Storage and Google Cloud Storage. Browse, view, and manage files across cloud providers from a single interface. Migrate photos between Google Cloud Storage and Google Photos.
 
 ## Architecture
 
@@ -11,10 +11,10 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
                                                    ──>  Azure Resource Manager
 ```
 
-- **Frontend**: Angular 19 standalone app with Material Design, Tailwind CSS, NgRx state management
-- **Backend**: Azure Functions v4 isolated worker process (.NET 8) serving as a BFF (Backend for Frontend)
-- **Auth**: Multi-provider OIDC via `angular-auth-oidc-client` — simultaneous Google + Azure sessions
-- **Deployment**: GitHub Actions CI/CD to Azure Static Web Apps (frontend) + Azure Functions (API)
+- **Frontend**: Angular 19 standalone app with Material Design, Tailwind CSS, NgRx
+- **Backend**: Azure Functions v4 isolated worker (.NET 8) — BFF pattern
+- **Auth**: Per-user OAuth tokens via `angular-auth-oidc-client` — no service accounts
+- **Deployment**: GitHub Actions CI/CD to Azure Static Web Apps + Azure Functions
 
 ## Tech Stack
 
@@ -26,7 +26,6 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
 | Tailwind CSS | Utility-first CSS |
 | NgRx (Store, Effects, Router-Store) | State management |
 | angular-auth-oidc-client | Multi-provider OIDC authentication |
-| @ngx-translate | i18n support |
 
 ### Backend (root)
 | Technology | Purpose |
@@ -35,7 +34,7 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
 | Azure Functions v4 (isolated worker) | Serverless API |
 | Azure.Storage.Blobs | Azure Blob Storage access |
 | Azure.ResourceManager | Azure subscription/resource browsing |
-| Durable Functions | Long-running file copy orchestrations |
+| Durable Functions | Long-running photo migration orchestrations |
 
 ## Getting Started
 
@@ -43,9 +42,8 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
 - Node.js 20+ (see `.nvmrc`)
 - .NET 8 SDK
 - Azure Functions Core Tools v4
-- Azure CLI (`az`)
 
-### Environment Setup
+### Setup
 
 1. **Clone and install**:
    ```bash
@@ -55,43 +53,25 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    cd Web.UI && npm install
    ```
 
-2. **Populate secrets from Bitwarden** (recommended):
-   ```bash
-   # Install prerequisites (one-time)
-   npm install -g @bitwarden/cli
-   # jq is also required: https://jqlang.github.io/jq/download/
+2. **Configure secrets** — choose one:
 
-   # Run the setup script — generates local.settings.json, environment.ts, environment.prod.ts
+   **Option A: From Bitwarden** (recommended):
+   ```bash
+   npm install -g @bitwarden/cli   # one-time
    bash setup-secrets.sh
    ```
-   This reads from a Bitwarden item named **"CloudFiles"** with these custom fields:
 
-   | Field | Description |
-   |-------|-------------|
-   | `GoogleClientId` | Google OAuth Client ID |
-   | `GoogleClientSecret` | Google OAuth Client Secret |
-   | `AzureTenantId` | Azure AD Tenant ID |
-   | `AzureClientId` | Azure App Registration Client ID |
-   | `ProductionApiUrl` | Production API base URL |
-
-3. **Or configure manually** — copy templates and fill in values:
+   **Option B: Manual** — copy templates and fill in values:
    ```bash
-   # Backend
    cp local.settings.example.json local.settings.json
-   # edit local.settings.json with your values
-
-   # Frontend
    cp Web.UI/src/environments/environment.template.ts Web.UI/src/environments/environment.ts
-   cp Web.UI/src/environments/environment.prod.template.ts Web.UI/src/environments/environment.prod.ts
-   # edit both files with your values
    ```
 
-4. **Run locally**:
-   ```bash 
+3. **Run locally**:
+   ```bash
+   # Terminal 1: Storage emulator
+   npx azurite --silent --location .azurite
 
-    # Terminal 1: azurite (when "AzureWebJobsStorage": "UseDevelopmentStorage=true")
-    npx azurite --silent --location .azurite
-   
    # Terminal 2: Backend
    func start
 
@@ -99,44 +79,60 @@ Angular 19 SPA  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob Storag
    cd Web.UI && ng serve
    ```
 
+### Environment Variables
+
+**Backend** (`local.settings.json`):
+| Variable | Description |
+|----------|-------------|
+| `AzureWebJobsStorage` | Azure Storage connection string - needed for durable azure functions (or `UseDevelopmentStorage=true`) |
+| `GooglePhotoClientId` | Google OAuth Client ID — used for token validation |
+| `AzureTenantId` | Azure AD Tenant ID |
+
+**Frontend** (`environment.ts`):
+| Variable | Description |
+|----------|-------------|
+| `googleClientId` | Google OAuth Client ID |
+| `googleClientSecret` | Google OAuth Client Secret |
+| `azureTenantId` | Azure AD Tenant ID |
+| `azureClientId` | Azure App Registration Client ID |
+
 ## Authentication
 
-CloudFiles uses **per-user OAuth tokens** for all cloud operations — no service accounts. Each user sees only their own resources.
+All cloud operations use the **logged-in user's own OAuth token**. No service accounts or API keys are stored on the server. Each user sees only their own cloud resources.
 
-### Providers
+### OIDC Providers
 
-| Provider | OIDC Config | Scopes | Resources |
-|----------|-------------|--------|-----------|
-| Google | `google` | `openid email profile`, `photoslibrary.appendonly`, `photoslibrary.readonly.appcreateddata`, `photospicker.mediaitems.readonly`, `devstorage.read_only` | Google Photos, Google Cloud Storage |
-| Azure (Management) | `azure` | `openid profile`, `management.azure.com/user_impersonation` | Subscriptions, resource groups, storage accounts |
-| Azure (Storage) | `azure-storage` | `openid profile`, `storage.azure.com/user_impersonation` | Blob file read/download |
+| Provider | Config ID | Scopes | Access to |
+|----------|-----------|--------|-----------|
+| Google | `google` | `photoslibrary.appendonly`, `photoslibrary.readonly.appcreateddata`, `photospicker.mediaitems.readonly`, `devstorage.read_only` | Google Photos, Google Cloud Storage |
+| Azure | `azure` | `management.azure.com/user_impersonation` | Subscriptions, resource groups, storage accounts |
+| Azure Storage | `azure-storage` | `storage.azure.com/user_impersonation` | Blob file read/download |
 
-### How it works
+### Token Routing
 
-The sign-in page shows provider cards with Connect/Disconnect buttons. Users can be logged into multiple providers simultaneously. The HTTP interceptor automatically attaches the correct Bearer token based on the request URL:
+The HTTP interceptor attaches the correct Bearer token based on request URL:
 
-| URL pattern | Token used |
-|-------------|------------|
+| URL pattern | Token |
+|-------------|-------|
 | `/azure/files/*` | `azure-storage` |
 | `/azure/*` | `azure` |
 | `/google/*`, `/process/*` | `google` |
 
-The backend validates each token and forwards it to the respective cloud API. No secrets or service accounts are stored on the server — the user's own OAuth token provides access to their cloud resources.
+The backend validates each token and forwards it to the respective cloud API.
 
 ## API Endpoints
 
-### File Browsing (BFF)
+### Azure Files
 | Method | Route | Description |
 |---|---|---|
-| GET | `azure/files/list?path=` | List files/folders in Azure Blob Storage |
-| GET | `azure/files/item?path=` | Download a file from Azure Blob Storage |
-| GET | `azure/files/json?path=` | Get file metadata + base64 content |
-| GET | `google/files/list?bucket=&path=` | List files in Google Cloud Storage |
+| GET | `azure/files/list?account=&container=&path=` | List files/folders in blob container |
+| GET | `azure/files/item?account=&container=&path=` | Download a blob |
+| GET | `azure/files/json?account=&container=&path=` | Get file metadata + base64 content |
 
-### Azure Resource Browsing
+### Azure Resources
 | Method | Route | Description |
 |---|---|---|
-| GET | `azure/subscription/list` | List Azure subscriptions |
+| GET | `azure/subscription/list` | List subscriptions |
 | GET | `azure/subscription/{id}/list` | List resource groups |
 | GET | `azure/subscription/{id}/ResourceGroup/{rg}/list` | List storage accounts |
 | GET | `azure/subscription/{id}/ResourceGroup/{rg}/accountName/{name}/list` | List blob containers |
@@ -144,72 +140,73 @@ The backend validates each token and forwards it to the respective cloud API. No
 ### Google Cloud Storage
 | Method | Route | Description |
 |---|---|---|
+| GET | `google/files/list?bucket=&path=` | List files/folders in a GCS bucket |
 | GET | `google/storage/buckets?projectId=` | List buckets in a GCP project |
 
-### Google Photos (Picker API)
+### Google Photos
 | Method | Route | Description |
 |---|---|---|
-| POST | `google/photos/sessions` | Create a Photos Picker session |
+| GET | `google/album/list` | List albums |
+| POST | `google/album` | Create album |
+| POST | `google/photos/sessions` | Create Photos Picker session |
 | GET | `google/photos/sessions/{id}` | Poll picker session status |
 | GET | `google/photos/sessions/{id}/media` | List picked media items |
 | DELETE | `google/photos/sessions/{id}` | Delete picker session |
-| GET | `google/photos/image?url=` | Proxy image with auth header |
-| GET | `google/album/list` | List Google Photos albums (legacy) |
-| POST | `google/album` | Create a new album (legacy) |
+| GET | `google/photos/image?url=` | Proxy image with auth |
+
+### Photo Migration (Durable Functions)
+| Method | Route | Description |
+|---|---|---|
+| POST | `process/AzureStorageToGooglePhotos/start` | Start Azure → Google Photos migration |
+| POST | `process/GooleStorageToGooglePhotos/start` | Start GCS → Google Photos migration |
+| GET | `process/instances` | List orchestration instances |
+| DELETE | `process/instances/{id}` | Purge an orchestration instance |
 
 ### Utility
 | Method | Route | Description |
 |---|---|---|
 | GET | `ping` | Health check |
 | GET | `google/tokenvalidate` | Validate Google token |
-| GET | `process/instances` | List Durable Function instances |
 
 ## Deployment
 
-CI/CD is configured via GitHub Actions:
+CI/CD via GitHub Actions:
 
-- **`CloudFiles-WebUI.yml`** — Builds and deploys the Angular SPA to Azure Static Web Apps
-- **`CloudFiles-Api.yml`** — Builds and deploys the .NET Azure Functions to Azure
-
-### GitHub Secrets Required
-| Secret | Description |
-|---|---|
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_HILL_0CA4C2B0F` | Azure Static Web Apps deployment token |
-| `CLOUDFILES_DEPLOYAZUREFUNCTIONS` | Azure Functions publishing profile |
+- **`CloudFiles-WebUI.yml`** — Builds Angular SPA, runs lint, deploys to Azure Static Web Apps
+- **`CloudFiles-Api.yml`** — Builds .NET backend, deploys to Azure Functions
 
 ## Project Structure
 
 ```
 CloudFiles/
-├── .github/workflows/       # CI/CD pipelines
-├── AzureToGoogle/            # Durable Functions: Azure → Google Photos copy
-├── GoogleToGoogle/           # Durable Functions: GCS → Google Photos copy
-├── Models/                   # Shared data models
-│   ├── Azure/                # Azure resource models
-│   └── Google/               # Google API models
-├── UiBffFunctions/           # BFF HTTP trigger functions
-│   ├── BFF_AzureFiles.cs     # Azure Blob Storage file operations
-│   ├── BFF_AzureManagement.cs# Azure subscription/resource browsing
-│   ├── BFF_GooglePhotos.cs   # Google Photos album operations
-│   ├── BFF_GoogleStorage.cs  # Google Cloud Storage file listing
-│   └── BFF_Common.cs         # Health check, token validation
-├── Utilities/                # Business logic
-│   ├── AzureUtility.cs       # Azure Blob + Resource Manager operations
-│   ├── GoogleUtility.cs      # Google Auth + Storage + Photos operations
-│   └── CommonUtility.cs      # Shared helpers
-├── Web.UI/                   # Angular 19 frontend
-│   └── src/
-│       ├── app/
-│       │   ├── core/         # Auth services, HTTP service
-│       │   ├── shared/       # Layout components, navigation
-│       │   └── views/        # Feature modules
-│       │       ├── file-manager/     # File browsing + detail view
-│       │       ├── storage-browser/        # Azure hierarchy browser
-│       │       ├── google-storage-browser/# Google Cloud Storage browser
-│       │       ├── google-photos/         # Google Photos picker browser
-│       │       └── sessions/              # Sign-in, 404, error pages
-│       └── environments/     # Environment configs (gitignored, use setup-secrets.sh)
-├── CloudFiles.csproj         # .NET project
-├── Program.cs                # Azure Functions host setup
-└── host.json                 # Functions host config
+├── .github/workflows/          # CI/CD pipelines
+├── AzureToGoogle/              # Durable Functions: Azure → Google Photos
+├── GoogleToGoogle/             # Durable Functions: GCS → Google Photos
+├── Models/                     # Shared data models
+│   ├── Azure/                  # Azure resource models
+│   └── Google/                 # Google API models
+├── UiBffFunctions/             # BFF HTTP trigger functions
+│   ├── BFF_AzureFiles.cs       # Azure Blob Storage operations
+│   ├── BFF_AzureManagement.cs  # Azure subscription/resource browsing
+│   ├── BFF_GooglePhotos.cs     # Google Photos operations
+│   ├── BFF_GoogleStorage.cs    # Google Cloud Storage browsing
+│   └── BFF_Common.cs           # Health check, token validation
+├── Utilities/
+│   ├── AzureUtility.cs         # Azure Blob + Resource Manager
+│   ├── GoogleUtility.cs        # Google Storage + Photos
+│   └── CommonUtility.cs        # Shared helpers
+├── Web.UI/                     # Angular 19 frontend
+│   └── src/app/
+│       ├── core/               # Auth, services, interceptors
+│       ├── shared/             # Layout, navigation, animations
+│       └── views/
+│           ├── file-manager/           # File browsing + detail view
+│           ├── storage-browser/        # Azure hierarchy browser
+│           ├── google-storage-browser/ # Google Cloud Storage browser
+│           ├── google-photos/          # Google Photos picker
+│           ├── processes/              # Migration job monitoring
+│           └── sessions/               # Sign-in, error pages
+├── CloudFiles.csproj
+├── Program.cs
+└── host.json
 ```

@@ -18,7 +18,7 @@ namespace CloudFiles.GoogleToGoogle
         // append this to statusQueryGetUri: &showHistory=true&showHistoryOutput=true
         [Function(Constants.ProcessGooleStorageToGooglePhotos_Start)]
         public static async Task<IActionResult> GooleStorageToGooglePhotos(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "process/GooleStorageToGooglePhotos/start")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "process/GooleStorageToGooglePhotos/start")] HttpRequest req,
             [DurableClient] DurableTaskClient starter,
             FunctionContext executionContext)
         {

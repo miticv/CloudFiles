@@ -103,16 +103,65 @@
 
             <!-- Containers list -->
             <mat-nav-list *ngIf="!loading && currentLevel === 'containers'">
-                <mat-list-item *ngFor="let c of containers" (click)="selectContainer(c)">
+                <mat-list-item *ngFor="let c of containers" (click)="selectContainer(c)"
+                               [class.bg-blue-50]="selectedContainer?.name === c.name && accessState">
                     <mat-icon matListItemIcon class="text-teal-500">inventory_2</mat-icon>
                     <div matListItemTitle>{{c.name}}</div>
                     <div matListItemLine class="text-secondary text-xs">Last modified: {{c.lastModifiedTime | date}}</div>
-                    <span matListItemMeta><mat-icon class="trail-icon">open_in_new</mat-icon></span>
+                    <span matListItemMeta>
+                        <mat-spinner *ngIf="selectedContainer?.name === c.name && (accessState === 'checking' || accessState === 'propagating')"
+                                     diameter="20"></mat-spinner>
+                        <mat-icon *ngIf="!(selectedContainer?.name === c.name && (accessState === 'checking' || accessState === 'propagating'))"
+                                  class="trail-icon">open_in_new</mat-icon>
+                    </span>
                 </mat-list-item>
                 <div *ngIf="containers.length === 0" class="text-center py-8 text-secondary">
                     No containers found.
                 </div>
             </mat-nav-list>
+
+            <!-- Access check panel (shown below container list) -->
+            <div *ngIf="selectedContainer && accessState" class="mt-2 max-w-[720px]">
+
+                <!-- Checking access -->
+                <div *ngIf="accessState === 'checking'" class="p-4 rounded-xl flex items-center gap-3 text-sm text-secondary"
+                     style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                    <mat-spinner diameter="18"></mat-spinner>
+                    Checking read access for <strong class="ml-1">{{selectedContainer.name}}</strong>...
+                </div>
+
+                <!-- No role: Grant Reader Access -->
+                <div *ngIf="accessState === 'no-role'" class="p-4 rounded-xl" style="background: #fff8e1; border: 1px solid #ffe082;">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-sm">
+                            <mat-icon style="font-size: 18px; width: 18px; height: 18px;" class="text-amber-600">security</mat-icon>
+                            <span><strong>Storage Blob Data Reader</strong> role is required to browse <strong>{{selectedContainer.name}}</strong>.</span>
+                        </div>
+                        <button mat-icon-button (click)="dismissAccessPanel()" matTooltip="Dismiss" class="!w-8 !h-8">
+                            <mat-icon style="font-size: 18px;">close</mat-icon>
+                        </button>
+                    </div>
+                    <button mat-flat-button color="primary" (click)="grantReadAccess()" [disabled]="grantingAccess" class="w-full">
+                        <mat-spinner *ngIf="grantingAccess" diameter="18" class="mr-2 inline-block"></mat-spinner>
+                        {{grantingAccess ? 'Granting access...' : 'Grant Read Access'}}
+                    </button>
+                    <div *ngIf="accessError" class="mt-2 text-xs" style="color: #b91c1c;">{{accessError}}</div>
+                </div>
+
+                <!-- Role assigned, waiting for propagation -->
+                <div *ngIf="accessState === 'propagating'" class="p-4 rounded-xl flex items-center gap-3 text-sm"
+                     style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
+                    <mat-spinner diameter="18"></mat-spinner>
+                    Read access granted for <strong class="mx-1">{{selectedContainer.name}}</strong>. Waiting for propagation...
+                </div>
+
+                <!-- Access fully ready (auto-navigates, but shown briefly) -->
+                <div *ngIf="accessState === 'ready'" class="p-4 rounded-xl flex items-center gap-2 text-sm"
+                     style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
+                    <mat-icon style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
+                    Read access confirmed. Opening <strong class="ml-1">{{selectedContainer.name}}</strong>...
+                </div>
+            </div>
 
         </div>
 

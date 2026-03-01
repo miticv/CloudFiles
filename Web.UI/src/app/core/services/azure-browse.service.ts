@@ -66,17 +66,21 @@ export class AzureBrowseService extends HttpService {
         );
     }
 
-    assignStorageRole(subscriptionId: string, resourceGroup: string, accountName: string): Observable<{ success: boolean; alreadyAssigned: boolean }> {
+    assignStorageRole(
+        subscriptionId: string, resourceGroup: string, accountName: string, role?: 'reader' | 'contributor'
+    ): Observable<{ success: boolean; alreadyAssigned: boolean }> {
+        const roleParam = role ? `?role=${role}` : '';
         return this.http.post<{ success: boolean; alreadyAssigned: boolean }>(
-            `${this.baseUrl}azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/assignRole`,
+            `${this.baseUrl}azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/assignRole${roleParam}`,
             {},
             this.getRequestOptions(true)
         );
     }
 
-    checkStorageRole(subscriptionId: string, resourceGroup: string, accountName: string): Observable<{ hasRole: boolean }> {
+    checkStorageRole(subscriptionId: string, resourceGroup: string, accountName: string, role?: 'reader' | 'contributor'): Observable<{ hasRole: boolean }> {
+        const roleParam = role ? `?role=${role}` : '';
         return this.http.get<{ hasRole: boolean }>(
-            `${this.baseUrl}azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/checkRole`,
+            `${this.baseUrl}azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/checkRole${roleParam}`,
             this.getRequestOptions(true)
         );
     }

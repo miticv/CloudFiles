@@ -240,9 +240,20 @@ namespace CloudFiles.Utilities
         }
 
         private const string StorageBlobDataContributorRoleId = "ba92f5b4-2d11-453d-a403-e96b0029c9fe";
+        private const string StorageBlobDataReaderRoleId = "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1";
 
-        public static async Task<(bool success, bool alreadyAssigned)> AssignStorageBlobDataContributorAsync(
-            string accessToken, string subscriptionId, string resourceGroup, string accountName, string principalId)
+        public static string? ResolveStorageRoleId(string? role)
+        {
+            return (role?.ToLowerInvariant()) switch
+            {
+                "reader" => StorageBlobDataReaderRoleId,
+                "contributor" or null or "" => StorageBlobDataContributorRoleId,
+                _ => null
+            };
+        }
+
+        public static async Task<(bool success, bool alreadyAssigned)> AssignStorageBlobRoleAsync(
+            string accessToken, string subscriptionId, string resourceGroup, string accountName, string principalId, string roleId)
         {
             using HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -255,7 +266,7 @@ namespace CloudFiles.Utilities
             {
                 properties = new
                 {
-                    roleDefinitionId = $"/{scope}/providers/Microsoft.Authorization/roleDefinitions/{StorageBlobDataContributorRoleId}",
+                    roleDefinitionId = $"/{scope}/providers/Microsoft.Authorization/roleDefinitions/{roleId}",
                     principalId = principalId,
                     principalType = "User"
                 }
@@ -282,8 +293,8 @@ namespace CloudFiles.Utilities
             throw new InvalidOperationException(errorData);
         }
 
-        public static async Task<bool> CheckStorageBlobDataContributorAsync(
-            string accessToken, string subscriptionId, string resourceGroup, string accountName, string principalId)
+        public static async Task<bool> CheckStorageBlobRoleAsync(
+            string accessToken, string subscriptionId, string resourceGroup, string accountName, string principalId, string roleId)
         {
             using HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -300,8 +311,7 @@ namespace CloudFiles.Utilities
                 return false;
             }
 
-            // Check if any assignment matches the Storage Blob Data Contributor role
-            return data.Contains(StorageBlobDataContributorRoleId, StringComparison.OrdinalIgnoreCase);
+            return data.Contains(roleId, StringComparison.OrdinalIgnoreCase);
         }
 
         public static async Task<bool> ProbeContainerAccessAsync(string accountName, string containerName, string accessToken)

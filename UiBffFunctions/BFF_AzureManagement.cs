@@ -123,13 +123,18 @@ namespace CloudFiles
             {
                 var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
 
+                string? role = req.Query["role"];
+                var roleId = AzureUtility.ResolveStorageRoleId(role);
+                if (roleId == null)
+                    return new BadRequestObjectResult(new { error = "Invalid role. Use 'reader' or 'contributor'." });
+
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                 var jwt = handler.ReadJwtToken(azureAccessToken);
                 var principalId = jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value
                     ?? throw new InvalidOperationException("Could not extract user object ID (oid) from Azure token.");
 
-                var hasRole = await AzureUtility.CheckStorageBlobDataContributorAsync(
-                    azureAccessToken, subscriptionId, resourceGroupId, accountName, principalId).ConfigureAwait(false);
+                var hasRole = await AzureUtility.CheckStorageBlobRoleAsync(
+                    azureAccessToken, subscriptionId, resourceGroupId, accountName, principalId, roleId).ConfigureAwait(false);
 
                 return new OkObjectResult(new { hasRole });
             }
@@ -156,16 +161,21 @@ namespace CloudFiles
             {
                 var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
 
-                // Extract the user's object ID from the Azure AD token
+                string? role = req.Query["role"];
+                var roleId = AzureUtility.ResolveStorageRoleId(role);
+                if (roleId == null)
+                    return new BadRequestObjectResult(new { error = "Invalid role. Use 'reader' or 'contributor'." });
+
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                 var jwt = handler.ReadJwtToken(azureAccessToken);
                 var principalId = jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value
                     ?? throw new InvalidOperationException("Could not extract user object ID (oid) from Azure token.");
 
-                log.LogInformation($"{Constants.AzureAssignStorageRole} assigning Storage Blob Data Contributor on {accountName} to {principalId}");
+                var roleName = role == "reader" ? "Storage Blob Data Reader" : "Storage Blob Data Contributor";
+                log.LogInformation($"{Constants.AzureAssignStorageRole} assigning {roleName} on {accountName} to {principalId}");
 
-                var (success, alreadyAssigned) = await AzureUtility.AssignStorageBlobDataContributorAsync(
-                    azureAccessToken, subscriptionId, resourceGroupId, accountName, principalId).ConfigureAwait(false);
+                var (success, alreadyAssigned) = await AzureUtility.AssignStorageBlobRoleAsync(
+                    azureAccessToken, subscriptionId, resourceGroupId, accountName, principalId, roleId).ConfigureAwait(false);
 
                 return new OkObjectResult(new { success, alreadyAssigned });
             }

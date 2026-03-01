@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { first } from 'rxjs';
@@ -24,7 +24,7 @@ interface BreadcrumbItem {
     templateUrl: './storage-browser.component.html',
     styleUrls: ['./storage-browser.component.scss']
 })
-export class StorageBrowserComponent implements OnInit {
+export class StorageBrowserComponent implements OnInit, OnDestroy {
     isAzureConnected = false;
     isAzureStorageConnected = false;
     loading = false;
@@ -41,6 +41,13 @@ export class StorageBrowserComponent implements OnInit {
     selectedSubscription: AzureSubscription | null = null;
     selectedResourceGroup: AzureResourceGroup | null = null;
     selectedStorageAccount: AzureStorageAccount | null = null;
+
+    // Access check state for container read access
+    selectedContainer: AzureContainer | null = null;
+    accessState: 'checking' | 'no-role' | 'propagating' | 'ready' | null = null;
+    grantingAccess = false;
+    accessError: string | null = null;
+    private probeTimer: ReturnType<typeof setInterval> | null = null;
 
     constructor(
         private azureBrowseService: AzureBrowseService,
@@ -61,6 +68,10 @@ export class StorageBrowserComponent implements OnInit {
                 }
             }
         });
+    }
+
+    ngOnDestroy(): void {
+        this.stopProbing();
     }
 
     loadSubscriptions(): void {
@@ -132,6 +143,8 @@ export class StorageBrowserComponent implements OnInit {
 
     selectStorageAccount(account: AzureStorageAccount): void {
         this.selectedStorageAccount = account;
+        this.selectedContainer = null;
+        this.resetAccessState();
         this.currentLevel = 'containers';
         this.breadcrumbs = [
             { label: this.selectedSubscription!.displayName, level: 'subscriptions' },
@@ -159,23 +172,119 @@ export class StorageBrowserComponent implements OnInit {
     }
 
     selectContainer(container: AzureContainer): void {
-        const queryParams = {
-            provider: 'azure',
-            account: this.selectedStorageAccount!.name,
-            container: container.name
-        };
-
-        // Save the selected container so we can restore directly to file-manager
-        this.saveState(container);
-
         if (!this.isAzureStorageConnected) {
+            const queryParams = {
+                provider: 'azure',
+                account: this.selectedStorageAccount!.name,
+                container: container.name
+            };
+            this.saveState(container);
             const target = `/file-manager?provider=azure&account=${encodeURIComponent(queryParams.account)}&container=${encodeURIComponent(queryParams.container)}`;
             localStorage.setItem('redirect', JSON.stringify(target));
             this.multiAuthService.login('azure-storage');
             return;
         }
 
-        this.router.navigate(['/file-manager'], { queryParams });
+        this.selectedContainer = container;
+        this.resetAccessState();
+        this.checkReadAccess();
+    }
+
+    private checkReadAccess(): void {
+        this.accessState = 'checking';
+        this.azureBrowseService.checkStorageRole(
+            this.selectedSubscription!.subscriptionId,
+            this.selectedResourceGroup!.name,
+            this.selectedStorageAccount!.name,
+            'reader'
+        ).subscribe({
+            next: (res) => {
+                if (res.hasRole) {
+                    this.startProbing();
+                } else {
+                    this.accessState = 'no-role';
+                }
+            },
+            error: () => {
+                this.accessState = 'no-role';
+            }
+        });
+    }
+
+    grantReadAccess(): void {
+        this.grantingAccess = true;
+        this.accessError = null;
+        this.azureBrowseService.assignStorageRole(
+            this.selectedSubscription!.subscriptionId,
+            this.selectedResourceGroup!.name,
+            this.selectedStorageAccount!.name,
+            'reader'
+        ).subscribe({
+            next: () => {
+                this.grantingAccess = false;
+                this.startProbing();
+            },
+            error: (err) => {
+                const body = err?.error;
+                if (err?.status === 400 && typeof body?.error === 'string' && body.error.includes('AuthorizationFailed')) {
+                    this.accessError = 'You don\'t have permission to assign roles on this storage account. Ask an Owner to assign Storage Blob Data Reader to you.';
+                } else {
+                    this.accessError = 'Failed to assign role. You may need to assign it manually in Azure Portal.';
+                }
+                this.grantingAccess = false;
+            }
+        });
+    }
+
+    private startProbing(): void {
+        this.accessState = 'propagating';
+        this.probeOnce();
+        this.probeTimer = setInterval(() => this.probeOnce(), 10000);
+    }
+
+    private probeOnce(): void {
+        this.azureBrowseService.probeContainerAccess(
+            this.selectedStorageAccount!.name,
+            this.selectedContainer!.name
+        ).subscribe({
+            next: (res) => {
+                if (res.hasAccess) {
+                    this.accessState = 'ready';
+                    this.stopProbing();
+                    this.navigateToFileManager();
+                }
+            }
+        });
+    }
+
+    private stopProbing(): void {
+        if (this.probeTimer) {
+            clearInterval(this.probeTimer);
+            this.probeTimer = null;
+        }
+    }
+
+    private resetAccessState(): void {
+        this.stopProbing();
+        this.accessState = null;
+        this.accessError = null;
+        this.grantingAccess = false;
+    }
+
+    private navigateToFileManager(): void {
+        this.saveState(this.selectedContainer!);
+        this.router.navigate(['/file-manager'], {
+            queryParams: {
+                provider: 'azure',
+                account: this.selectedStorageAccount!.name,
+                container: this.selectedContainer!.name
+            }
+        });
+    }
+
+    dismissAccessPanel(): void {
+        this.selectedContainer = null;
+        this.resetAccessState();
     }
 
     navigateToBreadcrumb(crumb: BreadcrumbItem): void {

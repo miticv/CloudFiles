@@ -39,16 +39,16 @@ import { MatButtonModule } from '@angular/material/button';
                 </div>
 
                 <div>
-                    <h3 class="font-semibold text-base mb-1">How to assign the role</h3>
-                    <ol class="list-decimal list-inside space-y-1 text-secondary">
-                        <li>Go to the <strong>Azure Portal</strong> &rarr; your Storage Account</li>
-                        <li>Click <strong>Access Control (IAM)</strong> in the left menu</li>
-                        <li>Click <strong>+ Add</strong> &rarr; <strong>Add role assignment</strong></li>
-                        <li>Search for <strong>Storage Blob Data Reader</strong> and select it</li>
-                        <li>Click <strong>Members</strong>, then <strong>+ Select members</strong></li>
-                        <li>Search for your user account and select it</li>
-                        <li>Click <strong>Review + assign</strong></li>
-                    </ol>
+                    <h3 class="font-semibold text-base mb-1">How to get access</h3>
+                    <p class="text-secondary mb-2">
+                        When you click a container without read access, a <strong>"Grant Read Access"</strong>
+                        button will appear. Clicking it assigns the role automatically.
+                    </p>
+                    <p class="text-secondary text-xs">
+                        This requires <strong>Owner</strong> or <strong>User Access Administrator</strong>
+                        on the storage account. If you don't have that permission, ask an account owner
+                        to assign the role for you in the Azure Portal.
+                    </p>
                 </div>
 
                 <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -66,7 +66,7 @@ import { MatButtonModule } from '@angular/material/button';
                     <p class="text-secondary">
                         Copying files <strong>into</strong> a container (e.g. from Google Photos) requires the
                         <strong>Storage Blob Data Contributor</strong> role — not just Reader.
-                        Assign it on the target storage account the same way as above.
+                        The Copy to Azure dialog will prompt you to grant this role automatically.
                     </p>
                 </div>
 

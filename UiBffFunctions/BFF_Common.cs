@@ -24,7 +24,7 @@ namespace CloudFiles
         {
             var log = executionContext.GetLogger(nameof(Ping));
             log.LogInformation($"{Constants.bffPing} call {req.Path}");
-            return new OkObjectResult("pong");
+            return new OkObjectResult("pong-v2");
         }
 
         [Function(Constants.GoogleValidateToken)]
@@ -164,7 +164,10 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, $"Unexpected error in {Constants.ProcessListInstances}");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new ObjectResult(new { error = ex.GetType().FullName, message = ex.Message, inner = ex.InnerException?.Message })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
             }
         }
 

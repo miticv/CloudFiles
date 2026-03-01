@@ -48,13 +48,6 @@
     </div>
   </div>
 
-  <div *ngIf="hasAnyConnection()" class="mt-6">
-    <button mat-flat-button color="primary" class="w-full !py-3 !text-base" routerLink="/storage-browser">
-      <mat-icon class="mr-2">folder_open</mat-icon>
-      Browse Files
-    </button>
-  </div>
-
   <p *ngIf="!hasAnyConnection()" class="text-secondary text-sm mt-6">
     Connect at least one provider to start browsing your files.
   </p>

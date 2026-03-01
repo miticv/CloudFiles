@@ -48,7 +48,10 @@ export class NavigationService implements OnDestroy {
             type: 'link',
             icon: 'sync',
             state: 'processes'
-        },
+        }
+    ];
+
+    private accountItems: IMenuItem[] = [
         {
             type: 'separator',
             name: 'Account'
@@ -100,15 +103,16 @@ export class NavigationService implements OnDestroy {
     }
 
     private updateMenu(isAdmin: boolean, connectionStatuses: ConnectionStatus[]) {
-        const items = this.baseItems.map((item) => {
+        const items = [...this.baseItems];
+        if (isAdmin) {
+            items.push(...this.adminItems);
+        }
+        items.push(...this.accountItems.map((item) => {
             if (item.state === 'connections') {
                 return { ...item, connectionStatuses };
             }
             return item;
-        });
-        if (isAdmin) {
-            items.push(...this.adminItems);
-        }
+        }));
         this.menuItems.next(items);
     }
 }

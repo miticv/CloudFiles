@@ -184,24 +184,39 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     }
 
     getInputSummary(instance: OrchestrationInstance): string {
-        // Google Photos → Azure: show photo count
         const input = this.parseJson(instance.serializedInput);
-        if (input) {
-            const photoItems = (input['photoItems'] || input['PhotoItems']) as unknown[];
-            if (photoItems) {
-                return `${photoItems.length} photo${photoItems.length !== 1 ? 's' : ''}`;
-            }
+        if (!input) return '';
+
+        // Google Photos → Azure: show photo count
+        const photoItems = (input['photoItems'] || input['PhotoItems']) as unknown[];
+        if (photoItems) {
+            return `${photoItems.length} photo${photoItems.length !== 1 ? 's' : ''}`;
+        }
+        // Count from trimmed list response (arrays stripped server-side)
+        const photoCount = input['photoItemsCount'] as number;
+        if (photoCount) {
+            return `${photoCount} photo${photoCount !== 1 ? 's' : ''}`;
         }
 
+        // Full array available (detail view)
         const selected = this.getSelectedItems(instance);
-        if (!selected.length) return '';
-        if (selected.length === 1) return selected[0].isFolder ? selected[0].name : selected[0].name;
-        const folders = selected.filter(i => i.isFolder).length;
-        const files = selected.length - folders;
-        const parts: string[] = [];
-        if (folders) parts.push(`${folders} folder${folders > 1 ? 's' : ''}`);
-        if (files) parts.push(`${files} file${files > 1 ? 's' : ''}`);
-        return parts.join(', ');
+        if (selected.length > 0) {
+            if (selected.length === 1) return selected[0].name;
+            const folders = selected.filter(i => i.isFolder).length;
+            const files = selected.length - folders;
+            const parts: string[] = [];
+            if (folders) parts.push(`${folders} folder${folders > 1 ? 's' : ''}`);
+            if (files) parts.push(`${files} file${files > 1 ? 's' : ''}`);
+            return parts.join(', ');
+        }
+
+        // Count from trimmed list response
+        const itemCount = input['selectedItemsCount'] as number;
+        if (itemCount) {
+            return `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+        }
+
+        return '';
     }
 
     getStartedBy(instance: OrchestrationInstance): string {
@@ -257,12 +272,15 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
         // Google Photos → Azure direction
         const photoItems = (input['photoItems'] || input['PhotoItems']) as unknown[];
-        if (photoItems && account && container) {
+        const photoCount = photoItems
+            ? (photoItems as unknown[]).length
+            : (input['photoItemsCount'] as number) || 0;
+        if (photoCount > 0 && account && container) {
             const folder = (input['destinationFolder'] || input['DestinationFolder']) as string;
             const dest = folder
                 ? `Azure (${account}/${container}/${folder})`
                 : `Azure (${account}/${container})`;
-            return { from: `Google Photos (${photoItems.length} photos)`, to: dest };
+            return { from: `Google Photos (${photoCount} photos)`, to: dest };
         }
 
         // Azure/Google Storage → Google Photos direction

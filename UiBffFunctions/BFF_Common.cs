@@ -11,6 +11,7 @@ using System.Threading;
 using Microsoft.DurableTask.Client;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace CloudFiles
 {
@@ -196,10 +197,10 @@ namespace CloudFiles
                     instances = allInstances;
                 }
 
-                // Map to lightweight DTOs. Exclude serializedOutput from the list
-                // response — it can be enormous (hundreds of file results) and exceeds
-                // the isolated worker gRPC channel limit (~4MB). Output is fetched
-                // on demand via the detail endpoint when the user expands an instance.
+                // Map to lightweight DTOs. Exclude serializedOutput and strip large
+                // arrays (selectedItemsList, photoItems) from serializedInput.
+                // These can be enormous and exceed the isolated worker gRPC limit (~4MB).
+                // Full data is fetched on demand via the detail endpoint.
                 var result = instances.Select(i => new
                 {
                     name = i.Name,
@@ -207,7 +208,7 @@ namespace CloudFiles
                     runtimeStatus = (int)i.RuntimeStatus,
                     createdAt = i.CreatedAt,
                     lastUpdatedAt = i.LastUpdatedAt,
-                    serializedInput = i.SerializedInput,
+                    serializedInput = TrimInputForList(i.SerializedInput),
                     serializedCustomStatus = i.SerializedCustomStatus
                 }).ToList();
 
@@ -294,6 +295,39 @@ namespace CloudFiles
             {
                 log.LogError(ex, $"Error purging instance {instanceId}");
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+        /// <summary>
+        /// Strip large arrays from serializedInput, keeping only summary fields
+        /// for the list view (startedBy, albumTitle, accountName, counts, etc.).
+        /// </summary>
+        private static string TrimInputForList(string? serializedInput)
+        {
+            if (string.IsNullOrEmpty(serializedInput)) return serializedInput!;
+            try
+            {
+                var obj = JObject.Parse(serializedInput);
+
+                // Replace large arrays with their count to preserve summary info
+                ReplaceArrayWithCount(obj, "selectedItemsList", "selectedItemsCount");
+                ReplaceArrayWithCount(obj, "SelectedItemsList", "selectedItemsCount");
+                ReplaceArrayWithCount(obj, "photoItems", "photoItemsCount");
+                ReplaceArrayWithCount(obj, "PhotoItems", "photoItemsCount");
+
+                return obj.ToString(Newtonsoft.Json.Formatting.None);
+            }
+            catch
+            {
+                return serializedInput;
+            }
+        }
+
+        private static void ReplaceArrayWithCount(JObject obj, string arrayProp, string countProp)
+        {
+            if (obj[arrayProp] is JArray arr)
+            {
+                obj[countProp] = arr.Count;
+                obj.Remove(arrayProp);
             }
         }
     }

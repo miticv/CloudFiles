@@ -73,13 +73,13 @@
                  (click)="toggleExpand(group.parent.instanceId)">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3 min-w-0">
-                        <mat-icon [class]="statusColors[group.parent.runtimeStatus]"
+                        <mat-icon [class]="statusColors[getEffectiveStatus(group.parent)]"
                                   class="rounded-full p-0.5 !text-[20px] !w-5 !h-5">
-                            {{statusIcons[group.parent.runtimeStatus]}}
+                            {{statusIcons[getEffectiveStatus(group.parent)]}}
                         </mat-icon>
                         <span class="px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap"
-                              [ngClass]="statusColors[group.parent.runtimeStatus]">
-                            {{statusLabels[group.parent.runtimeStatus]}}
+                              [ngClass]="statusColors[getEffectiveStatus(group.parent)]">
+                            {{statusLabels[getEffectiveStatus(group.parent)]}}
                         </span>
                         <span class="font-medium text-sm truncate">{{getDisplayName(group.parent.name)}}</span>
                         <span *ngIf="getInputSummary(group.parent)" class="text-xs text-secondary hidden md:inline">
@@ -191,12 +191,11 @@
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <div *ngFor="let file of getFailedFiles(group.parent)"
-                             class="flex items-start gap-2 px-2 py-1.5 rounded-md text-xs bg-red-50 border border-red-200"
-                             [matTooltip]="file.error">
-                            <mat-icon class="text-red-400 !text-sm !w-3.5 !h-3.5 mt-0.5">error_outline</mat-icon>
+                             class="flex items-start gap-2 px-2 py-1.5 rounded-md text-xs bg-red-50 border border-red-200">
+                            <mat-icon class="text-red-400 !text-sm !w-3.5 !h-3.5 mt-0.5 flex-shrink-0">error_outline</mat-icon>
                             <div class="min-w-0">
-                                <div class="font-medium truncate max-w-[300px]">{{file.name}}</div>
-                                <div class="text-red-600 truncate max-w-[300px]">{{file.error}}</div>
+                                <div class="font-medium break-all">{{file.name}}</div>
+                                <div class="text-red-600 break-words whitespace-pre-wrap">{{file.error}}</div>
                             </div>
                         </div>
                     </div>

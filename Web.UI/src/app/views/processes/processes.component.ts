@@ -400,6 +400,17 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return p === 'google' ? 'Google' : p === 'azure' ? 'Microsoft Azure' : '';
     }
 
+    getEffectiveStatus(instance: OrchestrationInstance): number {
+        if (instance.runtimeStatus !== OrchestrationRuntimeStatus.Completed) {
+            return instance.runtimeStatus;
+        }
+        // If completed but has any failed files, show as failed
+        if (this.getFailedFiles(instance).length > 0) {
+            return OrchestrationRuntimeStatus.Failed;
+        }
+        return instance.runtimeStatus;
+    }
+
     getDisplayName(name: string): string {
         if (name === 'azureStorageToGooglePhotosOrchestrator') return 'Azure to Google Photos';
         if (name === 'googleStorageToGooglePhotosOrchestrator') return 'Google Storage to Photos';
@@ -456,7 +467,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
     canRetry(group: ProcessGroup): boolean {
         const name = group.parent.name;
-        const status = group.parent.runtimeStatus;
+        const status = this.getEffectiveStatus(group.parent);
         if (name !== 'azureStorageToGooglePhotosOrchestrator' &&
             name !== 'googleStorageToGooglePhotosOrchestrator') return false;
         return status === OrchestrationRuntimeStatus.Failed ||

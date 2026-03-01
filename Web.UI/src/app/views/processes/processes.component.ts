@@ -555,7 +555,8 @@ export class ProcessesComponent implements OnInit, OnDestroy {
             isFolder: i.isFolder ?? i.IsFolder ?? false
         }));
 
-        // Skip files already successfully copied in the previous run
+        // Skip files already successfully copied — use expanded file list from output
+        // so folders are resolved to individual files and only truly failed ones are retried
         const output = this.parseJson(group.parent.serializedOutput);
         if (output) {
             const mediaResults = ((output['newMediaItemResults'] ?? output['NewMediaItemResults']) as any[]) || [];
@@ -563,10 +564,24 @@ export class ProcessesComponent implements OnInit, OnDestroy {
                 mediaResults.filter((r: any) => r.mediaItem?.id).map((r: any) => r.mediaItem.filename as string)
             );
             if (succeededNames.size > 0) {
-                selectedItemsList = selectedItemsList.filter((item) => {
-                    const basename = item.itemPath.includes('/') ? item.itemPath.split('/').pop()! : item.itemPath;
-                    return !succeededNames.has(basename);
-                });
+                const preparedItems = (output['listItemsPrepared'] ?? output['ListItemsPrepared']) as any[];
+                if (preparedItems?.length) {
+                    // Use the already-expanded individual file paths (handles folders correctly)
+                    selectedItemsList = preparedItems
+                        .filter((item: any) => !succeededNames.has(item.itemFilename || item.ItemFilename || ''))
+                        .map((item: any) => ({
+                            itemPath: item.itemPath || item.ItemPath || '',
+                            isFolder: false
+                        }));
+                } else {
+                    selectedItemsList = selectedItemsList
+                        .filter((item) => {
+                            if (item.isFolder) return true;
+                            const basename = item.itemPath.includes('/')
+                                ? item.itemPath.split('/').pop()! : item.itemPath;
+                            return !succeededNames.has(basename);
+                        });
+                }
             }
         }
 

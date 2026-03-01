@@ -79,7 +79,7 @@ namespace CloudFiles.AzureToGoogle
 
                 return item;
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is HttpRequestException)
+            catch (InvalidOperationException ex)
             {
                 item.StatusMessage = ex.Message;
                 return item;

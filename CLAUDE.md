@@ -55,7 +55,7 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
   - `BFF_Common.cs` — Health check, token validation
 - **`Utilities/`** — Cloud SDK wrappers: `AzureUtility.cs`, `GoogleUtility.cs`, `CommonUtility.cs`
 - **`Models/Constants.cs`** — All function and orchestrator name constants
-- **`AzureToGoogle/`**, **`GoogleToGoogle/`** — Durable Functions for photo migrations using a 2-phase pattern: sequential byte upload → sequential batched `batchCreate` (up to 50 items per Google Photos API call)
+- **`AzureToGoogle/`**, **`GoogleToGoogle/`** — Durable Functions for photo migrations: parallel upload in batches of 50 with retry (3 attempts, exponential backoff) → `batchCreate` per batch. See orchestrator pattern below
 - **`GooglePhotosToAzure/`** — Durable Functions for photo migration using parallel fan-out/fan-in (Azure Blob has no concurrent write quota)
 - **`Program.cs`** — Host builder; uses Newtonsoft JSON with camelCase serialization
 
@@ -102,7 +102,7 @@ Azure requires separate tokens per resource audience. The HTTP interceptor in `a
 - Token extraction: `CommonUtility.GetTokenFromHeaders(req)` for Google; `AzureUtility.VerifyAzure*HeaderTokenIsValid(req)` for Azure
 - Newtonsoft `[JsonProperty("name")]` for JSON serialization (not System.Text.Json)
 - Durable Functions follow orchestrator → activity pattern
-- **Google Photos writes** use a fully sequential 2-phase approach: Phase 1 uploads bytes one at a time (`/v1/uploads` enforces a per-minute per-user upload quota), Phase 2 calls `batchCreate` sequentially in batches of up to 50 (Google Photos API enforces a concurrent write request quota). See `AzureToGoogle/` and `GoogleToGoogle/`
+- **Google Photos writes** process files in chunks of 50: fan-out parallel uploads with retry (3 attempts, exponential backoff 5s/10s/20s via `TaskOptions.FromRetryPolicy`), then one `batchCreate` call per chunk. `HttpRequestException` propagates from activities so Durable Functions retries automatically; `TaskFailedException` is caught in the orchestrator's `SafeUpload` wrapper to record failures gracefully. See `AzureToGoogle/` and `GoogleToGoogle/`
 - **Azure Blob writes** use standard fan-out/fan-in (no concurrent write quota). See `GooglePhotosToAzure/`
 
 ## Post-Change Verification

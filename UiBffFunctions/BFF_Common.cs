@@ -140,46 +140,48 @@ namespace CloudFiles
                 };
 
                 List<OrchestrationMetadata> instances;
+                var parentInstances = allInstances
+                    .Where(i => parentOrchestratorNames.Contains(i.Name))
+                    .ToList();
+
+                // Fetch details individually — catch per-instance failures (e.g. gRPC size limits)
+                // so one large instance doesn't take down the whole listing.
+                var detailById = new Dictionary<string, OrchestrationMetadata>();
+                var detailTasks = parentInstances.Select(async p =>
+                {
+                    try
+                    {
+                        return await starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogWarning(ex, $"Failed to fetch details for {p.InstanceId}, using metadata only.");
+                        return null;
+                    }
+                }).ToList();
+                var details = await Task.WhenAll(detailTasks);
+                foreach (var d in details)
+                {
+                    if (d != null) detailById[d.InstanceId] = d;
+                }
+
                 if (showAll)
                 {
-                    // Admin viewing all: fetch inputs for parent instances to populate detail fields.
-                    var parentInstances = allInstances
-                        .Where(i => parentOrchestratorNames.Contains(i.Name))
-                        .ToList();
-                    var detailTasks = parentInstances
-                        .Select(p => starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true))
-                        .ToList();
-                    var details = await Task.WhenAll(detailTasks);
-                    var detailById = details
-                        .Where(d => d != null)
-                        .ToDictionary(d => d!.InstanceId, d => d!);
                     instances = allInstances
                         .Select(i => detailById.TryGetValue(i.InstanceId, out var d) ? d : i)
                         .ToList();
                 }
                 else if (!string.IsNullOrEmpty(userEmail))
                 {
-                    // Fetch serialized inputs only for top-level orchestrators to identify the owner.
-                    var parentInstances = allInstances
-                        .Where(i => parentOrchestratorNames.Contains(i.Name))
-                        .ToList();
-
-                    var detailTasks = parentInstances
-                        .Select(p => starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true))
-                        .ToList();
-                    var details = await Task.WhenAll(detailTasks);
-
+                    // Filter to the current user's instances using StartedBy in serialized input.
                     var parentIds = new HashSet<string>();
-                    var detailById = new Dictionary<string, OrchestrationMetadata>();
-                    foreach (var detail in details)
+                    foreach (var detail in detailById.Values)
                     {
-                        if (detail == null) continue;
                         if (!string.IsNullOrEmpty(detail.SerializedInput) &&
                             detail.SerializedInput.Contains("\"StartedBy\"", StringComparison.OrdinalIgnoreCase) &&
                             detail.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
                         {
                             parentIds.Add(detail.InstanceId);
-                            detailById[detail.InstanceId] = detail!;
                         }
                     }
 

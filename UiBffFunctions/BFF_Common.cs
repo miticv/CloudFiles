@@ -196,7 +196,22 @@ namespace CloudFiles
                     instances = allInstances;
                 }
 
-                return new OkObjectResult(instances);
+                // Map to simple DTOs to avoid serialization issues with OrchestrationMetadata.
+                // The SDK type can contain properties that fail JSON serialization (e.g. gRPC internals),
+                // causing a 500 at the response layer even though the function itself succeeds.
+                var result = instances.Select(i => new
+                {
+                    name = i.Name,
+                    instanceId = i.InstanceId,
+                    runtimeStatus = (int)i.RuntimeStatus,
+                    createdAt = i.CreatedAt,
+                    lastUpdatedAt = i.LastUpdatedAt,
+                    serializedInput = i.SerializedInput,
+                    serializedOutput = i.SerializedOutput,
+                    serializedCustomStatus = i.SerializedCustomStatus
+                }).ToList();
+
+                return new OkObjectResult(result);
             }
             catch (UnauthorizedAccessException ex)
             {

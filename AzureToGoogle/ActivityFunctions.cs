@@ -45,6 +45,10 @@ namespace CloudFiles.AzureToGoogle
 
             try
             {
+                var failFilter = Environment.GetEnvironmentVariable("TEST_FAIL_FILENAME_CONTAINS");
+                if (!string.IsNullOrEmpty(failFilter) && item.ItemFilename.Contains(failFilter, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"[TEST] Simulated failure for: {item.ItemFilename}");
+
                 log.LogInformation($"{Constants.CopyAzureBlobToGooglePhotos}: Copy image {item.ItemPath}.");
 
                 var azureUtility = new AzureUtility(item.AccountName!, item.ContainerName!, item.AzureAccessToken!);

@@ -102,6 +102,13 @@ Azure requires separate tokens per resource audience. The HTTP interceptor in `a
 - Newtonsoft `[JsonProperty("name")]` for JSON serialization (not System.Text.Json)
 - Durable Functions follow orchestrator → activity pattern with fan-out/fan-in
 
+## Post-Change Verification
+
+After implementing any changes, always run the relevant checks before considering work complete:
+
+- **Frontend changes (`Web.UI/`):** Run `npm run lint` and `npm run build`
+- **Backend changes (root):** Run `dotnet build`
+
 ## CI/CD
 
 - **`.github/workflows/CloudFiles-WebUI.yml`** — Frontend: lint, build, deploy to Azure Static Web Apps

@@ -45,6 +45,10 @@ namespace CloudFiles.GoogleToGoogle
 
             try
             {
+                var failFilter = Environment.GetEnvironmentVariable("TEST_FAIL_FILENAME_CONTAINS");
+                if (!string.IsNullOrEmpty(failFilter) && item.ItemFilename.Contains(failFilter, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"[TEST] Simulated failure for: {item.ItemFilename}");
+
                 log.LogInformation($"{Constants.CopyPhotoUrlToGooglePhotos}: Copy image {item.ItemPath}.");
 
                 var imageByteArray = await GoogleUtility.GetImageFromUrlAsync(item.MediaLInk, item.AccessToken).ConfigureAwait(false);

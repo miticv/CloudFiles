@@ -5,7 +5,8 @@
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "GooglePhotoClientId": "<google-oauth-client-id>",
     "AzureTenantId": "<azure-ad-tenant-id>",
-    "IS_RUNNING_LOCALLY": "true"
+    "IS_RUNNING_LOCALLY": "true",
+    "TEST_FAIL_FILENAME_CONTAINS": ""
   },
   "Host": {
     "LocalHttpPort": 7071,

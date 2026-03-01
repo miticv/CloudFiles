@@ -259,7 +259,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         if (results) {
             return results
                 .filter(r => r.success ?? r.Success)
-                .map(r => {
+                .map((r) => {
                     const name = r.filename || r.Filename || 'unknown';
                     const path = r.blobPath || r.BlobPath || '';
                     const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
@@ -273,7 +273,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         if (mediaResults) {
             return mediaResults
                 .filter(r => r.mediaItem?.id)
-                .map(r => {
+                .map((r) => {
                     const name = r.mediaItem!.filename || 'unknown';
                     const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
                     return { name, path: '', isImage: imageExts.has(ext) };
@@ -484,7 +484,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
                 mediaResults.filter((r: any) => r.mediaItem?.id).map((r: any) => r.mediaItem.filename as string)
             );
             if (succeededNames.size > 0) {
-                selectedItemsList = selectedItemsList.filter(item => {
+                selectedItemsList = selectedItemsList.filter((item) => {
                     const basename = item.itemPath.includes('/') ? item.itemPath.split('/').pop()! : item.itemPath;
                     return !succeededNames.has(basename);
                 });

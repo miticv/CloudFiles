@@ -23,9 +23,17 @@
                 </div>
             </div>
             <div class="flex items-center gap-3 mt-4 sm:mt-0">
+                <button mat-icon-button (click)="openHelp()" matTooltip="Migration help">
+                    <mat-icon>help_outline</mat-icon>
+                </button>
                 <button mat-flat-button color="primary" (click)="selectPhotos()" [disabled]="loading || polling">
                     <mat-icon>photo_library</mat-icon>
                     {{ pickedItems.length > 0 ? 'Select More' : 'Select Photos' }}
+                </button>
+                <button *ngIf="pickedItems.length > 0" mat-stroked-button (click)="clearSelection()"
+                        [disabled]="loading || polling">
+                    <mat-icon>clear_all</mat-icon>
+                    Clear
                 </button>
                 <button mat-flat-button (click)="openCopyToAzure()"
                         [disabled]="loading || polling || pickedItems.length === 0"
@@ -64,6 +72,12 @@
             <mat-icon class="!text-[80px] !w-20 !h-20 text-black/15">collections</mat-icon>
             <div class="mt-4 text-xl font-semibold tracking-tight text-secondary">No photos selected</div>
             <div class="mt-2 text-sm text-secondary">Click the button above to pick photos from Google.</div>
+            <div class="mt-4 px-4 py-3 rounded-lg text-xs text-secondary max-w-md text-center"
+                 style="background: #f0f4ff; border: 1px solid #e0e7ff;">
+                <mat-icon class="!text-[14px] !w-3.5 !h-3.5 align-middle mr-1" style="color: #6366f1;">tips_and_updates</mat-icon>
+                Tip: In the Google Photos picker, search by album name to find and select photos from specific albums.
+                You can open the picker multiple times to accumulate selections.
+            </div>
         </div>
 
         <!-- Photos grid -->

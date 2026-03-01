@@ -42,6 +42,22 @@ export interface StartGooglePhotosToAzureRequest {
     startedBy: string;
 }
 
+export interface DriveFileForCopy {
+    id: string;
+    name: string;
+    mimeType: string;
+    size: number | null;
+}
+
+export interface StartGoogleDriveToAzureRequest {
+    driveItems: DriveFileForCopy[];
+    accountName: string;
+    containerName: string;
+    destinationFolder: string;
+    azureAccessToken: string;
+    startedBy: string;
+}
+
 export interface StartJobResponse {
     id: string;
     statusQueryGetUri: string;
@@ -106,6 +122,14 @@ export class ProcessService extends HttpService {
     startGooglePhotosToAzure(request: StartGooglePhotosToAzureRequest): Observable<StartJobResponse> {
         return this.http.post<StartJobResponse>(
             `${this.baseUrl}process/GooglePhotosToAzure/start`,
+            request,
+            this.getRequestOptions(true)
+        );
+    }
+
+    startGoogleDriveToAzure(request: StartGoogleDriveToAzureRequest): Observable<StartJobResponse> {
+        return this.http.post<StartJobResponse>(
+            `${this.baseUrl}process/GoogleDriveToAzure/start`,
             request,
             this.getRequestOptions(true)
         );

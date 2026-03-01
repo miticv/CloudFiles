@@ -52,6 +52,11 @@ export const rootRouterConfig: Routes = [
                 data: { title: 'Google Storage', breadcrumb: 'GOOGLE STORAGE' }
             },
             {
+                path: 'google-drive',
+                loadChildren: () => import('./views/google-drive/google-drive.module').then(m => m.GoogleDriveModule),
+                data: { title: 'Google Drive', breadcrumb: 'GOOGLE DRIVE' }
+            },
+            {
                 path: 'google-photos',
                 loadChildren: () => import('./views/google-photos/google-photos.module').then(m => m.GooglePhotosModule),
                 data: { title: 'Google Photos', breadcrumb: 'GOOGLE PHOTOS' }

@@ -181,34 +181,55 @@ namespace CloudFiles.Utilities
             }
         }
 
-        public static async Task<MediaItemSearchResponse> ListMediaItemsAsync(string accessToken, string albumId, string nextPageToken)
+        // --- Google Drive API ---
+
+        public async Task<Models.Google.GoogleDriveFileListResponse> ListDriveFilesAsync(
+            string folderId = "root", string pageToken = null)
         {
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            if (!client.DefaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
-            {
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            }
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", this.GoogleToken);
+            client.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var body = new MediaItemSearchRequest
-            {
-                AlbumId = albumId,
-                PageSize = 50,
-                PageToken = string.IsNullOrEmpty(nextPageToken) ? null! : nextPageToken
-            };
-            var serializedBody = JsonConvert.SerializeObject(body, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+            var fields = Uri.EscapeDataString("nextPageToken,files(id,name,mimeType,size,modifiedTime,iconLink)");
+            var query = Uri.EscapeDataString($"'{folderId}' in parents and trashed = false");
+            var pageParam = string.IsNullOrEmpty(pageToken) ? "" : $"&pageToken={pageToken}";
+            var getUrl = $"https://www.googleapis.com/drive/v3/files?q={query}&fields={fields}&pageSize=100&orderBy=folder,name{pageParam}";
 
-            var response = await client.PostAsync("https://photoslibrary.googleapis.com/v1/mediaItems:search",
-                new StringContent(serializedBody, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+            var response = await client.GetAsync(getUrl).ConfigureAwait(false);
             var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonConvert.DeserializeObject<MediaItemSearchResponse>(result)!;
+                return JsonConvert.DeserializeObject<Models.Google.GoogleDriveFileListResponse>(result)!;
             }
             else
             {
-                throw new InvalidOperationException($"ListMediaItemsAsync error: {result}");
+                throw new InvalidOperationException($"ListDriveFilesAsync error: {result}");
+            }
+        }
+
+        public static async Task<(byte[] Data, string ContentType)> DownloadDriveFileAsync(
+            string fileId, string accessToken)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var url = $"https://www.googleapis.com/drive/v3/files/{fileId}?alt=media";
+
+            var response = await client.GetAsync(url).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+                return (data, contentType);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                throw new InvalidOperationException($"DownloadDriveFileAsync error: {error}");
             }
         }
 
@@ -248,7 +269,8 @@ namespace CloudFiles.Utilities
                string.IsNullOrEmpty(result.Scope) ||
                !(result.Scope.Contains("photoslibrary") ||
                  result.Scope.Contains("photospicker.mediaitems.readonly") ||
-                 result.Scope.Contains("devstorage")) ||
+                 result.Scope.Contains("devstorage") ||
+                 result.Scope.Contains("drive")) ||
                result.Aud != Environment.GetEnvironmentVariable("GooglePhotoClientId") ||
                !int.TryParse(result.Exp, out int expiration) ||
                expiration < 0 ) {

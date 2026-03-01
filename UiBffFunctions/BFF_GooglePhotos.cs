@@ -85,51 +85,6 @@ namespace CloudFiles
                 return new BadRequestObjectResult(ex.Message);
             }
         }
-        [Function(Constants.GoogleAlbumMedia)]
-        public static async Task<IActionResult> GoogleAlbumMedia(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/album/{albumId}/media")] HttpRequest req,
-            string albumId,
-            FunctionContext executionContext)
-        {
-            var log = executionContext.GetLogger(nameof(GoogleAlbumMedia));
-            try
-            {
-                var googleAccessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
-
-                if (string.IsNullOrWhiteSpace(albumId))
-                {
-                    return new BadRequestObjectResult("albumId is required");
-                }
-
-                var response = new MediaItemSearchResponse
-                {
-                    MediaItems = new List<MediaItem>()
-                };
-
-                log.LogInformation($"{Constants.GoogleAlbumMedia} function processing {nameof(GoogleUtility.ListMediaItemsAsync)} for album {albumId}.");
-                var result = new MediaItemSearchResponse();
-                do
-                {
-                    result = await GoogleUtility.ListMediaItemsAsync(googleAccessToken, albumId, result.NextPageToken).ConfigureAwait(false);
-                    if (result.MediaItems?.Count > 0)
-                    {
-                        response.MediaItems.AddRange(result.MediaItems);
-                    }
-                } while (result.NextPageToken != null);
-
-                return new OkObjectResult(response);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return new BadRequestObjectResult(ex.Message);
-            }
-        }
-
         // --- Google Photos Picker API endpoints ---
 
         [Function(Constants.GooglePhotosCreateSession)]

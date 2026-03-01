@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { GooglePhotosService, PickedMediaItem, PickingSession } from 'app/core/services/google-photos.service';
 import { MultiAuthService } from 'app/core/auth/multi-auth.service';
 import { CopyToAzureDialogComponent, CopyToAzureDialogData } from './copy-to-azure-dialog/copy-to-azure-dialog.component';
+import { GooglePhotosHelpDialogComponent } from './google-photos-help-dialog.component';
 
 @Component({
     standalone: false,
@@ -137,12 +138,15 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
 
         this.googlePhotosService.listPickedItems(sessionId).subscribe({
             next: (items) => {
-                this.pickedItems = items;
+                // Append new picks, deduplicating by id
+                const existingIds = new Set(this.pickedItems.map(p => p.id));
+                const newItems = items.filter(item => !existingIds.has(item.id));
+                this.pickedItems = [...this.pickedItems, ...newItems];
                 this.loading = false;
                 // Keep session alive so we can re-fetch fresh baseUrls later
                 sessionStorage.setItem('googlePhotosPickedItems', JSON.stringify({
                     sessionId,
-                    items
+                    items: this.pickedItems
                 }));
                 this.activeSessionId = sessionId;
             },
@@ -202,6 +206,15 @@ export class GooglePhotosComponent implements OnInit, OnDestroy {
         // Parse Go-style duration like "5s", "10s"
         const match = duration.match(/^(\d+)s$/);
         return match ? parseInt(match[1], 10) * 1000 : null;
+    }
+
+    clearSelection(): void {
+        this.pickedItems = [];
+        sessionStorage.removeItem('googlePhotosPickedItems');
+    }
+
+    openHelp(): void {
+        this.dialog.open(GooglePhotosHelpDialogComponent, { width: '560px' });
     }
 
     openCopyToAzure(): void {

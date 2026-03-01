@@ -19,13 +19,15 @@
 
         public const string GoogleAlbumList = "googleAlbumList";
         public const string GoogleAlbumAdd = "googleAlbumAdd";
-        public const string GoogleAlbumMedia = "googleAlbumMedia";
         public const string GooglePhotosCreateSession = "googlePhotosCreateSession";
         public const string GooglePhotosGetSession = "googlePhotosGetSession";
         public const string GooglePhotosSessionMedia = "googlePhotosSessionMedia";
         public const string GooglePhotosDeleteSession = "googlePhotosDeleteSession";
         public const string GooglePhotosImageProxy = "googlePhotosImageProxy";
-public const string GoogleFileList = "googleFileList";
+        // BFF Google Drive
+        public const string GoogleDriveFileList = "googleDriveFileList";
+
+        public const string GoogleFileList = "googleFileList";
         public const string GoogleStorageBucketList = "googleStorageBucketList";
 
         // public
@@ -58,6 +60,13 @@ public const string GoogleFileList = "googleFileList";
         public const string GooglePhotosToAzurePrepareList = "googlePhotosToAzurePrepareList";
         public const string CopyGooglePhotosToAzureOrchestrator = "copyGooglePhotosToAzureOrchestrator";
         public const string CopyGooglePhotoToAzureBlob = "copyGooglePhotoToAzureBlob";
+
+        // automation google drive to azure
+        public const string ProcessGoogleDriveToAzure_Start = "processGoogleDriveToAzure_Start";
+        public const string GoogleDriveToAzureOrchestrator = "googleDriveToAzureOrchestrator";
+        public const string GoogleDriveToAzurePrepareList = "googleDriveToAzurePrepareList";
+        public const string CopyGoogleDriveToAzureOrchestrator = "copyGoogleDriveToAzureOrchestrator";
+        public const string CopyGoogleDriveFileToAzureBlob = "copyGoogleDriveFileToAzureBlob";
 
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";

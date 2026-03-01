@@ -38,6 +38,12 @@ export class NavigationService implements OnDestroy {
             state: 'google-storage'
         },
         {
+            name: 'Google Drive',
+            type: 'link',
+            icon: 'folder_shared',
+            state: 'google-drive'
+        },
+        {
             name: 'Google Photos',
             type: 'link',
             icon: 'photo_library',

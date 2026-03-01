@@ -174,14 +174,15 @@
                     </summary>
                     <ng-container *ngIf="getSucceededFilesByFolder(group.parent) as folderGroups">
                         <!-- Grouped by folder -->
-                        <div *ngIf="folderGroups.length > 1; else flatSucceeded" class="mt-2 space-y-3">
-                            <div *ngFor="let fg of folderGroups">
-                                <div class="flex items-center gap-1 text-xs font-medium text-secondary mb-1">
+                        <div *ngIf="folderGroups.length > 1; else flatSucceeded" class="mt-2 space-y-1">
+                            <details *ngFor="let fg of folderGroups">
+                                <summary class="flex items-center gap-1 text-xs font-medium text-secondary cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                                     <mat-icon class="!text-sm !w-3.5 !h-3.5 text-amber-500">folder</mat-icon>
                                     {{fg.folder || '(root)'}}
                                     <span class="opacity-60">({{fg.files.length}})</span>
-                                </div>
-                                <div class="flex flex-col gap-1.5 ml-5">
+                                    <mat-icon class="!text-sm !w-3.5 !h-3.5 text-secondary expand-icon">expand_more</mat-icon>
+                                </summary>
+                                <div class="flex flex-col gap-1.5 ml-5 mt-1 mb-2">
                                     <div *ngFor="let file of fg.files"
                                          class="flex items-start gap-2 px-2 py-1.5 rounded-md text-xs bg-green-50 border border-green-200">
                                         <mat-icon [ngClass]="file.isImage ? 'text-blue-500' : 'text-slate-400'"
@@ -194,7 +195,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </details>
                         </div>
                         <!-- Flat (single folder) -->
                         <ng-template #flatSucceeded>
@@ -223,14 +224,15 @@
                     </summary>
                     <ng-container *ngIf="getFailedFilesByFolder(group.parent) as folderGroups">
                         <!-- Grouped by folder -->
-                        <div *ngIf="folderGroups.length > 1; else flatFailed" class="mt-2 space-y-3">
-                            <div *ngFor="let fg of folderGroups">
-                                <div class="flex items-center gap-1 text-xs font-medium text-secondary mb-1">
+                        <div *ngIf="folderGroups.length > 1; else flatFailed" class="mt-2 space-y-1">
+                            <details *ngFor="let fg of folderGroups">
+                                <summary class="flex items-center gap-1 text-xs font-medium text-secondary cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                                     <mat-icon class="!text-sm !w-3.5 !h-3.5 text-amber-500">folder</mat-icon>
                                     {{fg.folder || '(root)'}}
                                     <span class="opacity-60">({{fg.files.length}})</span>
-                                </div>
-                                <div class="flex flex-col gap-1.5 ml-5">
+                                    <mat-icon class="!text-sm !w-3.5 !h-3.5 text-secondary expand-icon">expand_more</mat-icon>
+                                </summary>
+                                <div class="flex flex-col gap-1.5 ml-5 mt-1 mb-2">
                                     <div *ngFor="let file of fg.files"
                                          class="rounded-md text-xs bg-red-50 border border-red-200 px-2 py-1.5">
                                         <div class="flex items-start gap-2">
@@ -246,7 +248,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </details>
                         </div>
                         <!-- Flat (single folder) -->
                         <ng-template #flatFailed>

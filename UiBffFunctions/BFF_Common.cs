@@ -120,12 +120,6 @@ namespace CloudFiles
                 };
 
                 log.LogInformation("List orchestration instances.");
-                var allInstances = new List<OrchestrationMetadata>();
-                await foreach (var instance in starter.GetAllInstancesAsync(queryFilter))
-                {
-                    allInstances.Add(instance);
-                }
-                log.LogInformation($"Fetched {allInstances.Count} instances from storage.");
 
                 // Top-level orchestrator names.
                 var parentOrchestratorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -135,79 +129,28 @@ namespace CloudFiles
                     "googlePhotosToAzureOrchestrator"
                 };
 
-                // Only return parent orchestrations in the list.
-                // Sub-orchestrators and activities are not needed for the overview.
-                var parentInstances = allInstances
-                    .Where(i => parentOrchestratorNames.Contains(i.Name))
-                    .ToList();
-
-                // Check admin privileges.
-                var adminEmails = (Environment.GetEnvironmentVariable("ADMIN_EMAILS") ?? "")
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                var isAdmin = adminEmails.Any(e => string.Equals(e, userEmail, StringComparison.OrdinalIgnoreCase));
-                var showAll = isAdmin && string.Equals(req.Query["all"], "true", StringComparison.OrdinalIgnoreCase);
-
-                // Fetch serializedInput for parent instances one-by-one to determine ownership.
-                // Use sequential calls to avoid poisoning the gRPC channel with parallel large responses.
-                var detailById = new Dictionary<string, OrchestrationMetadata>();
-                foreach (var p in parentInstances)
+                // Fetch metadata only (no inputs/outputs) to stay under gRPC limits.
+                // Filter to parent orchestrations only.
+                var instances = new List<object>();
+                int totalCount = 0;
+                await foreach (var instance in starter.GetAllInstancesAsync(queryFilter))
                 {
-                    try
+                    totalCount++;
+                    if (!parentOrchestratorNames.Contains(instance.Name)) continue;
+
+                    instances.Add(new
                     {
-                        var detail = await starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true);
-                        if (detail != null) detailById[detail.InstanceId] = detail;
-                    }
-                    catch (Exception ex)
-                    {
-                        log.LogWarning(ex, $"Failed to fetch details for {p.InstanceId}, using metadata only.");
-                    }
+                        name = instance.Name,
+                        instanceId = instance.InstanceId,
+                        runtimeStatus = (int)instance.RuntimeStatus,
+                        createdAt = instance.CreatedAt,
+                        lastUpdatedAt = instance.LastUpdatedAt,
+                        serializedCustomStatus = instance.SerializedCustomStatus
+                    });
                 }
 
-                List<OrchestrationMetadata> instances;
-                if (showAll)
-                {
-                    instances = parentInstances;
-                }
-                else if (!string.IsNullOrEmpty(userEmail))
-                {
-                    // Filter to the current user's instances using StartedBy in serialized input.
-                    var userParentIds = new HashSet<string>();
-                    foreach (var detail in detailById.Values)
-                    {
-                        if (!string.IsNullOrEmpty(detail.SerializedInput) &&
-                            detail.SerializedInput.Contains("\"StartedBy\"", StringComparison.OrdinalIgnoreCase) &&
-                            detail.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
-                        {
-                            userParentIds.Add(detail.InstanceId);
-                        }
-                    }
-                    instances = parentInstances.Where(i => userParentIds.Contains(i.InstanceId)).ToList();
-                }
-                else
-                {
-                    instances = parentInstances;
-                }
-
-                log.LogInformation($"Returning {instances.Count} instances (of {parentInstances.Count} parents, {allInstances.Count} total).");
-
-                // Map to lightweight DTOs. Exclude serializedOutput and strip large
-                // arrays from serializedInput. Full data is fetched via the detail endpoint.
-                var result = instances.Select(i =>
-                {
-                    var detail = detailById.TryGetValue(i.InstanceId, out var d) ? d : null;
-                    return new
-                    {
-                        name = i.Name,
-                        instanceId = i.InstanceId,
-                        runtimeStatus = (int)i.RuntimeStatus,
-                        createdAt = i.CreatedAt,
-                        lastUpdatedAt = i.LastUpdatedAt,
-                        serializedInput = TrimInputForList(detail?.SerializedInput),
-                        serializedCustomStatus = i.SerializedCustomStatus
-                    };
-                }).ToList();
-
-                return new OkObjectResult(result);
+                log.LogInformation($"Returning {instances.Count} parent instances (of {totalCount} total).");
+                return new OkObjectResult(instances);
             }
             catch (UnauthorizedAccessException ex)
             {

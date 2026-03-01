@@ -1,10 +1,8 @@
-import { inject } from '@angular/core';
-import { Router, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './shared/components/layouts/admin-layout/admin-layout.component';
 import { AuthLayoutComponent } from './shared/components/layouts/auth-layout/auth-layout.component';
 import { AuthGuard } from './core/auth/auth.guard';
 import { AdminGuard } from './core/auth/admin.guard';
-import { AuthService } from './core/services/auth.service';
 
 export const rootRouterConfig: Routes = [
     {
@@ -30,18 +28,6 @@ export const rootRouterConfig: Routes = [
                 path: 'terms',
                 loadComponent: () => import('./views/legal/terms-of-service.component').then(c => c.TermsOfServiceComponent),
                 data: { title: 'Terms of Service' }
-            }
-        ]
-    },
-    {
-        path: 'connections',
-        component: AdminLayoutComponent,
-        canActivate: [() => inject(AuthService).isLoggedIn() || inject(Router).createUrlTree(['/sessions/login'])],
-        children: [
-            {
-                path: '',
-                loadComponent: () => import('./views/sessions/signin/signin.component').then(c => c.SigninComponent),
-                data: { title: 'Connections', breadcrumb: 'CONNECTIONS' }
             }
         ]
     },
@@ -74,6 +60,11 @@ export const rootRouterConfig: Routes = [
                 path: 'processes',
                 loadChildren: () => import('./views/processes/processes.module').then(m => m.ProcessesModule),
                 data: { title: 'Processes', breadcrumb: 'PROCESSES' }
+            },
+            {
+                path: 'connections',
+                loadComponent: () => import('./views/sessions/signin/signin.component').then(c => c.SigninComponent),
+                data: { title: 'Connections', breadcrumb: 'CONNECTIONS' }
             },
             {
                 path: 'admin/users',

@@ -60,7 +60,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     private getConfigIdForUrl(url: string): string | null {
         // CloudFiles app auth routes
-        if (url.includes('/admin/') || url.includes('/auth/me')) {
+        if (url.includes('/manage/') || url.includes('/auth/me')) {
             return 'cloudfiles';
         }
         // Auth endpoints (login/register) don't need any token header

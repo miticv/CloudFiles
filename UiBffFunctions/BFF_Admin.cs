@@ -15,7 +15,7 @@ namespace CloudFiles
     {
         [Function(Constants.AdminUserList)]
         public static async Task<IActionResult> ListUsers(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "admin/users")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manage/users")] HttpRequest req,
             FunctionContext executionContext)
         {
             var log = executionContext.GetLogger(nameof(ListUsers));
@@ -54,7 +54,7 @@ namespace CloudFiles
 
         [Function(Constants.AdminUserUpdate)]
         public static async Task<IActionResult> UpdateUser(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "admin/users/{partitionKey}/{rowKey}")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "manage/users/{partitionKey}/{rowKey}")] HttpRequest req,
             string partitionKey,
             string rowKey,
             FunctionContext executionContext)

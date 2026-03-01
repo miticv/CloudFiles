@@ -23,10 +23,10 @@ export class AdminService extends HttpService {
     }
 
     listUsers(): Observable<UserDto[]> {
-        return this.http.get<UserDto[]>(`${this.baseUrl}admin/users`, this.getRequestOptions());
+        return this.http.get<UserDto[]>(`${this.baseUrl}manage/users`, this.getRequestOptions());
     }
 
     updateUser(partitionKey: string, rowKey: string, data: { isActive: boolean; isApproved: boolean }): Observable<{ success: boolean }> {
-        return this.http.put<{ success: boolean }>(`${this.baseUrl}admin/users/${partitionKey}/${rowKey}`, data, this.getRequestOptions());
+        return this.http.put<{ success: boolean }>(`${this.baseUrl}manage/users/${partitionKey}/${rowKey}`, data, this.getRequestOptions());
     }
 }

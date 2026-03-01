@@ -68,6 +68,8 @@ GOOGLE_CLIENT_SECRET=$(get_field "$ITEM_JSON" "GoogleClientSecret")
 AZURE_TENANT_ID=$(get_field "$ITEM_JSON" "AzureTenantId")
 AZURE_CLIENT_ID=$(get_field "$ITEM_JSON" "AzureClientId")
 PRODUCTION_API_URL=$(get_field "$ITEM_JSON" "ProductionApiUrl")
+JWT_SECRET=$(get_field "$ITEM_JSON" "JwtSecret")
+ADMIN_EMAILS=$(get_field "$ITEM_JSON" "AdminEmails")
 
 # Validate required fields
 MISSING=()
@@ -75,6 +77,8 @@ MISSING=()
 [ -z "$GOOGLE_CLIENT_SECRET" ] && MISSING+=("GoogleClientSecret")
 [ -z "$AZURE_TENANT_ID" ] && MISSING+=("AzureTenantId")
 [ -z "$AZURE_CLIENT_ID" ] && MISSING+=("AzureClientId")
+[ -z "$JWT_SECRET" ] && MISSING+=("JwtSecret")
+[ -z "$ADMIN_EMAILS" ] && MISSING+=("AdminEmails")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
     echo "Error: Missing required fields in Bitwarden item '$BW_ITEM_NAME':"
@@ -96,7 +100,9 @@ cat > "$LOCAL_SETTINGS" <<EOF
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "GooglePhotoClientId": "$GOOGLE_CLIENT_ID",
     "AzureTenantId": "$AZURE_TENANT_ID",
-    "IS_RUNNING_LOCALLY": "true"
+    "IS_RUNNING_LOCALLY": "true",
+    "ADMIN_EMAILS": "$ADMIN_EMAILS",
+    "JWT_SECRET": "$JWT_SECRET"
   },
   "Host": {
     "LocalHttpPort": 7071,
@@ -120,6 +126,7 @@ export const environment = {
     googleClientSecret: '$GOOGLE_CLIENT_SECRET',
     azureTenantId: '$AZURE_TENANT_ID',
     azureClientId: '$AZURE_CLIENT_ID',
+    adminEmail: '$ADMIN_EMAILS',
 };
 EOF
 echo "Generated: Web.UI/src/environments/environment.ts"
@@ -136,6 +143,7 @@ export const environment = {
     googleClientSecret: '$GOOGLE_CLIENT_SECRET',
     azureTenantId: '$AZURE_TENANT_ID',
     azureClientId: '$AZURE_CLIENT_ID',
+    adminEmail: '$ADMIN_EMAILS',
 };
 EOF
 echo "Generated: Web.UI/src/environments/environment.prod.ts"

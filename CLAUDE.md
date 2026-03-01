@@ -53,7 +53,9 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
   - `BFF_GooglePhotos.cs` — Google Photos operations & picker
   - `BFF_GoogleStorage.cs` — Google Cloud Storage browsing
   - `BFF_Common.cs` — Health check, token validation
-- **`Utilities/`** — Cloud SDK wrappers: `AzureUtility.cs`, `GoogleUtility.cs`, `CommonUtility.cs`
+  - `BFF_Auth.cs` — User registration/login (OAuth + local), JWT session management
+  - `BFF_Admin.cs` — Admin user management (list, update)
+- **`Utilities/`** — Cloud SDK wrappers: `AzureUtility.cs`, `GoogleUtility.cs`, `CommonUtility.cs`, `UserTableUtility.cs`
 - **`Models/Constants.cs`** — All function and orchestrator name constants
 - **`AzureToGoogle/`**, **`GoogleToGoogle/`** — Durable Functions for photo migrations: parallel upload in batches of 50 with retry (3 attempts, exponential backoff) → `batchCreate` per batch. See orchestrator pattern below
 - **`GooglePhotosToAzure/`** — Durable Functions for photo migration using parallel fan-out/fan-in (Azure Blob has no concurrent write quota)
@@ -61,22 +63,28 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
 
 ### Frontend (Angular 19 standalone, `Web.UI/src/app/`)
 
-- **`core/auth/`** — Multi-provider OIDC authentication:
+- **`core/auth/`** — Multi-provider OIDC authentication + app auth:
   - `multi-auth.service.ts` — Orchestrates three OIDC configs (google, azure, azure-storage)
-  - `auth.interceptor.ts` — Attaches correct Bearer token based on request URL pattern
-  - `auth.guard.ts` — Route protection
-- **`core/services/`** — API services for each cloud provider
+  - `auth.interceptor.ts` — Attaches correct Bearer token based on request URL pattern (OIDC for cloud APIs, CloudFiles JWT for `/admin/` and `/auth/me`)
+  - `auth.guard.ts` — Two-tier route protection (CloudFiles JWT + OIDC provider)
+  - `admin.guard.ts` — Admin-only route protection
+- **`core/services/`** — API services for each cloud provider + `auth.service.ts` (login/session) + `admin.service.ts` (user management)
 - **`views/`** — Feature modules (lazy-loaded):
   - `file-manager/` — Main file browsing with NgRx store (`store/` subfolder has actions, reducer, effects, selectors)
   - `storage-browser/` — Azure subscription/RG/account hierarchy
   - `google-storage-browser/` — GCS bucket browsing
   - `google-photos/` — Photos picker and album management
   - `processes/` — Migration job monitoring
-  - `sessions/` — Sign-in, logout, error pages
+  - `sessions/` — Login, sign-in (connections), error pages
+  - `admin/` — User management (admin only)
 - **`shared/components/layouts/`** — `AdminLayoutComponent` (authenticated, with sidebar) and `AuthLayoutComponent` (public)
 - **Routes** defined in `app.routing.ts`; default path redirects to `file-manager`
 
-### Authentication — Three OIDC Configs
+### Authentication — Two Layers
+
+**Layer 1: CloudFiles App Auth** — Users must log in (Google OAuth, Azure OAuth, or email/password) to create a user record in Azure Table Storage (`Users` table). The backend issues a CloudFiles JWT (HMAC-SHA256, 24h expiry) stored in `localStorage` as `cf_token`.
+
+**Layer 2: Three OIDC Configs** (for cloud API access)
 
 | Config ID | Resource | Why separate |
 |---|---|---|
@@ -85,9 +93,13 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
 | `azure-storage` | Azure Blob Storage | `storage.azure.com` audience |
 
 Azure requires separate tokens per resource audience. The HTTP interceptor in `auth.interceptor.ts` routes tokens by URL pattern:
+- `/admin/*`, `/auth/me` → CloudFiles JWT (from localStorage)
+- `/auth/local/*`, `/auth/oauth/*` → no auth header (credentials in body)
 - `/azure/files/*` → azure-storage token
 - `/azure/*` → azure token
 - `/google/*`, `/process/*` → google token
+
+**Auth Flow**: Login page (`/sessions/login`) → CloudFiles JWT → Connections page (`/sessions/signin`) → OIDC provider links → File browsing
 
 ## Code Conventions
 

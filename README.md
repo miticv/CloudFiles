@@ -199,6 +199,26 @@ The HTTP interceptor (`auth.interceptor.ts`) attaches the correct Bearer token b
 | GET | `ping` | Health check |
 | GET | `google/tokenvalidate` | Validate Google token |
 
+## Feature Flags
+
+Backend feature flags are set as environment variables — in `local.settings.json` for local dev, or in Azure Portal → Function App → **Configuration → Application settings** for deployed environments. Changes in the Portal take effect immediately (brief app restart, no redeployment needed).
+
+| Variable                                   | Values                  | Description                                              |
+|--------------------------------------------|-------------------------|----------------------------------------------------------|
+| `FEATURE_FLAG_TEST_FAIL_FILENAME_CONTAINS` | `""` (off) / any string | Fail any file whose name contains this string (testing). |
+
+### FEATURE_FLAG_TEST_FAIL_FILENAME_CONTAINS
+
+Forces any per-file activity to fail if the filename contains the configured string (case-insensitive). Applies to all three migration flows (Azure→GPhotos, GCS→GPhotos, GPhotos→Azure). Use to simulate partial failures without touching code or RBAC roles.
+
+**Local / staging only — do not set in production.**
+
+```json
+"FEATURE_FLAG_TEST_FAIL_FILENAME_CONTAINS": "IMG_"
+```
+
+Failed items show `[TEST] Simulated failure for: <filename>` in the Processes UI under **Failed Files**.
+
 ## Inspecting Process History in Azure Storage Explorer
 
 Durable Functions orchestration history persists indefinitely (until explicitly purged via the UI). The task hub is **`CloudFilesTaskHub`**.

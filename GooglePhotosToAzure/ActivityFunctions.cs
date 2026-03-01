@@ -52,7 +52,7 @@ namespace CloudFiles.GooglePhotosToAzure
 
             try
             {
-                var failFilter = Environment.GetEnvironmentVariable("TEST_FAIL_FILENAME_CONTAINS");
+                var failFilter = Environment.GetEnvironmentVariable("FEATURE_FLAG_TEST_FAIL_FILENAME_CONTAINS");
                 if (!string.IsNullOrEmpty(failFilter) && item.Filename.Contains(failFilter, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"[TEST] Simulated failure for: {item.Filename}");
 

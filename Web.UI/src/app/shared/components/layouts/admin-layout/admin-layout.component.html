@@ -16,6 +16,12 @@
                 <a *ngIf="item.type === 'link'" mat-list-item [routerLink]="['/' + item.state]" routerLinkActive="bg-primary/10 text-primary">
                     <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
                     <span matListItemTitle>{{item.name}}</span>
+                    <div *ngIf="item.connectionStatuses?.length" matListItemLine class="flex items-center gap-3 mt-0.5">
+                        <span *ngFor="let cs of item.connectionStatuses" class="flex items-center gap-1 text-xs">
+                            <span class="inline-block w-2 h-2 rounded-full" [class.bg-green-500]="cs.connected" [class.bg-gray-300]="!cs.connected"></span>
+                            <span [class.text-green-700]="cs.connected" [class.text-gray-400]="!cs.connected">{{cs.label}}</span>
+                        </span>
+                    </div>
                 </a>
             </ng-container>
         </mat-nav-list>
@@ -35,7 +41,7 @@
                     <mat-icon>account_circle</mat-icon>
                 </button>
                 <mat-menu #userMenu="matMenu">
-                    <a mat-menu-item routerLink="/sessions/signin">
+                    <a mat-menu-item routerLink="/connections">
                         <mat-icon>link</mat-icon>
                         <span>Connections</span>
                     </a>

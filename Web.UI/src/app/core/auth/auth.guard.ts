@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
                     return true;
                 }
                 localStorage.setItem('redirect', JSON.stringify(window.location.pathname));
-                return this.router.createUrlTree(['/sessions/signin']);
+                return this.router.createUrlTree(['/connections']);
             })
         );
     }

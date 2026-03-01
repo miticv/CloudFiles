@@ -62,11 +62,11 @@ export class AppComponent implements OnInit {
         this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((statuses) => {
             const anyAuthenticated = statuses.some(s => s.authenticated);
             if (!anyAuthenticated) {
-                if (!currentPath.startsWith('/sessions')) {
+                if (!currentPath.startsWith('/sessions') && !currentPath.startsWith('/connections')) {
                     if (!localStorage.getItem('redirect')) {
                         localStorage.setItem('redirect', JSON.stringify(currentPath));
                     }
-                    this.router.navigateByUrl('/sessions/signin');
+                    this.router.navigateByUrl('/connections');
                 }
             } else {
                 this.navigateToStoredEndpoint();

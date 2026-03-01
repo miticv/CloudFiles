@@ -128,6 +128,6 @@ export class MultiAuthService implements OnDestroy {
         // and redirect to connections so the user can re-authenticate with a fresh consent.
         console.warn('[Auth] clearing local auth state and redirecting to connections');
         this.oidcSecurityService.logoffLocalMultiple();
-        this.router.navigateByUrl('/sessions/signin');
+        this.router.navigateByUrl('/connections');
     }
 }

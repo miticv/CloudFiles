@@ -51,7 +51,7 @@ export class AuthInterceptor implements HttpInterceptor {
                 if (error instanceof HttpErrorResponse && error.status === 401) {
                     console.warn(`[Auth Interceptor] 401 from "${configId}" — token expired or invalid:`, req.url);
                     this.oidcSecurityService.logoffLocal(configId);
-                    this.router.navigateByUrl('/sessions/signin');
+                    this.router.navigateByUrl('/connections');
                 }
                 return throwError(() => error);
             })

@@ -8,7 +8,7 @@ import { RouterModule } from '@angular/router';
     template: `
     <div class="legal-page">
         <div class="legal-container">
-            <a routerLink="/sessions/signin" class="back-link">&larr; Back to CloudFiles</a>
+            <a routerLink="/connections" class="back-link">&larr; Back to CloudFiles</a>
             <h1>Terms of Service</h1>
             <p class="effective-date">Effective Date: February 28, 2026</p>
 

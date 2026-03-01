@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
-import { SigninComponent } from './signin/signin.component';
 import { NotFoundComponent } from './not-found/not-found.component';
 import { ErrorComponent } from './error/error.component';
 import { SessionsRoutes } from './sessions.routing';
@@ -22,7 +21,6 @@ import { SessionsRoutes } from './sessions.routing';
         RouterModule.forChild(SessionsRoutes)
     ],
     declarations: [
-        SigninComponent,
         NotFoundComponent,
         ErrorComponent
     ]

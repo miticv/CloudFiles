@@ -55,7 +55,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     ngOnInit() {
         // If already logged in with CloudFiles JWT, go to connections
         if (this.authService.isLoggedIn()) {
-            this.router.navigateByUrl('/sessions/signin');
+            this.router.navigateByUrl('/connections');
             return;
         }
 
@@ -96,7 +96,7 @@ export class LoginComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: () => {
                     this.loading = false;
-                    this.router.navigateByUrl('/sessions/signin');
+                    this.router.navigateByUrl('/connections');
                 },
                 error: (err) => {
                     this.loading = false;
@@ -128,7 +128,7 @@ export class LoginComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: () => {
                     this.loading = false;
-                    this.router.navigateByUrl('/sessions/signin');
+                    this.router.navigateByUrl('/connections');
                 },
                 error: (err) => {
                     this.loading = false;
@@ -167,7 +167,7 @@ export class LoginComponent implements OnInit, OnDestroy {
                                         next: () => {
                                             this.loading = false;
                                             this.authService.clearOAuthPending();
-                                            this.router.navigateByUrl('/sessions/signin');
+                                            this.router.navigateByUrl('/connections');
                                         },
                                         error: (err) => {
                                             this.loading = false;

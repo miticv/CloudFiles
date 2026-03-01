@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { SigninComponent } from './signin/signin.component';
 import { NotFoundComponent } from './not-found/not-found.component';
 import { ErrorComponent } from './error/error.component';
 
@@ -14,8 +13,8 @@ export const SessionsRoutes: Routes = [
             },
             {
                 path: 'signin',
-                component: SigninComponent,
-                data: { title: 'Sign In' }
+                redirectTo: '/connections',
+                pathMatch: 'full'
             },
             {
                 path: '404',

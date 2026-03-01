@@ -1,5 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MultiAuthService, ProviderStatus } from 'app/core/auth/multi-auth.service';
 import { appAnimations } from 'app/shared/animations/animations';
 
@@ -8,7 +12,8 @@ import { appAnimations } from 'app/shared/animations/animations';
     templateUrl: './signin.component.html',
     styleUrls: ['./signin.component.scss'],
     animations: appAnimations,
-    standalone: false
+    standalone: true,
+    imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule]
 })
 export class SigninComponent implements OnInit, OnDestroy {
     providers: ProviderStatus[] = [];
@@ -34,7 +39,7 @@ export class SigninComponent implements OnInit, OnDestroy {
     }
 
     connect(configId: string) {
-        localStorage.setItem('redirect', JSON.stringify('/sessions/signin'));
+        localStorage.setItem('redirect', JSON.stringify('/connections'));
         this.multiAuthService.login(configId);
     }
 

@@ -60,9 +60,9 @@ bootstrapApplication(AppComponent, {
                     customParamsRefreshTokenRequest: {
                         client_secret: environment.googleClientSecret
                     },
-                    postLoginRoute: '/sessions/signin',
-                    forbiddenRoute: '/sessions/signin',
-                    unauthorizedRoute: '/sessions/signin',
+                    postLoginRoute: '/connections',
+                    forbiddenRoute: '/connections',
+                    unauthorizedRoute: '/connections',
                     logLevel: environment.production ? LogLevel.Error : LogLevel.Debug,
                 },
                 {

@@ -107,13 +107,14 @@ namespace CloudFiles
                 }
 
                 // Fetch metadata without serialized inputs/outputs to avoid gRPC message-size limits.
-                // Large orchestration inputs (e.g. file lists) cause ResourceExhausted when fetched in bulk.
+                // Use small page sizes to keep each gRPC response under the 4MB limit.
+                var effectivePageSize = Math.Min(pageSizeInt, 5);
                 var queryFilter = new OrchestrationQuery
                 {
                     CreatedFrom = fromDate == DateTime.MinValue ? null : fromDate,
                     CreatedTo = toDate == DateTime.MaxValue ? null : toDate.AddDays(1),
                     Statuses = statuses,
-                    PageSize = pageSizeInt,
+                    PageSize = effectivePageSize,
                     FetchInputsAndOutputs = false,
                     ContinuationToken = req.Query["continueToken"],
                     InstanceIdPrefix = req.Query["prefix"]

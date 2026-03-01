@@ -683,16 +683,55 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return groups;
     }
 
+    trackByGroup(_index: number, group: ProcessGroup): string {
+        return group.parent.instanceId;
+    }
+
     private startAutoRefresh(): void {
-        this.refreshTimer = setInterval(() => {
-            const hasActive = this.instances.some(i =>
-                i.runtimeStatus === OrchestrationRuntimeStatus.Running ||
-                i.runtimeStatus === OrchestrationRuntimeStatus.Pending
-            );
-            if (hasActive) {
-                this.loadInstances();
+        this.refreshTimer = setInterval(() => this.refreshActive(), 5000);
+    }
+
+    private refreshActive(): void {
+        const previouslyActive = this.instances.filter(i =>
+            i.runtimeStatus === OrchestrationRuntimeStatus.Running ||
+            i.runtimeStatus === OrchestrationRuntimeStatus.Pending
+        );
+        if (previouslyActive.length === 0) return;
+
+        const params: ProcessListParams = {
+            statusList: [OrchestrationRuntimeStatus.Running, OrchestrationRuntimeStatus.Pending]
+        };
+        if (this.showAll && this.isAdmin) params.all = true;
+        if (this.fromDate) params.from = this.formatDate(this.fromDate);
+        if (this.toDate) params.to = this.formatDate(this.toDate);
+
+        this.processService.listInstances(params).subscribe({
+            next: (activeInstances) => {
+                const activeMap = new Map(activeInstances.map(i => [i.instanceId, i]));
+                let anyTransitioned = false;
+
+                for (let idx = 0; idx < this.instances.length; idx++) {
+                    const existing = this.instances[idx];
+                    const wasActive = existing.runtimeStatus === OrchestrationRuntimeStatus.Running ||
+                        existing.runtimeStatus === OrchestrationRuntimeStatus.Pending;
+                    if (!wasActive) continue;
+
+                    const updated = activeMap.get(existing.instanceId);
+                    if (updated) {
+                        this.instances[idx] = updated;
+                    } else {
+                        anyTransitioned = true;
+                    }
+                }
+
+                if (anyTransitioned) {
+                    // A running instance finished — full reload to get output data
+                    this.loadInstances();
+                } else {
+                    this.groups = this.buildGroups(this.instances);
+                }
             }
-        }, 5000);
+        });
     }
 
     private stopAutoRefresh(): void {

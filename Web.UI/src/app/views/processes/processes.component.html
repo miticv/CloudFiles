@@ -65,7 +65,7 @@
 
     <!-- Grouped instance list -->
     <div class="p-6 md:p-8 space-y-4" *ngIf="groups.length > 0">
-        <div *ngFor="let group of groups"
+        <div *ngFor="let group of groups; trackBy: trackByGroup"
              class="bg-card rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
             <!-- Parent row -->

@@ -49,6 +49,36 @@ namespace CloudFiles
 
         /********************************************************************************************************************************************/
 
+        [Function(Constants.AzureProbeContainerAccess)]
+        public static async Task<IActionResult> ProbeContainerAccess(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "azure/files/probe")] HttpRequest req,
+            FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(ProbeContainerAccess));
+            try
+            {
+                var accessToken = await AzureUtility.VerifyAzureStorageHeaderTokenIsValid(req).ConfigureAwait(false);
+                string? account = req.Query["account"];
+                string? container = req.Query["container"];
+
+                var acError = ValidateAccountAndContainer(account, container);
+                if (acError != null) return acError;
+
+                var hasAccess = await AzureUtility.ProbeContainerAccessAsync(account!, container!, accessToken).ConfigureAwait(false);
+                return new OkObjectResult(new { hasAccess });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error probing container access");
+                return new OkObjectResult(new { hasAccess = false });
+            }
+        }
+
         // ?path=2011 PhotoShoot Feng/Feng-2.jpg&account=myaccount&container=mycontainer
         [Function(Constants.AzureFileGetItem)]
         public static async Task<IActionResult> GetItem(

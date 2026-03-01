@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -113,7 +113,7 @@ export interface CopyToAzureDialogData {
                     <!-- Container -->
                     <mat-form-field *ngIf="selectedAccountName" appearance="outline" class="w-full mt-3" subscriptSizing="dynamic">
                         <mat-label>Container</mat-label>
-                        <mat-select [(ngModel)]="selectedContainer"
+                        <mat-select [(ngModel)]="selectedContainer" (selectionChange)="onContainerChange()"
                                     [disabled]="loadingStep === 'containers'">
                             <mat-option *ngFor="let c of containers" [value]="c.name">
                                 {{c.name}}
@@ -122,8 +122,15 @@ export interface CopyToAzureDialogData {
                         <mat-hint *ngIf="loadingStep === 'containers'">Loading...</mat-hint>
                     </mat-form-field>
 
-                    <!-- Grant Contributor Access -->
-                    <div *ngIf="selectedContainer && !hasContributorAccess" class="mt-4 p-3 rounded-lg" style="background: #fff8e1; border: 1px solid #ffe082;">
+                    <!-- Checking role... -->
+                    <div *ngIf="selectedContainer && accessState === 'checking'" class="mt-4 p-3 rounded-lg flex items-center gap-3 text-sm text-secondary"
+                         style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <mat-spinner diameter="18"></mat-spinner>
+                        Checking access...
+                    </div>
+
+                    <!-- No role: Grant Contributor Access -->
+                    <div *ngIf="selectedContainer && accessState === 'no-role'" class="mt-4 p-3 rounded-lg" style="background: #fff8e1; border: 1px solid #ffe082;">
                         <div class="flex items-center gap-2 text-sm mb-2">
                             <mat-icon style="font-size: 18px; width: 18px; height: 18px;" class="text-amber-600">security</mat-icon>
                             <span><strong>Storage Blob Data Contributor</strong> role is required to copy files.</span>
@@ -135,17 +142,24 @@ export interface CopyToAzureDialogData {
                         <div *ngIf="accessError" class="mt-2 text-xs" style="color: #b91c1c;">{{accessError}}</div>
                     </div>
 
-                    <!-- Access granted confirmation -->
-                    <div *ngIf="hasContributorAccess" class="mt-4 p-3 rounded-lg flex items-center gap-2 text-sm"
+                    <!-- Role assigned, waiting for propagation -->
+                    <div *ngIf="selectedContainer && accessState === 'propagating'" class="mt-4 p-3 rounded-lg flex items-center gap-3 text-sm"
+                         style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
+                        <mat-spinner diameter="18"></mat-spinner>
+                        Contributor access granted. Waiting for propagation...
+                    </div>
+
+                    <!-- Access fully ready -->
+                    <div *ngIf="selectedContainer && accessState === 'ready'" class="mt-4 p-3 rounded-lg flex items-center gap-2 text-sm"
                          style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
                         <mat-icon style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
-                        <span>Contributor access granted. Role may take up to 5 minutes to propagate.</span>
+                        Contributor access granted.
                     </div>
 
                     <!-- Destination folder (optional) -->
-                    <mat-form-field *ngIf="selectedContainer && hasContributorAccess" appearance="outline" class="w-full mt-3" subscriptSizing="dynamic">
+                    <mat-form-field *ngIf="selectedContainer && accessState === 'ready'" appearance="outline" class="w-full mt-3" subscriptSizing="dynamic">
                         <mat-label>Destination folder (optional)</mat-label>
-                        <input matInput [(ngModel)]="destinationFolder" placeholder="photos/2024">
+                        <input matInput [(ngModel)]="destinationFolder" (ngModelChange)="onDestinationFolderChange()" placeholder="photos/2024">
                     </mat-form-field>
                 </ng-container>
 
@@ -166,7 +180,7 @@ export interface CopyToAzureDialogData {
             <ng-container *ngIf="!success">
                 <button mat-button (click)="close()" [disabled]="submitting">Cancel</button>
                 <button mat-flat-button color="primary" (click)="startCopy()"
-                        [disabled]="!selectedContainer || !hasContributorAccess || submitting">
+                        [disabled]="accessState !== 'ready' || submitting">
                     <mat-spinner *ngIf="submitting" diameter="18" class="mr-2 inline-block"></mat-spinner>
                     {{submitting ? 'Starting...' : 'Start Copy'}}
                 </button>
@@ -174,7 +188,7 @@ export interface CopyToAzureDialogData {
         </mat-dialog-actions>
     `
 })
-export class CopyToAzureDialogComponent implements OnInit {
+export class CopyToAzureDialogComponent implements OnInit, OnDestroy {
     subscriptions: AzureSubscription[] = [];
     resourceGroups: AzureResourceGroup[] = [];
     storageAccounts: AzureStorageAccount[] = [];
@@ -192,9 +206,12 @@ export class CopyToAzureDialogComponent implements OnInit {
     success = false;
     instanceId: string | null = null;
 
-    hasContributorAccess = false;
+    // Access states: 'checking' | 'no-role' | 'propagating' | 'ready' | null
+    accessState: string | null = null;
     grantingAccess = false;
     accessError: string | null = null;
+    private probeTimer: ReturnType<typeof setInterval> | null = null;
+    private static STORAGE_KEY = 'copyToAzureState';
 
     constructor(
         private dialogRef: MatDialogRef<CopyToAzureDialogComponent>,
@@ -209,12 +226,17 @@ export class CopyToAzureDialogComponent implements OnInit {
         this.loadSubscriptions();
     }
 
+    ngOnDestroy(): void {
+        this.stopProbing();
+    }
+
     loadSubscriptions(): void {
         this.loadingStep = 'subscriptions';
         this.azureBrowseService.listSubscriptions().subscribe({
             next: (subs) => {
                 this.subscriptions = subs;
                 this.loadingStep = null;
+                this.restoreState();
             },
             error: () => {
                 this.error = 'Failed to load Azure subscriptions. Make sure Azure is connected.';
@@ -230,11 +252,10 @@ export class CopyToAzureDialogComponent implements OnInit {
         this.selectedResourceGroup = '';
         this.selectedAccountName = '';
         this.selectedContainer = '';
-        this.loadingStep = 'resourceGroups';
-        this.azureBrowseService.listResourceGroups(this.selectedSubscriptionId).subscribe({
-            next: (rgs) => { this.resourceGroups = rgs; this.loadingStep = null; },
-            error: () => { this.error = 'Failed to load resource groups.'; this.loadingStep = null; }
-        });
+        this.destinationFolder = '';
+        this.resetAccessState();
+        this.saveState();
+        this.loadResourceGroups();
     }
 
     onResourceGroupChange(): void {
@@ -242,22 +263,73 @@ export class CopyToAzureDialogComponent implements OnInit {
         this.containers = [];
         this.selectedAccountName = '';
         this.selectedContainer = '';
-        this.loadingStep = 'accounts';
-        this.azureBrowseService.listStorageAccounts(this.selectedSubscriptionId, this.selectedResourceGroup).subscribe({
-            next: (accs) => { this.storageAccounts = accs; this.loadingStep = null; },
-            error: () => { this.error = 'Failed to load storage accounts.'; this.loadingStep = null; }
-        });
+        this.destinationFolder = '';
+        this.resetAccessState();
+        this.saveState();
+        this.loadStorageAccounts();
     }
 
     onAccountChange(): void {
         this.containers = [];
         this.selectedContainer = '';
-        this.hasContributorAccess = false;
-        this.accessError = null;
+        this.destinationFolder = '';
+        this.resetAccessState();
+        this.saveState();
+        this.loadContainers();
+    }
+
+    onContainerChange(): void {
+        this.resetAccessState();
+        this.saveState();
+        if (this.selectedContainer) {
+            this.checkAccess();
+        }
+    }
+
+    onDestinationFolderChange(): void {
+        this.saveState();
+    }
+
+    private loadResourceGroups(callback?: () => void): void {
+        this.loadingStep = 'resourceGroups';
+        this.azureBrowseService.listResourceGroups(this.selectedSubscriptionId).subscribe({
+            next: (rgs) => { this.resourceGroups = rgs; this.loadingStep = null; callback?.(); },
+            error: () => { this.error = 'Failed to load resource groups.'; this.loadingStep = null; }
+        });
+    }
+
+    private loadStorageAccounts(callback?: () => void): void {
+        this.loadingStep = 'accounts';
+        this.azureBrowseService.listStorageAccounts(this.selectedSubscriptionId, this.selectedResourceGroup).subscribe({
+            next: (accs) => { this.storageAccounts = accs; this.loadingStep = null; callback?.(); },
+            error: () => { this.error = 'Failed to load storage accounts.'; this.loadingStep = null; }
+        });
+    }
+
+    private loadContainers(callback?: () => void): void {
         this.loadingStep = 'containers';
         this.azureBrowseService.listContainers(this.selectedSubscriptionId, this.selectedResourceGroup, this.selectedAccountName).subscribe({
-            next: (cs) => { this.containers = cs; this.loadingStep = null; },
+            next: (cs) => { this.containers = cs; this.loadingStep = null; callback?.(); },
             error: () => { this.error = 'Failed to load containers.'; this.loadingStep = null; }
+        });
+    }
+
+    private checkAccess(): void {
+        this.accessState = 'checking';
+        this.azureBrowseService.checkStorageRole(
+            this.selectedSubscriptionId, this.selectedResourceGroup, this.selectedAccountName
+        ).subscribe({
+            next: (res) => {
+                if (res.hasRole) {
+                    this.startProbing();
+                } else {
+                    this.accessState = 'no-role';
+                }
+            },
+            error: () => {
+                // If check fails, fall back to showing grant button
+                this.accessState = 'no-role';
+            }
         });
     }
 
@@ -268,8 +340,8 @@ export class CopyToAzureDialogComponent implements OnInit {
             this.selectedSubscriptionId, this.selectedResourceGroup, this.selectedAccountName
         ).subscribe({
             next: () => {
-                this.hasContributorAccess = true;
                 this.grantingAccess = false;
+                this.startProbing();
             },
             error: (err) => {
                 const body = err?.error;
@@ -281,6 +353,75 @@ export class CopyToAzureDialogComponent implements OnInit {
                 this.grantingAccess = false;
             }
         });
+    }
+
+    private startProbing(): void {
+        this.accessState = 'propagating';
+        this.probeOnce();
+        this.probeTimer = setInterval(() => this.probeOnce(), 10000);
+    }
+
+    private probeOnce(): void {
+        this.azureBrowseService.probeContainerAccess(this.selectedAccountName, this.selectedContainer).subscribe({
+            next: (res) => {
+                if (res.hasAccess) {
+                    this.accessState = 'ready';
+                    this.stopProbing();
+                }
+            }
+        });
+    }
+
+    private stopProbing(): void {
+        if (this.probeTimer) {
+            clearInterval(this.probeTimer);
+            this.probeTimer = null;
+        }
+    }
+
+    private saveState(): void {
+        sessionStorage.setItem(CopyToAzureDialogComponent.STORAGE_KEY, JSON.stringify({
+            selectedSubscriptionId: this.selectedSubscriptionId,
+            selectedResourceGroup: this.selectedResourceGroup,
+            selectedAccountName: this.selectedAccountName,
+            selectedContainer: this.selectedContainer,
+            destinationFolder: this.destinationFolder,
+        }));
+    }
+
+    private restoreState(): void {
+        const raw = sessionStorage.getItem(CopyToAzureDialogComponent.STORAGE_KEY);
+        if (!raw) return;
+
+        let saved: Record<string, string>;
+        try { saved = JSON.parse(raw); } catch { return; }
+
+        if (!saved.selectedSubscriptionId || !this.subscriptions.some(s => s.subscriptionId === saved.selectedSubscriptionId)) return;
+
+        this.selectedSubscriptionId = saved.selectedSubscriptionId;
+        this.loadResourceGroups(() => {
+            if (!saved.selectedResourceGroup || !this.resourceGroups.some(rg => rg.name === saved.selectedResourceGroup)) return;
+            this.selectedResourceGroup = saved.selectedResourceGroup;
+
+            this.loadStorageAccounts(() => {
+                if (!saved.selectedAccountName || !this.storageAccounts.some(a => a.name === saved.selectedAccountName)) return;
+                this.selectedAccountName = saved.selectedAccountName;
+
+                this.loadContainers(() => {
+                    if (!saved.selectedContainer || !this.containers.some(c => c.name === saved.selectedContainer)) return;
+                    this.selectedContainer = saved.selectedContainer;
+                    this.destinationFolder = saved.destinationFolder || '';
+                    this.checkAccess();
+                });
+            });
+        });
+    }
+
+    private resetAccessState(): void {
+        this.stopProbing();
+        this.accessState = null;
+        this.accessError = null;
+        this.grantingAccess = false;
     }
 
     startCopy(): void {

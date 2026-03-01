@@ -12,6 +12,8 @@
         public const string AzureStorageAccountList = "azureStorageAccountList";
         public const string AzureContainerList = "azureContainerList";
         public const string AzureAssignStorageRole = "azureAssignStorageRole";
+        public const string AzureCheckStorageRole = "azureCheckStorageRole";
+        public const string AzureProbeContainerAccess = "azureProbeContainerAccess";
         public const string GoogleToken = "googleToken";
         public const string GoogleValidateToken = "googleValidateToken";
 

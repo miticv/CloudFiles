@@ -282,6 +282,52 @@ namespace CloudFiles.Utilities
             throw new InvalidOperationException(errorData);
         }
 
+        public static async Task<bool> CheckStorageBlobDataContributorAsync(
+            string accessToken, string subscriptionId, string resourceGroup, string accountName, string principalId)
+        {
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var scope = $"subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Storage/storageAccounts/{accountName}";
+            var filter = $"assignedTo('{principalId}')";
+            var url = $"https://management.azure.com/{scope}/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01&$filter={filter}";
+
+            HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false);
+            var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            // Check if any assignment matches the Storage Blob Data Contributor role
+            return data.Contains(StorageBlobDataContributorRoleId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static async Task<bool> ProbeContainerAccessAsync(string accountName, string containerName, string accessToken)
+        {
+            try
+            {
+                var blobServiceUri = new Uri($"https://{accountName}.blob.core.windows.net");
+                var credential = new StaticAccessTokenCredential(accessToken);
+                var blobServiceClient = new BlobServiceClient(blobServiceUri, credential);
+                var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+                // Try to list one blob — succeeds only if data-plane role is active
+                await containerClient.GetBlobsByHierarchyAsync(delimiter: "/")
+                    .AsPages(default, 1)
+                    .GetAsyncEnumerator()
+                    .MoveNextAsync()
+                    .ConfigureAwait(false);
+
+                return true;
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 403)
+            {
+                return false;
+            }
+        }
+
         /********************************************************************************************************************************************/
 
         /**

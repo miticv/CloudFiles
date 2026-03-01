@@ -73,4 +73,18 @@ export class AzureBrowseService extends HttpService {
             this.getRequestOptions(true)
         );
     }
+
+    checkStorageRole(subscriptionId: string, resourceGroup: string, accountName: string): Observable<{ hasRole: boolean }> {
+        return this.http.get<{ hasRole: boolean }>(
+            `${this.baseUrl}azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/checkRole`,
+            this.getRequestOptions(true)
+        );
+    }
+
+    probeContainerAccess(accountName: string, containerName: string): Observable<{ hasAccess: boolean }> {
+        return this.http.get<{ hasAccess: boolean }>(
+            `${this.baseUrl}azure/files/probe?account=${accountName}&container=${containerName}`,
+            this.getRequestOptions(true)
+        );
+    }
 }

@@ -68,6 +68,20 @@
         public const string CopyGoogleDriveToAzureOrchestrator = "copyGoogleDriveToAzureOrchestrator";
         public const string CopyGoogleDriveFileToAzureBlob = "copyGoogleDriveFileToAzureBlob";
 
+        // automation Google Storage to Azure
+        public const string ProcessGcsToAzure_Start = "processGcsToAzure_Start";
+        public const string GcsToAzureOrchestrator = "gcsToAzureOrchestrator";
+        public const string GcsToAzurePrepareList = "gcsToAzurePrepareList";
+        public const string CopyGcsToAzureOrchestrator = "copyGcsToAzureOrchestrator";
+        public const string CopyGcsObjectToAzureBlob = "copyGcsObjectToAzureBlob";
+
+        // automation Azure to GCS
+        public const string ProcessAzureToGcs_Start = "processAzureToGcs_Start";
+        public const string AzureToGcsOrchestrator = "azureToGcsOrchestrator";
+        public const string AzureToGcsPrepareList = "azureToGcsPrepareList";
+        public const string CopyAzureToGcsOrchestrator = "copyAzureToGcsOrchestrator";
+        public const string CopyAzureBlobToGcsObject = "copyAzureBlobToGcsObject";
+
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";
         public const string AuthLocalLogin = "authLocalLogin";

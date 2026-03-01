@@ -50,6 +50,12 @@ export class NavigationService implements OnDestroy {
             state: 'google-photos'
         },
         {
+            name: 'Apple iCloud Drive',
+            type: 'link',
+            icon: 'cloud_off',
+            state: 'apple-drive'
+        },
+        {
             name: 'Processes',
             type: 'link',
             icon: 'sync',

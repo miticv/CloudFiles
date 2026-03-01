@@ -62,6 +62,11 @@ export const rootRouterConfig: Routes = [
                 data: { title: 'Google Photos', breadcrumb: 'GOOGLE PHOTOS' }
             },
             {
+                path: 'apple-drive',
+                loadChildren: () => import('./views/apple-drive/apple-drive.module').then(m => m.AppleDriveModule),
+                data: { title: 'Apple iCloud Drive', breadcrumb: 'APPLE DRIVE' }
+            },
+            {
                 path: 'processes',
                 loadChildren: () => import('./views/processes/processes.module').then(m => m.ProcessesModule),
                 data: { title: 'Processes', breadcrumb: 'PROCESSES' }

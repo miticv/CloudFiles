@@ -9,6 +9,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialogModule } from '@angular/material/dialog';
 import { GoogleStorageBrowserComponent } from './google-storage-browser.component';
 
 const routes: Route[] = [
@@ -30,7 +32,9 @@ const routes: Route[] = [
         MatProgressSpinnerModule,
         MatTooltipModule,
         MatFormFieldModule,
-        MatInputModule
+        MatInputModule,
+        MatCheckboxModule,
+        MatDialogModule
     ]
 })
 export class GoogleStorageBrowserModule {}

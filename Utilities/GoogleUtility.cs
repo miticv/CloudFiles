@@ -488,6 +488,31 @@ namespace CloudFiles.Utilities
             return await ProxyPickerImageAsync(downloadUrl, accessToken).ConfigureAwait(false);
         }
 
+        public static async Task<(string Name, long Size)> UploadToGcsAsync(
+            byte[] data, string bucket, string objectName, string contentType, string accessToken)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var url = $"https://storage.googleapis.com/upload/storage/v1/b/{bucket}/o?uploadType=media&name={Uri.EscapeDataString(objectName)}";
+
+            var content = new ByteArrayContent(data);
+            content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+
+            var response = await client.PostAsync(url, content).ConfigureAwait(false);
+            var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var parsed = JsonConvert.DeserializeObject<GoogleStorageFileItem>(result)!;
+                return (parsed.Name, long.TryParse(parsed.Size, out var size) ? size : data.Length);
+            }
+            else
+            {
+                throw new InvalidOperationException($"UploadToGcsAsync error: {result}");
+            }
+        }
+
         public static async Task<byte[]> GetImageFromUrlAsync(string mediaUrl, string accessToken)
         {
             using var httpClient = new HttpClient();

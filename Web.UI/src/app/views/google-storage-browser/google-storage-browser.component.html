@@ -123,16 +123,21 @@
                 <div>
                     <div class="text-3xl font-bold tracking-tight leading-none">Google Storage</div>
                     <div class="mt-1 font-medium text-secondary">
-                        <mat-icon class="!text-base !w-4 !h-4" style="vertical-align: text-bottom;">cloud_circle</mat-icon>
-                        {{currentBucket}}
+                        {{selectedFiles.size > 0 ? selectedFiles.size + ' file' + (selectedFiles.size !== 1 ? 's' : '') + ' selected' : currentBucket}}
                     </div>
                 </div>
                 <div class="flex items-center gap-1 mt-4 sm:mt-0">
                     <button mat-icon-button class="header-btn" (click)="backToSetup()" matTooltip="Change bucket">
                         <mat-icon>arrow_back</mat-icon>
                     </button>
-                    <button mat-icon-button class="header-btn" (click)="refresh()" matTooltip="Refresh">
+                    <button mat-icon-button class="header-btn" (click)="refresh()" matTooltip="Refresh" [disabled]="loading">
                         <mat-icon>refresh</mat-icon>
+                    </button>
+                    <button mat-flat-button (click)="openCopyToAzure()"
+                            [disabled]="loading || selectedFiles.size === 0"
+                            class="btn-azure ml-2">
+                        <mat-icon>cloud_download</mat-icon>
+                        Copy to Azure
                     </button>
                 </div>
             </div>
@@ -182,10 +187,23 @@
 
                     <!-- Files -->
                     <mat-nav-list *ngIf="files.length > 0">
-                        <div class="font-medium text-sm text-secondary mb-1 mt-4">Files</div>
-                        <mat-list-item *ngFor="let file of files">
-                            <mat-icon matListItemIcon class="text-blue-400">description</mat-icon>
-                            <div matListItemTitle>{{file.itemName}}</div>
+                        <div class="font-medium text-sm text-secondary mb-1 mt-4 flex items-center gap-2">
+                            <mat-checkbox [checked]="allSelected"
+                                          [indeterminate]="selectedFiles.size > 0 && !allSelected"
+                                          (change)="toggleSelectAll()"
+                                          color="primary">
+                            </mat-checkbox>
+                            Files
+                            <span class="text-xs text-gray-400">({{files.length}})</span>
+                        </div>
+                        <mat-list-item *ngFor="let file of files" (click)="toggleSelection(file)">
+                            <mat-checkbox matListItemIcon [checked]="isSelected(file)" color="primary"
+                                          (click)="$event.stopPropagation()" (change)="toggleSelection(file)">
+                            </mat-checkbox>
+                            <div matListItemTitle class="flex items-center gap-2">
+                                <mat-icon class="text-blue-400 !text-[20px] !w-5 !h-5">description</mat-icon>
+                                {{file.itemName}}
+                            </div>
                             <div matListItemLine class="text-secondary text-xs">
                                 <span class="type-badge" [ngClass]="getFileTypeBg(file.itemType)">{{file.itemType}}</span>
                             </div>

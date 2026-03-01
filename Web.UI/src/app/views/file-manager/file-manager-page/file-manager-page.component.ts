@@ -11,6 +11,7 @@ import { loadFile, loadFolder, setContext } from '../store/file-manager.actions'
 import { getCurrentPath, getFiles, getFolders, getCurrentFile, getShowDetail, getContext, getError, getIsLoading } from '../store/file-manager.selectors';
 import { StorageHelpDialogComponent } from '../../storage-browser/storage-help-dialog.component';
 import { MigrateDialogComponent, MigrateDialogData } from '../migrate-dialog/migrate-dialog.component';
+import { CopyToGcsDialogComponent, CopyToGcsDialogData } from '../copy-to-gcs-dialog/copy-to-gcs-dialog.component';
 
 @Component({
     standalone: false,
@@ -166,6 +167,22 @@ export class FileManagerPageComponent implements OnInit {
             container: this.currentContext.container
         };
         const dialogRef = this.dialog.open(MigrateDialogComponent, {
+            width: '520px',
+            data
+        });
+        dialogRef.afterClosed().subscribe(() => {
+            this.clearSelection();
+        });
+    }
+
+    openCopyToGcsDialog(): void {
+        const data: CopyToGcsDialogData = {
+            selectedFiles: Array.from(this.selectedFiles),
+            selectedFolders: Array.from(this.selectedFolders),
+            account: this.currentContext.account,
+            container: this.currentContext.container
+        };
+        const dialogRef = this.dialog.open(CopyToGcsDialogComponent, {
             width: '520px',
             data
         });

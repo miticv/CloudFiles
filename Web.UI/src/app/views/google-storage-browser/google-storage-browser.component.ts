@@ -1,9 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { first } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { GoogleStorageService, GoogleBucketItem } from 'app/core/services/google-storage.service';
 import { MultiAuthService } from 'app/core/auth/multi-auth.service';
 import { FileItem } from 'app/views/file-manager/model/FileItem';
+import {
+    CopyGcsToAzureDialogComponent,
+    CopyGcsToAzureDialogData
+} from './copy-gcs-to-azure-dialog/copy-gcs-to-azure-dialog.component';
 
 type ViewState = 'setup' | 'buckets' | 'browse';
 
@@ -38,9 +43,12 @@ export class GoogleStorageBrowserComponent implements OnInit {
 
     private readonly storageKey = 'googleStorageConfig';
 
+    selectedFiles = new Set<string>();
+
     constructor(
         private googleStorageService: GoogleStorageService,
-        private multiAuthService: MultiAuthService
+        private multiAuthService: MultiAuthService,
+        private dialog: MatDialog
     ) {}
 
     ngOnInit(): void {
@@ -114,10 +122,12 @@ export class GoogleStorageBrowserComponent implements OnInit {
 
     navigateToFolder(folder: FileItem): void {
         this.currentPath = folder.itemPath.split('/').filter(x => x);
+        this.selectedFiles.clear();
         this.loadFiles(folder.itemPath);
     }
 
     navigateToBreadcrumb(index: number): void {
+        this.selectedFiles.clear();
         if (index < 0) {
             this.currentPath = [];
             this.loadFiles();
@@ -143,6 +153,7 @@ export class GoogleStorageBrowserComponent implements OnInit {
     }
 
     refresh(): void {
+        this.selectedFiles.clear();
         if (this.currentView === 'browse') {
             const path = this.currentPath.length > 0
                 ? this.currentPath.join('/') + '/'
@@ -159,6 +170,49 @@ export class GoogleStorageBrowserComponent implements OnInit {
 
     get files(): FileItem[] {
         return this.items.filter(i => !i.isFolder);
+    }
+
+    // --- Selection ---
+
+    toggleSelection(file: FileItem): void {
+        if (this.selectedFiles.has(file.itemPath)) {
+            this.selectedFiles.delete(file.itemPath);
+        } else {
+            this.selectedFiles.add(file.itemPath);
+        }
+    }
+
+    isSelected(file: FileItem): boolean {
+        return this.selectedFiles.has(file.itemPath);
+    }
+
+    get allSelected(): boolean {
+        return this.files.length > 0 && this.files.every(f => this.selectedFiles.has(f.itemPath));
+    }
+
+    toggleSelectAll(): void {
+        if (this.allSelected) {
+            this.files.forEach(f => this.selectedFiles.delete(f.itemPath));
+        } else {
+            this.files.forEach(f => this.selectedFiles.add(f.itemPath));
+        }
+    }
+
+    get selectedFilesList(): FileItem[] {
+        return this.files.filter(f => this.selectedFiles.has(f.itemPath));
+    }
+
+    // --- Copy to Azure ---
+
+    openCopyToAzure(): void {
+        const data: CopyGcsToAzureDialogData = {
+            selectedFiles: this.selectedFilesList,
+            bucketName: this.currentBucket
+        };
+        this.dialog.open(CopyGcsToAzureDialogComponent, {
+            width: '520px',
+            data
+        });
     }
 
     getFileTypeBg(itemType: string): string {

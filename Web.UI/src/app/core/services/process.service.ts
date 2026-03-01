@@ -58,6 +58,35 @@ export interface StartGoogleDriveToAzureRequest {
     startedBy: string;
 }
 
+export interface GcsSelectedItem {
+    itemPath: string;
+    isFolder: boolean;
+}
+
+export interface StartGcsToAzureRequest {
+    selectedItems: GcsSelectedItem[];
+    bucketName: string;
+    accountName: string;
+    containerName: string;
+    destinationFolder: string;
+    azureAccessToken: string;
+    startedBy: string;
+}
+
+export interface AzureSelectedItem {
+    itemPath: string;
+    isFolder: boolean;
+}
+
+export interface StartAzureToGcsRequest {
+    selectedItems: AzureSelectedItem[];
+    accountName: string;
+    containerName: string;
+    bucketName: string;
+    destinationFolder: string;
+    startedBy: string;
+}
+
 export interface StartJobResponse {
     id: string;
     statusQueryGetUri: string;
@@ -130,6 +159,22 @@ export class ProcessService extends HttpService {
     startGoogleDriveToAzure(request: StartGoogleDriveToAzureRequest): Observable<StartJobResponse> {
         return this.http.post<StartJobResponse>(
             `${this.baseUrl}process/GoogleDriveToAzure/start`,
+            request,
+            this.getRequestOptions(true)
+        );
+    }
+
+    startGcsToAzure(request: StartGcsToAzureRequest): Observable<StartJobResponse> {
+        return this.http.post<StartJobResponse>(
+            `${this.baseUrl}process/GoogleStorageToAzure/start`,
+            request,
+            this.getRequestOptions(true)
+        );
+    }
+
+    startAzureToGcs(request: StartAzureToGcsRequest): Observable<StartJobResponse> {
+        return this.http.post<StartJobResponse>(
+            `${this.baseUrl}process/AzureToGcs/start`,
             request,
             this.getRequestOptions(true)
         );

@@ -42,7 +42,7 @@ bootstrapApplication(AppComponent, {
                         'https://www.googleapis.com/auth/photoslibrary.appendonly',
                         'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
                         'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
-                        'https://www.googleapis.com/auth/devstorage.read_only',
+                        'https://www.googleapis.com/auth/devstorage.read_write',
                         'https://www.googleapis.com/auth/drive.readonly',
                     ].join(' '),
                     triggerAuthorizationResultEvent: true,

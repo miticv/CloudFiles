@@ -192,14 +192,17 @@
                         Failed Files ({{getFailedFiles(group.parent).length}})
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <div *ngFor="let file of getFailedFiles(group.parent)"
-                             class="flex items-start gap-2 px-2 py-1.5 rounded-md text-xs bg-red-50 border border-red-200">
-                            <mat-icon class="text-red-400 !text-sm !w-3.5 !h-3.5 mt-0.5 flex-shrink-0">error_outline</mat-icon>
-                            <div class="min-w-0">
-                                <div class="font-medium break-all">{{file.name}}</div>
-                                <div class="text-red-600 break-words whitespace-pre-wrap">{{file.error}}</div>
-                            </div>
-                        </div>
+                        <details *ngFor="let file of getFailedFiles(group.parent)"
+                                 class="rounded-md text-xs bg-red-50 border border-red-200">
+                            <summary class="flex items-start gap-2 px-2 py-1.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+                                <mat-icon class="text-red-400 !text-sm !w-3.5 !h-3.5 mt-0.5 flex-shrink-0">error_outline</mat-icon>
+                                <div class="min-w-0">
+                                    <div class="font-medium break-all">{{file.name}}</div>
+                                    <div class="text-red-600 truncate">{{getErrorSummary(file.error)}}</div>
+                                </div>
+                            </summary>
+                            <div class="px-2 pb-2 ml-6 text-red-600 break-words whitespace-pre-wrap">{{file.error}}</div>
+                        </details>
                     </div>
                 </div>
                 <!-- Fallback: input files when no output yet (pending/running) -->

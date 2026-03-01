@@ -392,6 +392,16 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         };
     }
 
+    getErrorSummary(error: string): string {
+        try {
+            const parsed = JSON.parse(error);
+            if (parsed && typeof parsed.message === 'string') {
+                return parsed.message.length > 300 ? parsed.message.substring(0, 300) + '...' : parsed.message;
+            }
+        } catch { /* not JSON, use raw string */ }
+        return error.length > 300 ? error.substring(0, 300) + '...' : error;
+    }
+
     getFileIcon(fileName: string): string {
         const ext = fileName.includes('.') ? fileName.split('.').pop()!.toLowerCase() : '';
         const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);

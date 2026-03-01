@@ -196,7 +196,9 @@ namespace CloudFiles
                         createdAt = i.CreatedAt,
                         lastUpdatedAt = i.LastUpdatedAt,
                         serializedInput = TrimInputForList(detail?.SerializedInput),
-                        serializedCustomStatus = i.SerializedCustomStatus
+                        serializedCustomStatus = i.SerializedCustomStatus,
+                        hasFailedFiles = i.RuntimeStatus == OrchestrationRuntimeStatus.Completed
+                            && HasFailedFiles(detail?.SerializedOutput)
                     };
                 }).ToList();
 
@@ -319,6 +321,36 @@ namespace CloudFiles
             {
                 obj[countProp] = arr.Count;
                 obj.Remove(arrayProp);
+            }
+        }
+
+        /// <summary>
+        /// Checks whether the orchestration output contains any failed file entries.
+        /// Supports both GooglePhotosToAzure (results[].success) and
+        /// AzureToGoogle/GCSToGoogle (newMediaItemResults[].mediaItem.id) formats.
+        /// </summary>
+        private static bool HasFailedFiles(string? serializedOutput)
+        {
+            if (string.IsNullOrEmpty(serializedOutput)) return false;
+            try
+            {
+                var obj = JObject.Parse(serializedOutput);
+
+                // GooglePhotosToAzure: results[] with success flag
+                var results = (obj["results"] ?? obj["Results"]) as JArray;
+                if (results != null)
+                    return results.Any(r => !(r["success"]?.Value<bool>() ?? r["Success"]?.Value<bool>() ?? true));
+
+                // AzureToGoogle / GCSToGoogle: newMediaItemResults[] — failure = missing mediaItem.id
+                var mediaResults = (obj["newMediaItemResults"] ?? obj["NewMediaItemResults"]) as JArray;
+                if (mediaResults != null)
+                    return mediaResults.Any(r => string.IsNullOrEmpty(r["mediaItem"]?["id"]?.Value<string>()));
+
+                return false;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

@@ -60,6 +60,7 @@ export interface OrchestrationInstance {
     serializedInput: string;
     serializedOutput: string;
     serializedCustomStatus: string;
+    hasFailedFiles?: boolean;
 }
 
 export enum OrchestrationRuntimeStatus {

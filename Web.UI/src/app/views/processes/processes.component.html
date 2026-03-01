@@ -180,7 +180,7 @@
                     <ng-container *ngIf="getSucceededFilesByFolder(group.parent) as folderGroups">
                         <!-- Grouped by folder -->
                         <div *ngIf="folderGroups.length > 1; else flatSucceeded" class="mt-2 space-y-1">
-                            <details *ngFor="let fg of folderGroups">
+                            <details *ngFor="let fg of folderGroups; trackBy: trackByFolder">
                                 <summary class="flex items-center gap-1 text-xs font-medium text-secondary cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                                     <mat-icon class="!text-sm !w-3.5 !h-3.5 text-amber-500">folder</mat-icon>
                                     {{fg.folder || '(root)'}}
@@ -230,7 +230,7 @@
                     <ng-container *ngIf="getFailedFilesByFolder(group.parent) as folderGroups">
                         <!-- Grouped by folder -->
                         <div *ngIf="folderGroups.length > 1; else flatFailed" class="mt-2 space-y-1">
-                            <details *ngFor="let fg of folderGroups">
+                            <details *ngFor="let fg of folderGroups; trackBy: trackByFolder">
                                 <summary class="flex items-center gap-1 text-xs font-medium text-secondary cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                                     <mat-icon class="!text-sm !w-3.5 !h-3.5 text-amber-500">folder</mat-icon>
                                     {{fg.folder || '(root)'}}

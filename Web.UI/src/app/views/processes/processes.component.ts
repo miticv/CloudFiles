@@ -523,7 +523,10 @@ export class ProcessesComponent implements OnInit, OnDestroy {
             return instance.runtimeStatus;
         }
         // If completed but has any failed files, show as failed
-        // (only check if output is loaded — output is lazy-loaded on expand)
+        // Use hasFailedFiles flag from list endpoint, or check loaded output
+        if (instance.hasFailedFiles) {
+            return OrchestrationRuntimeStatus.Failed;
+        }
         if (instance.serializedOutput && this.getFailedFiles(instance).length > 0) {
             return OrchestrationRuntimeStatus.Failed;
         }
@@ -776,6 +779,10 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
     trackByGroup(_index: number, group: ProcessGroup): string {
         return group.parent.instanceId;
+    }
+
+    trackByFolder(_index: number, fg: { folder: string }): string {
+        return fg.folder;
     }
 
     private startAutoRefresh(): void {

@@ -298,18 +298,20 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return [];
     }
 
-    getFailedFiles(instance: OrchestrationInstance): { name: string; error: string }[] {
+    getFailedFiles(instance: OrchestrationInstance): { name: string; path: string; error: string }[] {
         const output = this.parseJson(instance.serializedOutput);
         if (!output) return [];
 
         // GooglePhotosToAzure: results[] with success === false
         const results = (output['results'] ?? output['Results']) as
-            { filename?: string; Filename?: string; success?: boolean; Success?: boolean; errorMessage?: string; ErrorMessage?: string }[] | undefined;
+            { filename?: string; Filename?: string; blobPath?: string; BlobPath?: string;
+              success?: boolean; Success?: boolean; errorMessage?: string; ErrorMessage?: string }[] | undefined;
         if (results) {
             return results
                 .filter(r => !(r.success ?? r.Success))
                 .map(r => ({
                     name: r.filename || r.Filename || 'unknown',
+                    path: r.blobPath || r.BlobPath || '',
                     error: r.errorMessage || r.ErrorMessage || 'Unknown error'
                 }));
         }
@@ -318,12 +320,28 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const mediaResults = (output['newMediaItemResults'] ?? output['NewMediaItemResults']) as
             { mediaItem?: { id?: string; filename?: string }; status?: { message?: string } }[] | undefined;
         if (mediaResults) {
+            // Build lookup from filename to full path using output listItemsPrepared
+            const pathMap = new Map<string, string>();
+            const preparedItems = (output['listItemsPrepared'] ?? output['ListItemsPrepared']) as
+                { itemPath?: string; ItemPath?: string; itemFilename?: string; ItemFilename?: string }[] | undefined;
+            if (preparedItems) {
+                for (const item of preparedItems) {
+                    const filename = item.itemFilename || item.ItemFilename || '';
+                    const itemPath = item.itemPath || item.ItemPath || '';
+                    if (filename) pathMap.set(filename, itemPath);
+                }
+            }
+
             return mediaResults
                 .filter(r => !r.mediaItem?.id)
-                .map(r => ({
-                    name: r.mediaItem?.filename || 'unknown',
-                    error: r.status?.message || 'Unknown error'
-                }));
+                .map((r) => {
+                    const name = r.mediaItem?.filename || 'unknown';
+                    return {
+                        name,
+                        path: pathMap.get(name) || '',
+                        error: r.status?.message || 'Unknown error'
+                    };
+                });
         }
 
         return [];

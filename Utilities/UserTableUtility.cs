@@ -189,7 +189,7 @@ namespace CloudFiles.Utilities
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
 
-            var handler = new JwtSecurityTokenHandler();
+            var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
             var principal = handler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuer = true,

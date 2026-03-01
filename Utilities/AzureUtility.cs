@@ -239,6 +239,49 @@ namespace CloudFiles.Utilities
             }
         }
 
+        private const string StorageBlobDataContributorRoleId = "ba92f5b4-2d11-453d-a403-e96b0029c9fe";
+
+        public static async Task<(bool success, bool alreadyAssigned)> AssignStorageBlobDataContributorAsync(
+            string accessToken, string subscriptionId, string resourceGroup, string accountName, string principalId)
+        {
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var roleAssignmentId = Guid.NewGuid().ToString();
+            var scope = $"subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Storage/storageAccounts/{accountName}";
+            var url = $"https://management.azure.com/{scope}/providers/Microsoft.Authorization/roleAssignments/{roleAssignmentId}?api-version=2022-04-01";
+
+            var body = new
+            {
+                properties = new
+                {
+                    roleDefinitionId = $"/{scope}/providers/Microsoft.Authorization/roleDefinitions/{StorageBlobDataContributorRoleId}",
+                    principalId = principalId,
+                    principalType = "User"
+                }
+            };
+
+            var content = new StringContent(
+                JsonConvert.SerializeObject(body),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            HttpResponseMessage response = await client.PutAsync(url, content).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, false);
+            }
+
+            if ((int)response.StatusCode == 409)
+            {
+                return (true, true);
+            }
+
+            var errorData = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            throw new InvalidOperationException(errorData);
+        }
+
         /********************************************************************************************************************************************/
 
         /**

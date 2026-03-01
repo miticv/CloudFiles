@@ -8,7 +8,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
@@ -34,7 +33,7 @@ export interface CopyToAzureDialogData {
         CommonModule, FormsModule,
         MatDialogModule, MatIconModule, MatButtonModule,
         MatSelectModule, MatFormFieldModule, MatInputModule,
-        MatProgressSpinnerModule, MatMenuModule, MatTooltipModule
+        MatProgressSpinnerModule, MatTooltipModule
     ],
     selector: 'app-copy-to-azure-dialog',
     styles: [`
@@ -69,34 +68,6 @@ export interface CopyToAzureDialogData {
 
                 <!-- Azure Destination -->
                 <div class="text-sm font-semibold mb-2" style="color: #424242;">Azure Destination</div>
-                <div class="mb-3 flex items-center gap-1 text-xs text-secondary">
-                    <mat-icon style="font-size: 15px; width: 15px; height: 15px;">info</mat-icon>
-                    <span>Requires <strong>Storage Blob Data Contributor</strong> role on the target storage account.</span>
-                    <span [matMenuTriggerFor]="roleHelpMenu"
-                          matTooltip="How to assign this role"
-                          class="cursor-pointer inline-flex items-center text-secondary hover:text-fg-base transition-colors duration-150">
-                        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">help_outline</mat-icon>
-                    </span>
-                </div>
-
-                <mat-menu #roleHelpMenu xPosition="after">
-                    <div class="p-4" style="max-width: 320px;" (click)="$event.stopPropagation()">
-                        <p class="text-sm font-semibold mb-2">How to assign the role</p>
-                        <ol class="list-decimal list-inside space-y-1 text-secondary text-xs leading-relaxed">
-                            <li>Go to the <strong>Azure Portal</strong> &rarr; your Storage Account</li>
-                            <li>Click <strong>Access Control (IAM)</strong> in the left menu</li>
-                            <li>Click <strong>+ Add</strong> &rarr; <strong>Add role assignment</strong></li>
-                            <li>Search for <strong>Storage Blob Data Contributor</strong> and select it</li>
-                            <li>Click <strong>Members</strong>, then <strong>+ Select members</strong></li>
-                            <li>Search for your user account and select it</li>
-                            <li>Click <strong>Review + assign</strong></li>
-                        </ol>
-                        <p class="text-xs text-secondary mt-3 flex items-center gap-1">
-                            <mat-icon style="font-size: 14px; width: 14px; height: 14px;" class="text-amber-500">schedule</mat-icon>
-                            Role assignments can take up to 5 minutes to take effect.
-                        </p>
-                    </div>
-                </mat-menu>
 
                 <!-- Loading subscriptions -->
                 <div *ngIf="loadingStep === 'subscriptions'" class="flex items-center justify-center gap-3 py-8 text-sm text-secondary">
@@ -151,8 +122,28 @@ export interface CopyToAzureDialogData {
                         <mat-hint *ngIf="loadingStep === 'containers'">Loading...</mat-hint>
                     </mat-form-field>
 
+                    <!-- Grant Contributor Access -->
+                    <div *ngIf="selectedContainer && !hasContributorAccess" class="mt-4 p-3 rounded-lg" style="background: #fff8e1; border: 1px solid #ffe082;">
+                        <div class="flex items-center gap-2 text-sm mb-2">
+                            <mat-icon style="font-size: 18px; width: 18px; height: 18px;" class="text-amber-600">security</mat-icon>
+                            <span><strong>Storage Blob Data Contributor</strong> role is required to copy files.</span>
+                        </div>
+                        <button mat-flat-button color="primary" (click)="grantAccess()" [disabled]="grantingAccess" class="w-full">
+                            <mat-spinner *ngIf="grantingAccess" diameter="18" class="mr-2 inline-block"></mat-spinner>
+                            {{grantingAccess ? 'Granting access...' : 'Grant Contributor Access'}}
+                        </button>
+                        <div *ngIf="accessError" class="mt-2 text-xs" style="color: #b91c1c;">{{accessError}}</div>
+                    </div>
+
+                    <!-- Access granted confirmation -->
+                    <div *ngIf="hasContributorAccess" class="mt-4 p-3 rounded-lg flex items-center gap-2 text-sm"
+                         style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
+                        <mat-icon style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
+                        <span>Contributor access granted. Role may take up to 5 minutes to propagate.</span>
+                    </div>
+
                     <!-- Destination folder (optional) -->
-                    <mat-form-field *ngIf="selectedContainer" appearance="outline" class="w-full mt-3" subscriptSizing="dynamic">
+                    <mat-form-field *ngIf="selectedContainer && hasContributorAccess" appearance="outline" class="w-full mt-3" subscriptSizing="dynamic">
                         <mat-label>Destination folder (optional)</mat-label>
                         <input matInput [(ngModel)]="destinationFolder" placeholder="photos/2024">
                     </mat-form-field>
@@ -175,7 +166,7 @@ export interface CopyToAzureDialogData {
             <ng-container *ngIf="!success">
                 <button mat-button (click)="close()" [disabled]="submitting">Cancel</button>
                 <button mat-flat-button color="primary" (click)="startCopy()"
-                        [disabled]="!selectedContainer || submitting">
+                        [disabled]="!selectedContainer || !hasContributorAccess || submitting">
                     <mat-spinner *ngIf="submitting" diameter="18" class="mr-2 inline-block"></mat-spinner>
                     {{submitting ? 'Starting...' : 'Start Copy'}}
                 </button>
@@ -200,6 +191,10 @@ export class CopyToAzureDialogComponent implements OnInit {
     error: string | null = null;
     success = false;
     instanceId: string | null = null;
+
+    hasContributorAccess = false;
+    grantingAccess = false;
+    accessError: string | null = null;
 
     constructor(
         private dialogRef: MatDialogRef<CopyToAzureDialogComponent>,
@@ -257,10 +252,34 @@ export class CopyToAzureDialogComponent implements OnInit {
     onAccountChange(): void {
         this.containers = [];
         this.selectedContainer = '';
+        this.hasContributorAccess = false;
+        this.accessError = null;
         this.loadingStep = 'containers';
         this.azureBrowseService.listContainers(this.selectedSubscriptionId, this.selectedResourceGroup, this.selectedAccountName).subscribe({
             next: (cs) => { this.containers = cs; this.loadingStep = null; },
             error: () => { this.error = 'Failed to load containers.'; this.loadingStep = null; }
+        });
+    }
+
+    grantAccess(): void {
+        this.grantingAccess = true;
+        this.accessError = null;
+        this.azureBrowseService.assignStorageRole(
+            this.selectedSubscriptionId, this.selectedResourceGroup, this.selectedAccountName
+        ).subscribe({
+            next: () => {
+                this.hasContributorAccess = true;
+                this.grantingAccess = false;
+            },
+            error: (err) => {
+                const body = err?.error;
+                if (err?.status === 400 && typeof body?.error === 'string' && body.error.includes('AuthorizationFailed')) {
+                    this.accessError = 'You don\'t have permission to assign roles on this storage account. Ask an Owner to assign Storage Blob Data Contributor to you.';
+                } else {
+                    this.accessError = 'Failed to assign role. You may need to assign it manually in Azure Portal.';
+                }
+                this.grantingAccess = false;
+            }
         });
     }
 

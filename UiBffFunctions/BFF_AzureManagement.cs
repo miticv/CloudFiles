@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using CloudFiles.Utilities;
 using CloudFiles.Models;
+using System.Linq;
 using System.Net;
 
 namespace CloudFiles
@@ -109,6 +110,41 @@ namespace CloudFiles
             catch (InvalidOperationException ex)
             {
                 return new BadRequestObjectResult(ex.Message);
+            }
+        }
+        [Function(Constants.AzureAssignStorageRole)]
+        public static async Task<IActionResult> AssignStorageRole(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "azure/subscription/{subscriptionId}/ResourceGroup/{resourceGroupId}/accountName/{accountName}/assignRole")] HttpRequest req,
+            string subscriptionId, string resourceGroupId, string accountName,
+            FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(AssignStorageRole));
+            try
+            {
+                var azureAccessToken = await AzureUtility.VerifyAzureManagementHeaderTokenIsValid(req).ConfigureAwait(false);
+
+                // Extract the user's object ID from the Azure AD token
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(azureAccessToken);
+                var principalId = jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value
+                    ?? throw new InvalidOperationException("Could not extract user object ID (oid) from Azure token.");
+
+                log.LogInformation($"{Constants.AzureAssignStorageRole} assigning Storage Blob Data Contributor on {accountName} to {principalId}");
+
+                var (success, alreadyAssigned) = await AzureUtility.AssignStorageBlobDataContributorAsync(
+                    azureAccessToken, subscriptionId, resourceGroupId, accountName, principalId).ConfigureAwait(false);
+
+                return new OkObjectResult(new { success, alreadyAssigned });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                log.LogError(ex, "Error assigning storage role");
+                return new BadRequestObjectResult(new { error = ex.Message });
             }
         }
     }

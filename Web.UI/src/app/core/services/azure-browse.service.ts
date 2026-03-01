@@ -65,4 +65,12 @@ export class AzureBrowseService extends HttpService {
             this.getRequestOptions(true)
         );
     }
+
+    assignStorageRole(subscriptionId: string, resourceGroup: string, accountName: string): Observable<{ success: boolean; alreadyAssigned: boolean }> {
+        return this.http.post<{ success: boolean; alreadyAssigned: boolean }>(
+            `${this.baseUrl}azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/assignRole`,
+            {},
+            this.getRequestOptions(true)
+        );
+    }
 }

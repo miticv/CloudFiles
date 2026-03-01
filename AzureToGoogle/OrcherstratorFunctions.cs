@@ -55,30 +55,20 @@ namespace CloudFiles.AzureToGoogle
             var filesCopyItemsPrepared = context.GetInput<ItemsPrepared>()!;
             int total = filesCopyItemsPrepared.ListItemsPrepared.Count;
 
-            // --- Phase 1: Fan-out upload bytes (parallel) ---
-            var taskToFile = new Dictionary<Task<ItemPrepared>, string>();
-            log.LogInformation("Fan-Out UploadAzureBlobToGoogle");
-            foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
-            {
-                var task = context.CallActivityAsync<ItemPrepared>(Constants.UploadAzureBlobToGooglePhotos, item);
-                taskToFile[task] = item.ItemFilename;
-            }
-
-            var pending = new HashSet<Task<ItemPrepared>>(taskToFile.Keys);
+            // --- Phase 1: Upload bytes sequentially (Google Photos rate-limits uploads per minute) ---
+            log.LogInformation("Sequential UploadAzureBlobToGoogle");
             context.SetCustomStatus(new { completed = 0, total, lastFile = "", phase = "uploading" });
 
             var uploaded = new List<ItemPrepared>();
             var failedResults = new List<NewMediaItemResult>();
+            int completedCount = 0;
 
-            while (pending.Count > 0)
+            foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
             {
-                var done = await Task.WhenAny(pending);
-                pending.Remove(done);
-                var result = await done;
+                var result = await context.CallActivityAsync<ItemPrepared>(Constants.UploadAzureBlobToGooglePhotos, item);
 
                 if (!string.IsNullOrEmpty(result.StatusMessage))
                 {
-                    // Upload failed — record as failed result
                     failedResults.Add(new NewMediaItemResult
                     {
                         Status = new Status { Message = result.StatusMessage },
@@ -91,11 +81,12 @@ namespace CloudFiles.AzureToGoogle
                     uploaded.Add(result);
                 }
 
+                completedCount++;
                 context.SetCustomStatus(new
                 {
-                    completed = total - pending.Count,
+                    completed = completedCount,
                     total,
-                    lastFile = taskToFile[done],
+                    lastFile = item.ItemFilename,
                     phase = "uploading"
                 });
             }
@@ -128,7 +119,7 @@ namespace CloudFiles.AzureToGoogle
 
                     context.SetCustomStatus(new
                     {
-                        completed = total - pending.Count,
+                        completed = completedCount,
                         total,
                         lastFile = $"batch {i / batchSize + 1}",
                         phase = "creating"

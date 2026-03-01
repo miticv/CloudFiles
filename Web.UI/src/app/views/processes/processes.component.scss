@@ -88,6 +88,14 @@
     }
 }
 
+// Rotate expand icon when <details> is open
+details[open] > summary .expand-icon {
+    transform: rotate(180deg);
+}
+.expand-icon {
+    transition: transform 0.15s;
+}
+
 // Shared toolbar icon-button polish
 .toolbar-btn {
     width: 36px !important;

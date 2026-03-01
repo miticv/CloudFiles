@@ -251,7 +251,6 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     getSucceededFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean; source: string; destination: string }[] {
         const output = this.parseJson(instance.serializedOutput);
         if (!output) return [];
-        const input = this.parseJson(instance.serializedInput);
         const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
 
         // GooglePhotosToAzure: results[] with success flag
@@ -272,17 +271,15 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const mediaResults = (output['newMediaItemResults'] ?? output['NewMediaItemResults']) as
             { mediaItem?: { id?: string; filename?: string } }[] | undefined;
         if (mediaResults) {
-            // Build a lookup from filename to source path using input selectedItemsList
+            // Build a lookup from filename to source path using output listItemsPrepared
             const sourcePathMap = new Map<string, string>();
-            if (input) {
-                const items = (input['selectedItemsList'] ?? input['SelectedItemsList']) as
-                    { itemPath?: string; ItemPath?: string }[] | undefined;
-                if (items) {
-                    for (const item of items) {
-                        const itemPath = item.itemPath || item.ItemPath || '';
-                        const basename = itemPath.includes('/') ? itemPath.substring(itemPath.lastIndexOf('/') + 1) : itemPath;
-                        sourcePathMap.set(basename, itemPath);
-                    }
+            const preparedItems = (output['listItemsPrepared'] ?? output['ListItemsPrepared']) as
+                { itemPath?: string; ItemPath?: string; itemFilename?: string; ItemFilename?: string }[] | undefined;
+            if (preparedItems) {
+                for (const item of preparedItems) {
+                    const filename = item.itemFilename || item.ItemFilename || '';
+                    const itemPath = item.itemPath || item.ItemPath || '';
+                    if (filename) sourcePathMap.set(filename, itemPath);
                 }
             }
             const album = this.getAlbumTitle(instance);

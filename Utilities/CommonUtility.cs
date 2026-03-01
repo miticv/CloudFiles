@@ -34,6 +34,13 @@ namespace CloudFiles.Utilities
                 Message = message
             };
         }
+        public static bool IsSupportedGooglePhotosType(string contentType)
+        {
+            if (string.IsNullOrEmpty(contentType)) return false;
+            return contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+                || contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string GetTokenFromHeaders(HttpRequest req)
         {
             var success = req.Headers.TryGetValue("Authorization", out StringValues values);

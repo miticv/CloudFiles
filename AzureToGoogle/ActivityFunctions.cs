@@ -59,12 +59,18 @@ namespace CloudFiles.AzureToGoogle
                 var azureUtility = new AzureUtility(item.AccountName!, item.ContainerName!, item.AzureAccessToken!);
 
                 var blobData = await azureUtility.GetBlobItemAsync(item.ItemPath).ConfigureAwait(false);
+                item.ContentType = blobData.ContentType;
+                item.ContentLength = blobData.Details.ContentLength;
+
+                if (!CommonUtility.IsSupportedGooglePhotosType(item.ContentType))
+                {
+                    item.StatusMessage = $"{item.ItemPath}: Unsupported type ({item.ContentType}). File not uploaded to Google Photos.";
+                    return item;
+                }
 
                 MemoryStream memoryStream = new MemoryStream();
                 await blobData.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
                 memoryStream.Position = 0;
-                item.ContentType = blobData.ContentType;
-                item.ContentLength = blobData.Details.ContentLength;
 
                 if (String.IsNullOrEmpty(item.UploadToken))
                 {

@@ -54,6 +54,12 @@ namespace CloudFiles.GoogleToGoogle
                 if (!string.IsNullOrEmpty(failFilter) && item.ItemFilename.Contains(failFilter, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"[TEST] Simulated failure for: {item.ItemFilename}");
 
+                if (!CommonUtility.IsSupportedGooglePhotosType(item.ContentType))
+                {
+                    item.StatusMessage = $"{item.ItemPath}: Unsupported type ({item.ContentType}). File not uploaded to Google Photos.";
+                    return item;
+                }
+
                 log.LogInformation($"{Constants.UploadGoogleStorageToGooglePhotos}: Uploading {item.ItemPath}.");
 
                 var imageByteArray = await GoogleUtility.GetImageFromUrlAsync(item.MediaLInk, item.AccessToken).ConfigureAwait(false);

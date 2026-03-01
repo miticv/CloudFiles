@@ -20,19 +20,19 @@ namespace CloudFiles.GoogleToGoogle
      **/
     public static class OrcherstratorFunctions
     {
-        [Function(Constants.GooleStorageToGooglePhotosOrchestrator)]
-        public static async Task<object> GooleStorageToGooglePhotosOrchestrator(
+        [Function(Constants.GoogleStorageToGooglePhotosOrchestrator)]
+        public static async Task<object> GoogleStorageToGooglePhotosOrchestrator(
             [OrchestrationTrigger] TaskOrchestrationContext context)
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
 
             var request = context.GetInput<FilesCopyRequest>()!;
 
-            log.LogInformation($"{Constants.GooleStorageToGooglePhotosOrchestrator}: Preparing request...");
+            log.LogInformation($"{Constants.GoogleStorageToGooglePhotosOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<GoogleItemsPrepared>(
                 Constants.GoogleStorageToGooglePhotosPrepareList, request);
 
-            log.LogInformation($"{Constants.GooleStorageToGooglePhotosOrchestrator}: FanOut request to {Constants.CopyGoogleStorageToGooglePhotosOrchestrator} ...");
+            log.LogInformation($"{Constants.GoogleStorageToGooglePhotosOrchestrator}: FanOut request to {Constants.CopyGoogleStorageToGooglePhotosOrchestrator} ...");
             var results = await context.CallSubOrchestratorAsync<NewMediaItemResultRoot>(
                Constants.CopyGoogleStorageToGooglePhotosOrchestrator, preparedRequest);
 

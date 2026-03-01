@@ -189,7 +189,7 @@ The HTTP interceptor (`auth.interceptor.ts`) attaches the correct Bearer token b
 | Method | Route | Description |
 |---|---|---|
 | POST | `process/AzureStorageToGooglePhotos/start` | Start Azure → Google Photos migration |
-| POST | `process/GooleStorageToGooglePhotos/start` | Start GCS → Google Photos migration |
+| POST | `process/GoogleStorageToGooglePhotos/start` | Start GCS → Google Photos migration |
 | GET | `process/instances` | List orchestration instances |
 | DELETE | `process/instances/{id}` | Purge an orchestration instance |
 

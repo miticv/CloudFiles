@@ -16,13 +16,13 @@ namespace CloudFiles.GoogleToGoogle
     public static class HttpFunctions
     {
         // append this to statusQueryGetUri: &showHistory=true&showHistoryOutput=true
-        [Function(Constants.ProcessGooleStorageToGooglePhotos_Start)]
-        public static async Task<IActionResult> GooleStorageToGooglePhotos(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "process/GooleStorageToGooglePhotos/start")] HttpRequest req,
+        [Function(Constants.ProcessGoogleStorageToGooglePhotos_Start)]
+        public static async Task<IActionResult> GoogleStorageToGooglePhotos(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "process/GoogleStorageToGooglePhotos/start")] HttpRequest req,
             [DurableClient] DurableTaskClient starter,
             FunctionContext executionContext)
         {
-            var log = executionContext.GetLogger(nameof(GooleStorageToGooglePhotos));
+            var log = executionContext.GetLogger(nameof(GoogleStorageToGooglePhotos));
             try {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
@@ -35,7 +35,7 @@ namespace CloudFiles.GoogleToGoogle
                 request.AccessToken = accessToken;
 
                 string instanceId = await starter.ScheduleNewOrchestrationInstanceAsync(
-                    Constants.GooleStorageToGooglePhotosOrchestrator, request).ConfigureAwait(false);
+                    Constants.GoogleStorageToGooglePhotosOrchestrator, request).ConfigureAwait(false);
                 log.LogInformation($"Started orchestration instance '{instanceId}'.");
 
                 return CreateCheckStatusResponse(req, instanceId);

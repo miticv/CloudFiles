@@ -135,7 +135,7 @@ namespace CloudFiles
                 var parentOrchestratorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "azureStorageToGooglePhotosOrchestrator",
-                    "gooleStorageToGooglePhotosOrchestrator",
+                    "googleStorageToGooglePhotosOrchestrator",
                     "googlePhotosToAzureOrchestrator"
                 };
 

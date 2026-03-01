@@ -25,6 +25,14 @@ export interface PhotoCopyItem {
     filename: string;
 }
 
+export interface StartGoogleStorageRequest {
+    albumId: string;
+    albumTitle: string;
+    selectedItemsList: MigrationItem[];
+    bucketName: string;
+    startedBy: string;
+}
+
 export interface StartGooglePhotosToAzureRequest {
     photoItems: PhotoCopyItem[];
     accountName: string;
@@ -81,6 +89,14 @@ export class ProcessService extends HttpService {
     startMigration(request: StartMigrationRequest): Observable<StartJobResponse> {
         return this.http.post<StartJobResponse>(
             `${this.baseUrl}process/AzureStorageToGooglePhotos/start`,
+            request,
+            this.getRequestOptions(true)
+        );
+    }
+
+    startGoogleStorageToGooglePhotos(request: StartGoogleStorageRequest): Observable<StartJobResponse> {
+        return this.http.post<StartJobResponse>(
+            `${this.baseUrl}process/GoogleStorageToGooglePhotos/start`,
             request,
             this.getRequestOptions(true)
         );

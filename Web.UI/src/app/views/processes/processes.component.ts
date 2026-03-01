@@ -1,13 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import { first } from 'rxjs/operators';
+import { first, switchMap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import {
     ProcessService,
     OrchestrationInstance,
     OrchestrationRuntimeStatus,
-    ProcessListParams
+    ProcessListParams,
+    StartMigrationRequest,
+    StartGoogleStorageRequest
 } from 'app/core/services/process.service';
 import { ConfirmDialogComponent } from 'app/shared/components/confirm-dialog/confirm-dialog.component';
 import { environment } from 'environments/environment';
@@ -19,7 +21,7 @@ export interface ProcessGroup {
 
 const PARENT_NAMES = new Set([
     'azureStorageToGooglePhotosOrchestrator',
-    'gooleStorageToGooglePhotosOrchestrator',
+    'googleStorageToGooglePhotosOrchestrator',
     'googlePhotosToAzureOrchestrator'
 ]);
 
@@ -43,6 +45,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     statusFilter: number[] = [];
     expandedInstanceId: string | null = null;
     deletingInstanceIds = new Set<string>();
+    retryingGroupIds = new Set<string>();
     isAdmin = false;
     showAll = false;
     fromDate: Date | null = (() => { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0, 0, 0, 0); return d; })();
@@ -276,17 +279,33 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     getSelectedItems(instance: OrchestrationInstance): { name: string; path: string; isFolder: boolean; isImage: boolean }[] {
         const input = this.parseJson(instance.serializedInput);
         if (!input) return [];
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+
+        // AzureToGoogle / GCSToGoogle: selectedItemsList
         const items = (input['selectedItemsList'] ?? input['SelectedItemsList']) as
             { itemPath?: string; ItemPath?: string; isFolder?: boolean; IsFolder?: boolean }[] | undefined;
-        if (!items) return [];
-        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
-        return items.map((i) => {
-            const path = i.itemPath || i.ItemPath || '';
-            const name = path.includes('/') ? path.substring(path.lastIndexOf('/') + 1) : path;
-            const isFolder = i.isFolder ?? i.IsFolder ?? false;
-            const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-            return { name: name || path, path, isFolder, isImage: !isFolder && imageExts.has(ext) };
-        });
+        if (items) {
+            return items.map((i) => {
+                const path = i.itemPath || i.ItemPath || '';
+                const name = path.includes('/') ? path.substring(path.lastIndexOf('/') + 1) : path;
+                const isFolder = i.isFolder ?? i.IsFolder ?? false;
+                const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+                return { name: name || path, path, isFolder, isImage: !isFolder && imageExts.has(ext) };
+            });
+        }
+
+        // GooglePhotosToAzure: input uses photoItems
+        const photoItems = (input['photoItems'] ?? input['PhotoItems']) as
+            { filename?: string; Filename?: string }[] | undefined;
+        if (photoItems) {
+            return photoItems.map((i) => {
+                const name = i.filename || i.Filename || 'unknown';
+                const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+                return { name, path: '', isFolder: false, isImage: imageExts.has(ext) };
+            });
+        }
+
+        return [];
     }
 
     getChildFiles(child: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
@@ -333,7 +352,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     getProvider(instance: OrchestrationInstance): 'google' | 'azure' | null {
         const name = instance.name;
         if (name === 'azureStorageToGooglePhotosOrchestrator') return 'azure';
-        if (name === 'gooleStorageToGooglePhotosOrchestrator') return 'google';
+        if (name === 'googleStorageToGooglePhotosOrchestrator') return 'google';
         if (name === 'googlePhotosToAzureOrchestrator') return 'google';
         return null;
     }
@@ -345,7 +364,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
     getDisplayName(name: string): string {
         if (name === 'azureStorageToGooglePhotosOrchestrator') return 'Azure to Google Photos';
-        if (name === 'gooleStorageToGooglePhotosOrchestrator') return 'Google Storage to Photos';
+        if (name === 'googleStorageToGooglePhotosOrchestrator') return 'Google Storage to Photos';
         if (name === 'googlePhotosToAzureOrchestrator') return 'Google Photos to Azure';
         if (name === 'copyAzureBlobsToGooglePhotosOrchestrator') return 'Copy Blobs';
         if (name === 'copyGoogleStorageToGooglePhotosOrchestrator') return 'Copy Storage';
@@ -395,6 +414,86 @@ export class ProcessesComponent implements OnInit, OnDestroy {
                 }
             });
         });
+    }
+
+    canRetry(group: ProcessGroup): boolean {
+        const name = group.parent.name;
+        const status = group.parent.runtimeStatus;
+        if (name !== 'azureStorageToGooglePhotosOrchestrator' &&
+            name !== 'googleStorageToGooglePhotosOrchestrator') return false;
+        return status === OrchestrationRuntimeStatus.Failed ||
+               status === OrchestrationRuntimeStatus.Terminated;
+    }
+
+    retryProcess(group: ProcessGroup, event: Event): void {
+        event.stopPropagation();
+        const input = this.parseJson(group.parent.serializedInput);
+        if (!input) return;
+
+        const albumId    = ((input['albumId']    || input['AlbumId'])    as string) || '';
+        const albumTitle = ((input['albumTitle'] || input['AlbumTitle']) as string) || '';
+        const rawItems   = ((input['selectedItemsList'] || input['SelectedItemsList']) as any[]) || [];
+        const selectedItemsList = rawItems.map((i: any) => ({
+            itemPath: i.itemPath || i.ItemPath || '',
+            isFolder: i.isFolder ?? i.IsFolder ?? false
+        }));
+
+        this.retryingGroupIds.add(group.parent.instanceId);
+
+        if (group.parent.name === 'azureStorageToGooglePhotosOrchestrator') {
+            const accountName   = ((input['accountName']   || input['AccountName'])   as string) || '';
+            const containerName = ((input['containerName'] || input['ContainerName']) as string) || '';
+
+            forkJoin({
+                azureToken: this.oidcService.getAccessToken('azure-storage').pipe(first()),
+                googleUser: this.oidcService.getUserData('google').pipe(first()),
+                azureUser:  this.oidcService.getUserData('azure').pipe(first())
+            }).pipe(
+                switchMap(({ azureToken, googleUser, azureUser }) => {
+                    const emails: string[] = [];
+                    if (googleUser?.['email'])             emails.push(`google:${googleUser['email']}`);
+                    if (azureUser?.['preferred_username']) emails.push(`azure:${azureUser['preferred_username']}`);
+                    else if (azureUser?.['email'])         emails.push(`azure:${azureUser['email']}`);
+
+                    return this.processService.startMigration({
+                        albumId, albumTitle, selectedItemsList,
+                        accountName, containerName,
+                        azureAccessToken: azureToken,
+                        startedBy: emails.join('|')
+                    });
+                })
+            ).subscribe({
+                next: () => {
+                    this.retryingGroupIds.delete(group.parent.instanceId);
+                    this.loadInstances();
+                },
+                error: () => {
+                    this.retryingGroupIds.delete(group.parent.instanceId);
+                    this.error = 'Failed to retry. Please try again.';
+                }
+            });
+
+        } else {
+            const bucketName = ((input['bucketName'] || input['BucketName']) as string) || '';
+
+            this.oidcService.getUserData('google').pipe(first()).subscribe({
+                next: (googleUser: any) => {
+                    const startedBy = googleUser?.email ? `google:${googleUser.email}` : '';
+                    this.processService.startGoogleStorageToGooglePhotos({
+                        albumId, albumTitle, selectedItemsList, bucketName, startedBy
+                    }).subscribe({
+                        next: () => {
+                            this.retryingGroupIds.delete(group.parent.instanceId);
+                            this.loadInstances();
+                        },
+                        error: () => {
+                            this.retryingGroupIds.delete(group.parent.instanceId);
+                            this.error = 'Failed to retry. Please try again.';
+                        }
+                    });
+                }
+            });
+        }
     }
 
     private buildGroups(instances: OrchestrationInstance[]): ProcessGroup[] {

@@ -27,7 +27,7 @@ public const string GoogleFileList = "googleFileList";
 
         // public
         public const string ProcessAzureToGooglePhotos_Start = "processAzureToGooglePhotos_Start";
-        public const string ProcessGooleStorageToGooglePhotos_Start = "processGooleStorageToGooglePhotos_Start";
+        public const string ProcessGoogleStorageToGooglePhotos_Start = "processGoogleStorageToGooglePhotos_Start";
         public const string ProcessListInstances = "processListInstances";
         public const string ProcessPurgeInstance = "processPurgeInstance";
 
@@ -38,7 +38,7 @@ public const string GoogleFileList = "googleFileList";
         public const string CopyAzureBlobToGooglePhotos = "copyAzureBlobToGooglePhotos";
 
         // automation google storage
-        public const string GooleStorageToGooglePhotosOrchestrator = "gooleStorageToGooglePhotosOrchestrator";
+        public const string GoogleStorageToGooglePhotosOrchestrator = "googleStorageToGooglePhotosOrchestrator";
         public const string GoogleStorageToGooglePhotosPrepareList = "googleStorageToGooglePhotosPrepareList";
         public const string CopyGoogleStorageToGooglePhotosOrchestrator = "copyGoogleStorageToGooglePhotosOrchestrator";
         public const string CopyPhotoUrlToGooglePhotos = "copyPhotoUrlToGooglePhotos";

@@ -248,9 +248,10 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return { from, to: `Google Photos (Album: ${album})` };
     }
 
-    getSucceededFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
+    getSucceededFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean; source: string; destination: string }[] {
         const output = this.parseJson(instance.serializedOutput);
         if (!output) return [];
+        const input = this.parseJson(instance.serializedInput);
         const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
 
         // GooglePhotosToAzure: results[] with success flag
@@ -263,7 +264,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
                     const name = r.filename || r.Filename || 'unknown';
                     const path = r.blobPath || r.BlobPath || '';
                     const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-                    return { name, path, isImage: imageExts.has(ext) };
+                    return { name, path, isImage: imageExts.has(ext), source: 'Google Photos', destination: path || name };
                 });
         }
 
@@ -271,12 +272,29 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const mediaResults = (output['newMediaItemResults'] ?? output['NewMediaItemResults']) as
             { mediaItem?: { id?: string; filename?: string } }[] | undefined;
         if (mediaResults) {
+            // Build a lookup from filename to source path using input selectedItemsList
+            const sourcePathMap = new Map<string, string>();
+            if (input) {
+                const items = (input['selectedItemsList'] ?? input['SelectedItemsList']) as
+                    { itemPath?: string; ItemPath?: string }[] | undefined;
+                if (items) {
+                    for (const item of items) {
+                        const itemPath = item.itemPath || item.ItemPath || '';
+                        const basename = itemPath.includes('/') ? itemPath.substring(itemPath.lastIndexOf('/') + 1) : itemPath;
+                        sourcePathMap.set(basename, itemPath);
+                    }
+                }
+            }
+            const album = this.getAlbumTitle(instance);
+            const dest = album ? `Google Photos (${album})` : 'Google Photos';
+
             return mediaResults
                 .filter(r => r.mediaItem?.id)
                 .map((r) => {
                     const name = r.mediaItem!.filename || 'unknown';
                     const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-                    return { name, path: '', isImage: imageExts.has(ext) };
+                    const source = sourcePathMap.get(name) || name;
+                    return { name, path: '', isImage: imageExts.has(ext), source, destination: dest };
                 });
         }
 

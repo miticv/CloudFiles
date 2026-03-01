@@ -36,8 +36,13 @@ namespace CloudFiles.AzureToGoogle
             return new ItemsPrepared() {  ListItemsPrepared = preparedList };
         }
 
-        [Function(Constants.CopyAzureBlobToGooglePhotos)]
-        public static async Task<NewMediaItemResultRoot> CopyAzureBlobToGooglePhotos(
+        /// <summary>
+        /// Upload-only: downloads blob from Azure and uploads bytes to Google Photos.
+        /// Returns the ItemPrepared with UploadToken set (or StatusMessage on failure).
+        /// Does NOT call batchCreate — that is done by the orchestrator in a batch.
+        /// </summary>
+        [Function(Constants.UploadAzureBlobToGooglePhotos)]
+        public static async Task<ItemPrepared> UploadAzureBlobToGooglePhotos(
             [ActivityTrigger] ItemPrepared item,
             FunctionContext executionContext)
         {
@@ -49,7 +54,7 @@ namespace CloudFiles.AzureToGoogle
                 if (!string.IsNullOrEmpty(failFilter) && item.ItemFilename.Contains(failFilter, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"[TEST] Simulated failure for: {item.ItemFilename}");
 
-                log.LogInformation($"{Constants.CopyAzureBlobToGooglePhotos}: Copy image {item.ItemPath}.");
+                log.LogInformation($"{Constants.UploadAzureBlobToGooglePhotos}: Uploading {item.ItemPath}.");
 
                 var azureUtility = new AzureUtility(item.AccountName!, item.ContainerName!, item.AzureAccessToken!);
 
@@ -66,33 +71,28 @@ namespace CloudFiles.AzureToGoogle
                     item.UploadToken = await GoogleUtility.CopyBytesToGooglePhotosAsync(memoryStream, item.AccessToken, item.ContentType).ConfigureAwait(false);
                 }
 
-                return await GoogleUtility.SaveMediaItemsToGooglePhotosAsync(item).ConfigureAwait(false);
+                return item;
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex) when (ex is InvalidOperationException || ex is HttpRequestException)
             {
-                return ReturnUnprocessedItem(ex.Message, item);
-            }
-            catch (HttpRequestException ex)
-            {
-                return ReturnUnprocessedItem(ex.Message, item);
+                item.StatusMessage = ex.Message;
+                return item;
             }
         }
 
-        private static NewMediaItemResultRoot ReturnUnprocessedItem(string message, ItemPrepared item) {
-            var quit = new NewMediaItemResultRoot() { NewMediaItemResults = new List<NewMediaItemResult>() };
-            quit.NewMediaItemResults.Add(new NewMediaItemResult()
-            {
-                Status = new Status()
-                {
-                    Message = message
-                },
-                MediaItem = new MediaItem()
-                {
-                    Filename = item.ItemFilename
-                },
-                UploadToken = item.UploadToken
-            });
-            return quit;
+        /// <summary>
+        /// Shared activity: calls Google Photos batchCreate with up to 50 items at once.
+        /// </summary>
+        [Function(Constants.BatchCreateGoogleMediaItems)]
+        public static async Task<NewMediaItemResultRoot> BatchCreateGoogleMediaItems(
+            [ActivityTrigger] BatchCreateRequest request,
+            FunctionContext executionContext)
+        {
+            ILogger log = executionContext.GetLogger(nameof(ActivityFunctions));
+
+            log.LogInformation($"{Constants.BatchCreateGoogleMediaItems}: Creating {request.Items.Count} media items in batch.");
+
+            return await GoogleUtility.SaveMediaItemsBatchAsync(request.AccessToken, request.AlbumId, request.Items).ConfigureAwait(false);
         }
     }
 }

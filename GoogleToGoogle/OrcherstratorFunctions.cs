@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CloudFiles.Models;
 using CloudFiles.Models.Google;
@@ -50,38 +51,90 @@ namespace CloudFiles.GoogleToGoogle
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
             var filesCopyItemsPrepared = context.GetInput<GoogleItemsPrepared>()!;
+            int total = filesCopyItemsPrepared.ListItemsPrepared.Count;
 
-            var taskToFile = new Dictionary<Task<NewMediaItemResultRoot>, string>();
-            log.LogInformation("Fan-Out CopyPhotoUrlToGoogle");
+            // --- Phase 1: Fan-out upload bytes (parallel) ---
+            var taskToFile = new Dictionary<Task<GoogleItemPrepared>, string>();
+            log.LogInformation("Fan-Out UploadGoogleStorageToGoogle");
             foreach (var item in filesCopyItemsPrepared.ListItemsPrepared)
             {
-                var task = context.CallActivityAsync<NewMediaItemResultRoot>(Constants.CopyPhotoUrlToGooglePhotos, item);
+                var task = context.CallActivityAsync<GoogleItemPrepared>(Constants.UploadGoogleStorageToGooglePhotos, item);
                 taskToFile[task] = item.ItemFilename;
             }
 
-            var pending = new HashSet<Task<NewMediaItemResultRoot>>(taskToFile.Keys);
-            int total = pending.Count;
-            context.SetCustomStatus(new { completed = 0, total, lastFile = "" });
+            var pending = new HashSet<Task<GoogleItemPrepared>>(taskToFile.Keys);
+            context.SetCustomStatus(new { completed = 0, total, lastFile = "", phase = "uploading" });
 
-            var response = new NewMediaItemResultRoot
-            {
-                NewMediaItemResults = new List<NewMediaItemResult>()
-            };
+            var uploaded = new List<GoogleItemPrepared>();
+            var failedResults = new List<NewMediaItemResult>();
 
-            log.LogInformation("Fan-In CopyPhotoUrlToGoogle");
             while (pending.Count > 0)
             {
                 var done = await Task.WhenAny(pending);
                 pending.Remove(done);
                 var result = await done;
-                response.NewMediaItemResults.AddRange(result.NewMediaItemResults);
+
+                if (!string.IsNullOrEmpty(result.StatusMessage))
+                {
+                    failedResults.Add(new NewMediaItemResult
+                    {
+                        Status = new Status { Message = result.StatusMessage },
+                        MediaItem = new MediaItem { Filename = result.ItemFilename },
+                        UploadToken = result.UploadToken
+                    });
+                }
+                else
+                {
+                    uploaded.Add(result);
+                }
 
                 context.SetCustomStatus(new
                 {
                     completed = total - pending.Count,
                     total,
-                    lastFile = taskToFile[done]
+                    lastFile = taskToFile[done],
+                    phase = "uploading"
                 });
+            }
+
+            // --- Phase 2: Batch create media items (sequential, up to 50 per call) ---
+            log.LogInformation($"BatchCreate: {uploaded.Count} uploaded, {failedResults.Count} failed during upload");
+
+            var response = new NewMediaItemResultRoot
+            {
+                NewMediaItemResults = new List<NewMediaItemResult>(failedResults)
+            };
+
+            if (uploaded.Count > 0)
+            {
+                var first = uploaded[0];
+                const int batchSize = 50;
+                for (int i = 0; i < uploaded.Count; i += batchSize)
+                {
+                    var batch = uploaded.GetRange(i, System.Math.Min(batchSize, uploaded.Count - i));
+                    var batchRequest = new BatchCreateRequest
+                    {
+                        AccessToken = first.AccessToken,
+                        AlbumId = first.AlbumId,
+                        Items = batch.Select(item => new BatchCreateItem
+                        {
+                            UploadToken = item.UploadToken,
+                            FileName = item.ItemFilename
+                        }).ToList()
+                    };
+
+                    context.SetCustomStatus(new
+                    {
+                        completed = total - pending.Count,
+                        total,
+                        lastFile = $"batch {i / batchSize + 1}",
+                        phase = "creating"
+                    });
+
+                    var batchResult = await context.CallActivityAsync<NewMediaItemResultRoot>(
+                        Constants.BatchCreateGoogleMediaItems, batchRequest);
+                    response.NewMediaItemResults.AddRange(batchResult.NewMediaItemResults);
+                }
             }
 
             return response;

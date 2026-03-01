@@ -36,8 +36,13 @@ namespace CloudFiles.GoogleToGoogle
             return new GoogleItemsPrepared() { ListItemsPrepared = preparedList };
         }
 
-        [Function(Constants.CopyPhotoUrlToGooglePhotos)]
-        public static async Task<NewMediaItemResultRoot> CopyPhotoUrlToGooglePhotos(
+        /// <summary>
+        /// Upload-only: downloads from Google Storage and uploads bytes to Google Photos.
+        /// Returns the GoogleItemPrepared with UploadToken set (or StatusMessage on failure).
+        /// Does NOT call batchCreate — that is done by the orchestrator in a batch.
+        /// </summary>
+        [Function(Constants.UploadGoogleStorageToGooglePhotos)]
+        public static async Task<GoogleItemPrepared> UploadGoogleStorageToGooglePhotos(
             [ActivityTrigger] GoogleItemPrepared item,
             FunctionContext executionContext)
         {
@@ -49,7 +54,7 @@ namespace CloudFiles.GoogleToGoogle
                 if (!string.IsNullOrEmpty(failFilter) && item.ItemFilename.Contains(failFilter, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"[TEST] Simulated failure for: {item.ItemFilename}");
 
-                log.LogInformation($"{Constants.CopyPhotoUrlToGooglePhotos}: Copy image {item.ItemPath}.");
+                log.LogInformation($"{Constants.UploadGoogleStorageToGooglePhotos}: Uploading {item.ItemPath}.");
 
                 var imageByteArray = await GoogleUtility.GetImageFromUrlAsync(item.MediaLInk, item.AccessToken).ConfigureAwait(false);
 
@@ -64,33 +69,13 @@ namespace CloudFiles.GoogleToGoogle
                     item.UploadToken = await GoogleUtility.CopyBytesToGooglePhotosAsync(memoryStream, item.AccessToken, item.ContentType).ConfigureAwait(false);
                 }
 
-                return await GoogleUtility.SaveMediaItemsToGooglePhotosAsync(item).ConfigureAwait(false);
+                return item;
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex) when (ex is InvalidOperationException || ex is HttpRequestException)
             {
-                return ReturnUnprocessedItem(ex.Message, item);
+                item.StatusMessage = ex.Message;
+                return item;
             }
-            catch (HttpRequestException ex)
-            {
-                return ReturnUnprocessedItem(ex.Message, item);
-            }
-        }
-
-        private static NewMediaItemResultRoot ReturnUnprocessedItem(string message, ItemPrepared item) {
-            var quit = new NewMediaItemResultRoot() { NewMediaItemResults = new List<NewMediaItemResult>() };
-            quit.NewMediaItemResults.Add(new NewMediaItemResult()
-            {
-                Status = new Status()
-                {
-                    Message = message
-                },
-                MediaItem = new MediaItem()
-                {
-                    Filename = item.ItemFilename
-                },
-                UploadToken = item.UploadToken
-            });
-            return quit;
         }
     }
 }

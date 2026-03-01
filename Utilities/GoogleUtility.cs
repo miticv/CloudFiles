@@ -91,6 +91,46 @@ namespace CloudFiles.Utilities
             }
         }
 
+        public static async Task<NewMediaItemResultRoot> SaveMediaItemsBatchAsync(string accessToken, string albumId, List<BatchCreateItem> items)
+        {
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            NewMediaItemRoot body = new NewMediaItemRoot()
+            {
+                AlbumId = albumId,
+                NewMediaItems = new List<NewMediaItem>()
+            };
+
+            foreach (var item in items)
+            {
+                body.NewMediaItems.Add(new NewMediaItem()
+                {
+                    SimpleMediaItem = new SimpleMediaItem()
+                    {
+                        FileName = item.FileName,
+                        UploadToken = item.UploadToken
+                    },
+                    Description = ""
+                });
+            }
+
+            string serializedBody = JsonConvert.SerializeObject(body);
+
+            HttpResponseMessage response = await client.PostAsync("https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate",
+                new StringContent(serializedBody, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+            string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return JsonConvert.DeserializeObject<NewMediaItemResultRoot>(result)!;
+            }
+            else
+            {
+                throw new InvalidOperationException($"SaveMediaItemsBatchAsync error: {result}");
+            }
+        }
+
         public static async Task<AlbumListResponse> ListAlbumsAsync(string accessToken, string nextPageToken)
         {
             using var client = new HttpClient();

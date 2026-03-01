@@ -35,13 +35,18 @@ public const string GoogleFileList = "googleFileList";
         public const string AzureStorageToGooglePhotosOrchestrator = "azureStorageToGooglePhotosOrchestrator";
         public const string AzureStorageToGooglePhotosPrepareList =  "azureStorageToGooglePhotosPrepareList";
         public const string CopyAzureBlobsToGooglePhotosOrchestrator = "copyAzureBlobsToGooglePhotosOrchestrator";
+        public const string UploadAzureBlobToGooglePhotos = "uploadAzureBlobToGooglePhotos";
         public const string CopyAzureBlobToGooglePhotos = "copyAzureBlobToGooglePhotos";
 
         // automation google storage
         public const string GoogleStorageToGooglePhotosOrchestrator = "googleStorageToGooglePhotosOrchestrator";
         public const string GoogleStorageToGooglePhotosPrepareList = "googleStorageToGooglePhotosPrepareList";
         public const string CopyGoogleStorageToGooglePhotosOrchestrator = "copyGoogleStorageToGooglePhotosOrchestrator";
+        public const string UploadGoogleStorageToGooglePhotos = "uploadGoogleStorageToGooglePhotos";
         public const string CopyPhotoUrlToGooglePhotos = "copyPhotoUrlToGooglePhotos";
+
+        // shared batch create for Google Photos
+        public const string BatchCreateGoogleMediaItems = "batchCreateGoogleMediaItems";
 
         // automation google photos to azure
         public const string ProcessGooglePhotosToAzure_Start = "processGooglePhotosToAzure_Start";

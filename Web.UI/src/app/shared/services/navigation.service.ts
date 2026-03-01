@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { AuthService } from 'app/core/services/auth.service';
 
 export interface IMenuItem {
     type: 'link' | 'separator';
@@ -10,7 +11,10 @@ export interface IMenuItem {
 
 @Injectable({ providedIn: 'root' })
 export class NavigationService {
-    menuItems = new BehaviorSubject<IMenuItem[]>([
+    menuItems = new BehaviorSubject<IMenuItem[]>([]);
+    menuItems$ = this.menuItems.asObservable();
+
+    private baseItems: IMenuItem[] = [
         {
             name: 'Storage Browser',
             type: 'link',
@@ -45,7 +49,32 @@ export class NavigationService {
             icon: 'link',
             state: 'sessions/signin'
         }
-    ]);
+    ];
 
-    menuItems$ = this.menuItems.asObservable();
+    private adminItems: IMenuItem[] = [
+        {
+            type: 'separator',
+            name: 'Admin'
+        },
+        {
+            name: 'User Management',
+            type: 'link',
+            icon: 'people',
+            state: 'admin/users'
+        }
+    ];
+
+    constructor(private authService: AuthService) {
+        this.authService.user$.subscribe((user) => {
+            this.updateMenu(user?.isAdmin ?? false);
+        });
+    }
+
+    private updateMenu(isAdmin: boolean) {
+        const items = [...this.baseItems];
+        if (isAdmin) {
+            items.push(...this.adminItems);
+        }
+        this.menuItems.next(items);
+    }
 }

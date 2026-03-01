@@ -125,8 +125,8 @@ export class MultiAuthService implements OnDestroy {
 
     private handleSilentRenewFailure(): void {
         // When refresh fails (e.g. refresh token revoked or missing), clear local state
-        // and redirect to sign-in so the user can re-authenticate with a fresh consent.
-        console.warn('[Auth] clearing local auth state and redirecting to sign-in');
+        // and redirect to connections so the user can re-authenticate with a fresh consent.
+        console.warn('[Auth] clearing local auth state and redirecting to connections');
         this.oidcSecurityService.logoffLocalMultiple();
         this.router.navigateByUrl('/sessions/signin');
     }

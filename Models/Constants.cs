@@ -55,5 +55,15 @@ public const string GoogleFileList = "googleFileList";
         public const string GooglePhotosToAzurePrepareList = "googlePhotosToAzurePrepareList";
         public const string CopyGooglePhotosToAzureOrchestrator = "copyGooglePhotosToAzureOrchestrator";
         public const string CopyGooglePhotoToAzureBlob = "copyGooglePhotoToAzureBlob";
+
+        // Auth
+        public const string AuthOAuthLogin = "authOAuthLogin";
+        public const string AuthLocalLogin = "authLocalLogin";
+        public const string AuthLocalRegister = "authLocalRegister";
+        public const string AuthGetCurrentUser = "authGetCurrentUser";
+
+        // Admin
+        public const string AdminUserList = "adminUserList";
+        public const string AdminUserUpdate = "adminUserUpdate";
     }
 }

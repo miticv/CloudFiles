@@ -26,6 +26,12 @@
     <!-- Azure Storage Blobs (direct SDK usage in utilities) -->
     <PackageReference Include="Azure.Storage.Blobs" Version="12.21.2" />
 
+    <!-- Azure Table Storage (user registration) -->
+    <PackageReference Include="Azure.Data.Tables" Version="12.9.1" />
+
+    <!-- BCrypt password hashing -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
     <!-- Identity / Token validation -->
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.1" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.1" />

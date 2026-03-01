@@ -10,6 +10,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Subscription } from 'rxjs';
 import { NavigationService, IMenuItem } from '../../../services/navigation.service';
 import { MultiAuthService } from 'app/core/auth/multi-auth.service';
+import { AuthService } from 'app/core/services/auth.service';
 
 @Component({
     selector: 'app-admin-layout',
@@ -35,6 +36,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     constructor(
         private navService: NavigationService,
         private multiAuth: MultiAuthService,
+        private authService: AuthService,
         private router: Router
     ) {}
 
@@ -55,7 +57,8 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     }
 
     signOut() {
+        this.authService.clearSession();
         this.multiAuth.logoutAll();
-        this.router.navigateByUrl('/sessions/signin');
+        this.router.navigateByUrl('/sessions/login');
     }
 }

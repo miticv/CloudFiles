@@ -6,6 +6,7 @@ import { filter, first } from 'rxjs/operators';
 import { RoutePartsService } from './shared/services/route-parts.service';
 import { UILibIconService } from './shared/services/ui-lib-icon.service';
 import { MultiAuthService } from './core/auth/multi-auth.service';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
     selector: 'app-root',
@@ -22,7 +23,8 @@ export class AppComponent implements OnInit {
         private activeRoute: ActivatedRoute,
         private routePartsService: RoutePartsService,
         private iconService: UILibIconService,
-        private multiAuthService: MultiAuthService
+        private multiAuthService: MultiAuthService,
+        private authService: AuthService
     ) {
         iconService.init();
     }
@@ -33,12 +35,33 @@ export class AppComponent implements OnInit {
     }
 
     private checkAuth() {
-        // Auth callback is already processed by withAppInitializerAuthCheck() before routing.
-        // Use isAuthenticated$ (via watchAuthStatus) which has the correct state immediately.
+        const currentPath = window.location.pathname + window.location.search;
+
+        // Don't redirect if already on public pages
+        if (currentPath.startsWith('/sessions/login') || currentPath.startsWith('/privacy') || currentPath.startsWith('/terms')) {
+            return;
+        }
+
+        // If returning from OAuth redirect with pending flag, don't interfere
+        if (this.authService.getOAuthPending()) {
+            return;
+        }
+
+        // First check: do we have a CloudFiles session (our app JWT)?
+        if (!this.authService.isLoggedIn()) {
+            if (!currentPath.startsWith('/sessions')) {
+                if (!localStorage.getItem('redirect')) {
+                    localStorage.setItem('redirect', JSON.stringify(currentPath));
+                }
+            }
+            this.router.navigateByUrl('/sessions/login');
+            return;
+        }
+
+        // Second check: OIDC providers
         this.multiAuthService.watchAuthStatus().pipe(first()).subscribe((statuses) => {
             const anyAuthenticated = statuses.some(s => s.authenticated);
             if (!anyAuthenticated) {
-                const currentPath = window.location.pathname + window.location.search;
                 if (!currentPath.startsWith('/sessions')) {
                     if (!localStorage.getItem('redirect')) {
                         localStorage.setItem('redirect', JSON.stringify(currentPath));

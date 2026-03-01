@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './shared/components/layouts/admin-layout/admin-layout.component';
 import { AuthLayoutComponent } from './shared/components/layouts/auth-layout/auth-layout.component';
 import { AuthGuard } from './core/auth/auth.guard';
+import { AdminGuard } from './core/auth/admin.guard';
 
 export const rootRouterConfig: Routes = [
     {
@@ -59,6 +60,12 @@ export const rootRouterConfig: Routes = [
                 path: 'processes',
                 loadChildren: () => import('./views/processes/processes.module').then(m => m.ProcessesModule),
                 data: { title: 'Processes', breadcrumb: 'PROCESSES' }
+            },
+            {
+                path: 'admin/users',
+                loadComponent: () => import('./views/admin/admin-users.component').then(c => c.AdminUsersComponent),
+                canActivate: [AdminGuard],
+                data: { title: 'User Management', breadcrumb: 'ADMIN' }
             }
         ]
     },

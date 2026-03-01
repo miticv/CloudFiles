@@ -8,6 +8,11 @@ export const SessionsRoutes: Routes = [
         path: '',
         children: [
             {
+                path: 'login',
+                loadComponent: () => import('./login/login.component').then(c => c.LoginComponent),
+                data: { title: 'Login' }
+            },
+            {
                 path: 'signin',
                 component: SigninComponent,
                 data: { title: 'Sign In' }

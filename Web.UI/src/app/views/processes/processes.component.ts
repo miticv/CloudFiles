@@ -347,6 +347,31 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return [];
     }
 
+    getSucceededFilesByFolder(instance: OrchestrationInstance) {
+        return this.groupFilesByFolder(this.getSucceededFiles(instance), (f) => {
+            return f.source.includes('/') ? f.source : f.path;
+        });
+    }
+
+    getFailedFilesByFolder(instance: OrchestrationInstance) {
+        return this.groupFilesByFolder(this.getFailedFiles(instance), f => f.path);
+    }
+
+    private groupFilesByFolder<T>(files: T[], getPath: (f: T) => string): { folder: string; files: T[] }[] {
+        const map = new Map<string, T[]>();
+        for (const file of files) {
+            const fullPath = getPath(file);
+            const folder = fullPath.includes('/')
+                ? fullPath.substring(0, fullPath.lastIndexOf('/'))
+                : '';
+            if (!map.has(folder)) map.set(folder, []);
+            map.get(folder)!.push(file);
+        }
+        return Array.from(map.entries())
+            .map(([folder, grouped]) => ({ folder, files: grouped }))
+            .sort((a, b) => a.folder.localeCompare(b.folder));
+    }
+
     getSelectedItems(instance: OrchestrationInstance): { name: string; path: string; isFolder: boolean; isImage: boolean }[] {
         const input = this.parseJson(instance.serializedInput);
         if (!input) return [];

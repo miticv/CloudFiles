@@ -50,6 +50,7 @@ export class ProcessesComponent implements OnInit, OnDestroy {
     showAll = false;
     fromDate: Date | null = (() => { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0, 0, 0, 0); return d; })();
     toDate: Date | null = new Date();
+    private outputCache = new Map<string, string>();
     private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
     readonly statusLabels: Record<number, string> = {
@@ -114,8 +115,8 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         if (this.toDate) params.to = this.formatDate(this.toDate);
         this.processService.listInstances(params).subscribe({
             next: (data) => {
-                this.instances = data;
-                this.groups = this.buildGroups(data);
+                this.mergeInstances(data);
+                this.groups = this.buildGroups(this.instances);
                 this.startedByCache.clear();
                 this.loading = false;
             },
@@ -155,6 +156,9 @@ export class ProcessesComponent implements OnInit, OnDestroy {
             this.processService.getInstance(instanceId).subscribe({
                 next: (detail) => {
                     this.detailLoadingIds.delete(instanceId);
+                    if (detail.serializedOutput) {
+                        this.outputCache.set(instanceId, detail.serializedOutput);
+                    }
                     const idx = this.instances.findIndex(i => i.instanceId === instanceId);
                     if (idx >= 0) {
                         this.instances[idx] = { ...this.instances[idx], serializedOutput: detail.serializedOutput };
@@ -714,6 +718,22 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         }
     }
 
+    private mergeInstances(incoming: OrchestrationInstance[]): void {
+        // Preserve lazy-loaded serializedOutput across refreshes
+        for (const inst of this.instances) {
+            if (inst.serializedOutput) {
+                this.outputCache.set(inst.instanceId, inst.serializedOutput);
+            }
+        }
+        this.instances = incoming.map((inst) => {
+            const cachedOutput = this.outputCache.get(inst.instanceId);
+            if (!inst.serializedOutput && cachedOutput) {
+                return { ...inst, serializedOutput: cachedOutput };
+            }
+            return inst;
+        });
+    }
+
     private buildGroups(instances: OrchestrationInstance[]): ProcessGroup[] {
         // Sort newest first
         const sorted = [...instances].sort((a, b) =>
@@ -789,7 +809,11 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
                     const updated = activeMap.get(existing.instanceId);
                     if (updated) {
-                        this.instances[idx] = updated;
+                        // Preserve lazy-loaded output when refreshing active instances
+                        const cachedOutput = existing.serializedOutput || this.outputCache.get(existing.instanceId);
+                        this.instances[idx] = cachedOutput
+                            ? { ...updated, serializedOutput: cachedOutput }
+                            : updated;
                     } else {
                         anyTransitioned = true;
                     }

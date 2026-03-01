@@ -125,14 +125,9 @@ namespace CloudFiles
                 {
                     allInstances.Add(instance);
                 }
+                log.LogInformation($"Fetched {allInstances.Count} instances from storage.");
 
-                // Check admin privileges.
-                var adminEmails = (Environment.GetEnvironmentVariable("ADMIN_EMAILS") ?? "")
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                var isAdmin = adminEmails.Any(e => string.Equals(e, userEmail, StringComparison.OrdinalIgnoreCase));
-                var showAll = isAdmin && string.Equals(req.Query["all"], "true", StringComparison.OrdinalIgnoreCase);
-
-                // Top-level orchestrator names. Sub-orchestrators are matched by instanceId prefix.
+                // Top-level orchestrator names.
                 var parentOrchestratorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "azureStorageToGooglePhotosOrchestrator",
@@ -140,76 +135,76 @@ namespace CloudFiles
                     "googlePhotosToAzureOrchestrator"
                 };
 
-                List<OrchestrationMetadata> instances;
+                // Only return parent orchestrations in the list.
+                // Sub-orchestrators and activities are not needed for the overview.
                 var parentInstances = allInstances
                     .Where(i => parentOrchestratorNames.Contains(i.Name))
                     .ToList();
 
-                // Fetch details individually — catch per-instance failures (e.g. gRPC size limits)
-                // so one large instance doesn't take down the whole listing.
+                // Check admin privileges.
+                var adminEmails = (Environment.GetEnvironmentVariable("ADMIN_EMAILS") ?? "")
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var isAdmin = adminEmails.Any(e => string.Equals(e, userEmail, StringComparison.OrdinalIgnoreCase));
+                var showAll = isAdmin && string.Equals(req.Query["all"], "true", StringComparison.OrdinalIgnoreCase);
+
+                // Fetch serializedInput for parent instances one-by-one to determine ownership.
+                // Use sequential calls to avoid poisoning the gRPC channel with parallel large responses.
                 var detailById = new Dictionary<string, OrchestrationMetadata>();
-                var detailTasks = parentInstances.Select(async p =>
+                foreach (var p in parentInstances)
                 {
                     try
                     {
-                        return await starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true);
+                        var detail = await starter.GetInstanceAsync(p.InstanceId, getInputsAndOutputs: true);
+                        if (detail != null) detailById[detail.InstanceId] = detail;
                     }
                     catch (Exception ex)
                     {
                         log.LogWarning(ex, $"Failed to fetch details for {p.InstanceId}, using metadata only.");
-                        return null;
                     }
-                }).ToList();
-                var details = await Task.WhenAll(detailTasks);
-                foreach (var d in details)
-                {
-                    if (d != null) detailById[d.InstanceId] = d;
                 }
 
+                List<OrchestrationMetadata> instances;
                 if (showAll)
                 {
-                    instances = allInstances
-                        .Select(i => detailById.TryGetValue(i.InstanceId, out var d) ? d : i)
-                        .ToList();
+                    instances = parentInstances;
                 }
                 else if (!string.IsNullOrEmpty(userEmail))
                 {
                     // Filter to the current user's instances using StartedBy in serialized input.
-                    var parentIds = new HashSet<string>();
+                    var userParentIds = new HashSet<string>();
                     foreach (var detail in detailById.Values)
                     {
                         if (!string.IsNullOrEmpty(detail.SerializedInput) &&
                             detail.SerializedInput.Contains("\"StartedBy\"", StringComparison.OrdinalIgnoreCase) &&
                             detail.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
                         {
-                            parentIds.Add(detail.InstanceId);
+                            userParentIds.Add(detail.InstanceId);
                         }
                     }
-
-                    instances = allInstances
-                        .Where(i => parentIds.Contains(i.InstanceId) ||
-                                    parentIds.Any(pid => i.InstanceId.StartsWith(pid)))
-                        .Select(i => detailById.TryGetValue(i.InstanceId, out var d) ? d : i)
-                        .ToList();
+                    instances = parentInstances.Where(i => userParentIds.Contains(i.InstanceId)).ToList();
                 }
                 else
                 {
-                    instances = allInstances;
+                    instances = parentInstances;
                 }
 
+                log.LogInformation($"Returning {instances.Count} instances (of {parentInstances.Count} parents, {allInstances.Count} total).");
+
                 // Map to lightweight DTOs. Exclude serializedOutput and strip large
-                // arrays (selectedItemsList, photoItems) from serializedInput.
-                // These can be enormous and exceed the isolated worker gRPC limit (~4MB).
-                // Full data is fetched on demand via the detail endpoint.
-                var result = instances.Select(i => new
+                // arrays from serializedInput. Full data is fetched via the detail endpoint.
+                var result = instances.Select(i =>
                 {
-                    name = i.Name,
-                    instanceId = i.InstanceId,
-                    runtimeStatus = (int)i.RuntimeStatus,
-                    createdAt = i.CreatedAt,
-                    lastUpdatedAt = i.LastUpdatedAt,
-                    serializedInput = TrimInputForList(i.SerializedInput),
-                    serializedCustomStatus = i.SerializedCustomStatus
+                    var detail = detailById.TryGetValue(i.InstanceId, out var d) ? d : null;
+                    return new
+                    {
+                        name = i.Name,
+                        instanceId = i.InstanceId,
+                        runtimeStatus = (int)i.RuntimeStatus,
+                        createdAt = i.CreatedAt,
+                        lastUpdatedAt = i.LastUpdatedAt,
+                        serializedInput = TrimInputForList(detail?.SerializedInput),
+                        serializedCustomStatus = i.SerializedCustomStatus
+                    };
                 }).ToList();
 
                 return new OkObjectResult(result);

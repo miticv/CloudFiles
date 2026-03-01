@@ -248,32 +248,70 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         return { from, to: `Google Photos (Album: ${album})` };
     }
 
-    getExpandedFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
+    getSucceededFiles(instance: OrchestrationInstance): { name: string; path: string; isImage: boolean }[] {
+        const output = this.parseJson(instance.serializedOutput);
+        if (!output) return [];
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
+
+        // GooglePhotosToAzure: results[] with success flag
+        const results = (output['results'] ?? output['Results']) as
+            { filename?: string; Filename?: string; blobPath?: string; BlobPath?: string; success?: boolean; Success?: boolean }[] | undefined;
+        if (results) {
+            return results
+                .filter(r => r.success ?? r.Success)
+                .map(r => {
+                    const name = r.filename || r.Filename || 'unknown';
+                    const path = r.blobPath || r.BlobPath || '';
+                    const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+                    return { name, path, isImage: imageExts.has(ext) };
+                });
+        }
+
+        // AzureToGoogle / GCSToGoogle: newMediaItemResults[] — success = mediaItem.id non-empty
+        const mediaResults = (output['newMediaItemResults'] ?? output['NewMediaItemResults']) as
+            { mediaItem?: { id?: string; filename?: string } }[] | undefined;
+        if (mediaResults) {
+            return mediaResults
+                .filter(r => r.mediaItem?.id)
+                .map(r => {
+                    const name = r.mediaItem!.filename || 'unknown';
+                    const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+                    return { name, path: '', isImage: imageExts.has(ext) };
+                });
+        }
+
+        return [];
+    }
+
+    getFailedFiles(instance: OrchestrationInstance): { name: string; error: string }[] {
         const output = this.parseJson(instance.serializedOutput);
         if (!output) return [];
 
-        // Google Photos → Azure: results use filename/blobPath
+        // GooglePhotosToAzure: results[] with success === false
         const results = (output['results'] ?? output['Results']) as
-            { filename?: string; Filename?: string; blobPath?: string; BlobPath?: string }[] | undefined;
+            { filename?: string; Filename?: string; success?: boolean; Success?: boolean; errorMessage?: string; ErrorMessage?: string }[] | undefined;
         if (results) {
-            const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
-            return results.map((r) => {
-                const name = r.filename || r.Filename || 'unknown';
-                const path = r.blobPath || r.BlobPath || '';
-                const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-                return { name, path, isImage: imageExts.has(ext) };
-            });
+            return results
+                .filter(r => !(r.success ?? r.Success))
+                .map(r => ({
+                    name: r.filename || r.Filename || 'unknown',
+                    error: r.errorMessage || r.ErrorMessage || 'Unknown error'
+                }));
         }
 
-        const items = (output['listItemsPrepared'] ?? output['ListItemsPrepared']) as
-            { itemFilename?: string; itemPath?: string; ItemFilename?: string; ItemPath?: string }[] | undefined;
-        if (!items) return [];
-        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'heic', 'heif', 'tiff', 'tif', 'svg']);
-        return items.map((i) => {
-            const name = i.itemFilename || i.ItemFilename || i.itemPath || i.ItemPath || 'unknown';
-            const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
-            return { name, path: i.itemPath || i.ItemPath || '', isImage: imageExts.has(ext) };
-        });
+        // AzureToGoogle / GCSToGoogle: newMediaItemResults[] — failure = mediaItem.id empty
+        const mediaResults = (output['newMediaItemResults'] ?? output['NewMediaItemResults']) as
+            { mediaItem?: { id?: string; filename?: string }; status?: { message?: string } }[] | undefined;
+        if (mediaResults) {
+            return mediaResults
+                .filter(r => !r.mediaItem?.id)
+                .map(r => ({
+                    name: r.mediaItem?.filename || 'unknown',
+                    error: r.status?.message || 'Unknown error'
+                }));
+        }
+
+        return [];
     }
 
     getSelectedItems(instance: OrchestrationInstance): { name: string; path: string; isFolder: boolean; isImage: boolean }[] {
@@ -433,10 +471,25 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         const albumId    = ((input['albumId']    || input['AlbumId'])    as string) || '';
         const albumTitle = ((input['albumTitle'] || input['AlbumTitle']) as string) || '';
         const rawItems   = ((input['selectedItemsList'] || input['SelectedItemsList']) as any[]) || [];
-        const selectedItemsList = rawItems.map((i: any) => ({
+        let selectedItemsList = rawItems.map((i: any) => ({
             itemPath: i.itemPath || i.ItemPath || '',
             isFolder: i.isFolder ?? i.IsFolder ?? false
         }));
+
+        // Skip files already successfully copied in the previous run
+        const output = this.parseJson(group.parent.serializedOutput);
+        if (output) {
+            const mediaResults = ((output['newMediaItemResults'] ?? output['NewMediaItemResults']) as any[]) || [];
+            const succeededNames = new Set<string>(
+                mediaResults.filter((r: any) => r.mediaItem?.id).map((r: any) => r.mediaItem.filename as string)
+            );
+            if (succeededNames.size > 0) {
+                selectedItemsList = selectedItemsList.filter(item => {
+                    const basename = item.itemPath.includes('/') ? item.itemPath.split('/').pop()! : item.itemPath;
+                    return !succeededNames.has(basename);
+                });
+            }
+        }
 
         this.retryingGroupIds.add(group.parent.instanceId);
 

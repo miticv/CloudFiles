@@ -110,6 +110,13 @@ export class ProcessService extends HttpService {
         );
     }
 
+    getInstance(instanceId: string): Observable<OrchestrationInstance> {
+        return this.http.get<OrchestrationInstance>(
+            `${this.baseUrl}process/instances/${instanceId}`,
+            this.getRequestOptions(true)
+        );
+    }
+
     purgeInstance(instanceId: string): Observable<{ instanceId: string; purged: boolean }> {
         return this.http.delete<{ instanceId: string; purged: boolean }>(
             `${this.baseUrl}process/instances/${instanceId}`,

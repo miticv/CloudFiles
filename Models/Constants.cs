@@ -30,6 +30,7 @@ public const string GoogleFileList = "googleFileList";
         public const string ProcessGoogleStorageToGooglePhotos_Start = "processGoogleStorageToGooglePhotos_Start";
         public const string ProcessListInstances = "processListInstances";
         public const string ProcessPurgeInstance = "processPurgeInstance";
+        public const string ProcessGetInstance = "processGetInstance";
 
         // automation azure storage
         public const string AzureStorageToGooglePhotosOrchestrator = "azureStorageToGooglePhotosOrchestrator";

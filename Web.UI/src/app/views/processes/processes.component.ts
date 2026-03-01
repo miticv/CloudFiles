@@ -139,9 +139,37 @@ export class ProcessesComponent implements OnInit, OnDestroy {
         this.loadInstances();
     }
 
+    private detailLoadingIds = new Set<string>();
+
     toggleExpand(instanceId: string): void {
-        this.expandedInstanceId =
-            this.expandedInstanceId === instanceId ? null : instanceId;
+        if (this.expandedInstanceId === instanceId) {
+            this.expandedInstanceId = null;
+            return;
+        }
+        this.expandedInstanceId = instanceId;
+
+        // Lazy-load full instance details (including serializedOutput) on first expand
+        const instance = this.instances.find(i => i.instanceId === instanceId);
+        if (instance && !instance.serializedOutput && !this.detailLoadingIds.has(instanceId)) {
+            this.detailLoadingIds.add(instanceId);
+            this.processService.getInstance(instanceId).subscribe({
+                next: (detail) => {
+                    this.detailLoadingIds.delete(instanceId);
+                    const idx = this.instances.findIndex(i => i.instanceId === instanceId);
+                    if (idx >= 0) {
+                        this.instances[idx] = { ...this.instances[idx], serializedOutput: detail.serializedOutput };
+                        this.groups = this.buildGroups(this.instances);
+                    }
+                },
+                error: () => {
+                    this.detailLoadingIds.delete(instanceId);
+                }
+            });
+        }
+    }
+
+    isDetailLoading(instanceId: string): boolean {
+        return this.detailLoadingIds.has(instanceId);
     }
 
     parseJson(serialized: string): Record<string, unknown> | null {
@@ -473,7 +501,8 @@ export class ProcessesComponent implements OnInit, OnDestroy {
             return instance.runtimeStatus;
         }
         // If completed but has any failed files, show as failed
-        if (this.getFailedFiles(instance).length > 0) {
+        // (only check if output is loaded — output is lazy-loaded on expand)
+        if (instance.serializedOutput && this.getFailedFiles(instance).length > 0) {
             return OrchestrationRuntimeStatus.Failed;
         }
         return instance.runtimeStatus;
@@ -544,6 +573,30 @@ export class ProcessesComponent implements OnInit, OnDestroy {
 
     retryProcess(group: ProcessGroup, event: Event): void {
         event.stopPropagation();
+
+        // Fetch full details if output is missing (needed to filter out succeeded files)
+        if (!group.parent.serializedOutput) {
+            this.retryingGroupIds.add(group.parent.instanceId);
+            this.processService.getInstance(group.parent.instanceId).subscribe({
+                next: (detail) => {
+                    this.retryingGroupIds.delete(group.parent.instanceId);
+                    const idx = this.instances.findIndex(i => i.instanceId === group.parent.instanceId);
+                    if (idx >= 0) {
+                        this.instances[idx] = { ...this.instances[idx], serializedOutput: detail.serializedOutput };
+                        this.groups = this.buildGroups(this.instances);
+                    }
+                    // Find updated group and retry
+                    const updatedGroup = this.groups.find(g => g.parent.instanceId === group.parent.instanceId);
+                    if (updatedGroup) this.retryProcess(updatedGroup, event);
+                },
+                error: () => {
+                    this.retryingGroupIds.delete(group.parent.instanceId);
+                    this.error = 'Failed to load instance details for retry.';
+                }
+            });
+            return;
+        }
+
         const input = this.parseJson(group.parent.serializedInput);
         if (!input) return;
 

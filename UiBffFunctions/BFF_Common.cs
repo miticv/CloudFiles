@@ -196,9 +196,10 @@ namespace CloudFiles
                     instances = allInstances;
                 }
 
-                // Map to simple DTOs to avoid serialization issues with OrchestrationMetadata.
-                // The SDK type can contain properties that fail JSON serialization (e.g. gRPC internals),
-                // causing a 500 at the response layer even though the function itself succeeds.
+                // Map to lightweight DTOs. Exclude serializedOutput from the list
+                // response — it can be enormous (hundreds of file results) and exceeds
+                // the isolated worker gRPC channel limit (~4MB). Output is fetched
+                // on demand via the detail endpoint when the user expands an instance.
                 var result = instances.Select(i => new
                 {
                     name = i.Name,
@@ -207,7 +208,6 @@ namespace CloudFiles
                     createdAt = i.CreatedAt,
                     lastUpdatedAt = i.LastUpdatedAt,
                     serializedInput = i.SerializedInput,
-                    serializedOutput = i.SerializedOutput,
                     serializedCustomStatus = i.SerializedCustomStatus
                 }).ToList();
 
@@ -225,6 +225,47 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, $"Unexpected error in {Constants.ProcessListInstances}");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [Function(Constants.ProcessGetInstance)]
+        public static async Task<IActionResult> GetInstance(
+           [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "process/instances/{instanceId}")] HttpRequest req,
+           [DurableClient] DurableTaskClient starter,
+           string instanceId,
+           FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(GetInstance));
+            try
+            {
+                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                var instance = await starter.GetInstanceAsync(instanceId, getInputsAndOutputs: true).ConfigureAwait(false);
+                if (instance == null)
+                {
+                    return new NotFoundResult();
+                }
+
+                return new OkObjectResult(new
+                {
+                    name = instance.Name,
+                    instanceId = instance.InstanceId,
+                    runtimeStatus = (int)instance.RuntimeStatus,
+                    createdAt = instance.CreatedAt,
+                    lastUpdatedAt = instance.LastUpdatedAt,
+                    serializedInput = instance.SerializedInput,
+                    serializedOutput = instance.SerializedOutput,
+                    serializedCustomStatus = instance.SerializedCustomStatus
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Error fetching instance {instanceId}");
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }

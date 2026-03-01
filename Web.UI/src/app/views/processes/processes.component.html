@@ -165,6 +165,11 @@
                         </div>
                     </div>
                 </div>
+                <!-- Loading indicator for lazy-loaded output -->
+                <div *ngIf="isDetailLoading(group.parent.instanceId)" class="mt-4 flex items-center gap-2 text-sm text-secondary">
+                    <mat-spinner diameter="16" strokeWidth="2"></mat-spinner>
+                    Loading file details...
+                </div>
                 <!-- Copied files (succeeded) -->
                 <details *ngIf="getSucceededFiles(group.parent).length > 0" class="mt-4">
                     <summary class="font-semibold text-sm flex items-center gap-1 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
@@ -272,8 +277,8 @@
                         </ng-template>
                     </ng-container>
                 </details>
-                <!-- Fallback: input files when no output yet (pending/running) -->
-                <div *ngIf="getSucceededFiles(group.parent).length === 0 && getFailedFiles(group.parent).length === 0 && getSelectedItems(group.parent).length > 0" class="mt-4">
+                <!-- Fallback: input files when no output available (pending/running/not yet loaded) -->
+                <div *ngIf="!group.parent.serializedOutput && !isDetailLoading(group.parent.instanceId) && getSelectedItems(group.parent).length > 0" class="mt-4">
                     <div class="font-semibold mb-2 text-sm flex items-center gap-1">
                         <mat-icon class="!text-base !w-4 !h-4">content_copy</mat-icon>
                         Selected ({{getSelectedItems(group.parent).length}})

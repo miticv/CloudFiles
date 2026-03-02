@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { useFileSelection } from '@/hooks/use-file-selection';
+import { NotConnectedState } from '@/components/not-connected-state';
 import { useOidc } from '@/auth/oidc-provider';
 import { useDriveFiles } from '@/api/google-drive.api';
 import { Button } from '@/components/ui/button';
@@ -8,8 +10,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
-import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare } from 'lucide-react';
+import { cn, formatFileSize, formatSelectionCount, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CheckSquare } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { CopyToBar } from '@/components/copy-to-bar';
 import { type CopyProviderId } from '@/lib/providers';
@@ -38,28 +40,6 @@ interface BreadcrumbEntry {
   name: string;
 }
 
-// ─── Not-Connected State ───
-function NotConnected({ onConnect }: { onConnect: () => void }) {
-  return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center space-y-4 max-w-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <CloudOff className="h-8 w-8 text-slate-400" />
-        </div>
-        <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-foreground">Google not connected</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect your Google account to browse files stored in Google Drive.
-          </p>
-        </div>
-        <Button onClick={onConnect}>
-          <FolderOpen className="h-4 w-4" />
-          Connect Google
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Main Component ───
 export function Component() {
@@ -70,9 +50,10 @@ export function Component() {
 
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ id: 'root', name: 'My Drive' }]);
   const [pageToken, setPageToken] = useState<string | null>(null);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
+  const {
+    selectionMode, selectedFiles, selectedFolders, setSelectedFiles, setSelectedFolders,
+    totalSelected, toggleSelectionMode, clearSelection,
+  } = useFileSelection();
   const [accumulatedNextToken, setAccumulatedNextToken] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
   const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
@@ -106,8 +87,6 @@ export function Component() {
   const regularFiles = allFiles.filter((f) => f.mimeType !== GOOGLE_FOLDER_MIME && !GOOGLE_DOCS_MIMES.has(f.mimeType));
   const googleDocsFiles = allFiles.filter((f) => GOOGLE_DOCS_MIMES.has(f.mimeType));
   const selectableFiles = regularFiles;
-
-  const totalSelected = selectedFiles.size + selectedFolders.size;
 
   // Get the actual file/folder objects for passing to dialog
   const selectedFileObjects = useMemo(
@@ -147,11 +126,8 @@ export function Component() {
   function toggleFile(fileId: string) {
     setSelectedFiles((prev) => {
       const next = new Set(prev);
-      if (next.has(fileId)) {
-        next.delete(fileId);
-      } else {
-        next.add(fileId);
-      }
+      if (next.has(fileId)) next.delete(fileId);
+      else next.add(fileId);
       return next;
     });
   }
@@ -159,28 +135,14 @@ export function Component() {
   function toggleFolder(folderId: string) {
     setSelectedFolders((prev) => {
       const next = new Set(prev);
-      if (next.has(folderId)) {
-        next.delete(folderId);
-      } else {
-        next.add(folderId);
-      }
+      if (next.has(folderId)) next.delete(folderId);
+      else next.add(folderId);
       return next;
     });
   }
 
-  function toggleSelectionMode() {
-    setSelectionMode((prev) => !prev);
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
-
-  function clearSelection() {
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
-
   if (!googleConnected) {
-    return <NotConnected onConnect={() => login('google')} />;
+    return <NotConnectedState provider="Google" description="Connect your Google account to browse files stored in Google Drive." buttonLabel="Connect Google" buttonIcon={<FolderOpen className="h-4 w-4" />} onConnect={() => login('google')} />;
   }
 
   return (
@@ -471,12 +433,7 @@ export function Component() {
         <CopyToBar
           sourceProvider="google-drive"
           selectedCount={totalSelected}
-          selectedLabel={
-            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
-            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
-            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
-            ' selected'
-          }
+          selectedLabel={formatSelectionCount(selectedFiles.size, selectedFolders.size)}
           onClearSelection={clearSelection}
           onCopyTo={(dest) => setActiveDialog(dest)}
         />

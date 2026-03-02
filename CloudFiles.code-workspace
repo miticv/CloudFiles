@@ -10,8 +10,8 @@
 			"**/bin": true,
 			"**/obj": true
 		},
-		"claudeCode.useTerminal": true,
-		"claudeCode.allowDangerouslySkipPermissions": true,
+		"claudeCode.useTerminal": false,
+		"claudeCode.allowDangerouslySkipPermissions": false,
 		"claudeCode.environmentVariables": [
 			
 		]

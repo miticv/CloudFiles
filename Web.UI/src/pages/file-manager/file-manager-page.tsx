@@ -10,7 +10,7 @@ import { FileDetailSheet } from '@/components/file-detail-sheet';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { cn, formatFileSize, formatSelectionCount, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
 import {
   Folder,
   FileText,
@@ -472,12 +472,7 @@ export function Component() {
         <CopyToBar
           sourceProvider="azure"
           selectedCount={totalSelected}
-          selectedLabel={
-            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
-            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
-            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
-            ' selected'
-          }
+          selectedLabel={formatSelectionCount(selectedFiles.size, selectedFolders.size)}
           onClearSelection={clearSelection}
           onCopyTo={(dest) => setActiveDialog(dest)}
         />

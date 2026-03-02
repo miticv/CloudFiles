@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { useFileSelection } from '@/hooks/use-file-selection';
 import { useOidc } from '@/auth/oidc-provider';
 import { startPCloudLogin } from '@/auth/pcloud-auth';
 import { usePCloudFolder } from '@/api/pcloud.api';
@@ -8,8 +9,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
-import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare, X } from 'lucide-react';
+import { cn, formatFileSize, formatSelectionCount, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { NotConnectedState } from '@/components/not-connected-state';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CheckSquare, X } from 'lucide-react';
 import { isAxiosError } from 'axios';
 
 interface BreadcrumbEntry {
@@ -17,27 +19,6 @@ interface BreadcrumbEntry {
   name: string;
 }
 
-function NotConnected({ onConnect }: { onConnect: () => void }) {
-  return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center space-y-4 max-w-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <CloudOff className="h-8 w-8 text-slate-400" />
-        </div>
-        <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-foreground">pCloud not connected</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect your pCloud account to browse your files.
-          </p>
-        </div>
-        <Button onClick={onConnect}>
-          <FolderOpen className="h-4 w-4" />
-          Connect pCloud
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export function Component() {
   usePageTitle('pCloud');
@@ -46,35 +27,14 @@ export function Component() {
   const pcloudConnected = providers.find((p) => p.configId === 'pcloud')?.authenticated ?? false;
 
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ folderId: 0, name: 'Root' }]);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<Set<number>>(new Set());
-  const [selectedFolders, setSelectedFolders] = useState<Set<number>>(new Set());
+  const {
+    selectionMode, selectedFiles, selectedFolders, setSelectedFiles, setSelectedFolders,
+    toggleItem, totalSelected, toggleSelectionMode, clearSelection,
+  } = useFileSelection<number>();
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
   const { data, isLoading, error, refetch } = usePCloudFolder(currentFolder.folderId, pcloudConnected);
-
-  const toggleItem = useCallback(<T,>(id: T, set: React.Dispatch<React.SetStateAction<Set<T>>>) => {
-    set((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const totalSelected = selectedFiles.size + selectedFolders.size;
-
-  function toggleSelectionMode() {
-    setSelectionMode((prev) => !prev);
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
-
-  function clearSelection() {
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
 
   function navigateToFolder(folderId: number, folderName: string) {
     setBreadcrumbs((prev) => [...prev, { folderId, name: folderName }]);
@@ -85,7 +45,7 @@ export function Component() {
   }
 
   if (!pcloudConnected) {
-    return <NotConnected onConnect={() => startPCloudLogin()} />;
+    return <NotConnectedState provider="pCloud" description="Connect your pCloud account to browse your files." buttonLabel="Connect pCloud" buttonIcon={<FolderOpen className="h-4 w-4" />} onConnect={() => startPCloudLogin()} />;
   }
 
   const items = data?.items ?? [];
@@ -304,10 +264,7 @@ export function Component() {
         <div className="border-t border-border bg-card px-6 py-3">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-foreground">
-              {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
-              {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
-              {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
-              {' '}selected
+              {formatSelectionCount(selectedFiles.size, selectedFolders.size)}
             </span>
             <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
               <X className="h-3.5 w-3.5" />

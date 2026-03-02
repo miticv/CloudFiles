@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { useFileSelection } from '@/hooks/use-file-selection';
+import { NotConnectedState } from '@/components/not-connected-state';
 import { useOidc } from '@/auth/oidc-provider';
 import { startDropboxLogin } from '@/auth/dropbox-auth';
 import { useDropboxFolder } from '@/api/dropbox.api';
@@ -8,8 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
-import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare } from 'lucide-react';
+import { cn, formatFileSize, formatSelectionCount, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CheckSquare } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { CopyToBar } from '@/components/copy-to-bar';
 import { type CopyProviderId } from '@/lib/providers';
@@ -23,27 +25,6 @@ interface BreadcrumbEntry {
   name: string;
 }
 
-function NotConnected({ onConnect }: { onConnect: () => void }) {
-  return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center space-y-4 max-w-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <CloudOff className="h-8 w-8 text-slate-400" />
-        </div>
-        <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-foreground">Dropbox not connected</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect your Dropbox account to browse your files.
-          </p>
-        </div>
-        <Button onClick={onConnect}>
-          <FolderOpen className="h-4 w-4" />
-          Connect Dropbox
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export function Component() {
   usePageTitle('Dropbox');
@@ -56,33 +37,12 @@ export function Component() {
 
   const { data, isLoading, error, refetch } = useDropboxFolder(currentFolder.path, dropboxConnected);
 
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
+  const {
+    selectionMode, selectedFiles, selectedFolders, setSelectedFiles, setSelectedFolders,
+    toggleItem, totalSelected, toggleSelectionMode, clearSelection,
+  } = useFileSelection();
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
   const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
-
-  const toggleItem = useCallback(<T,>(id: T, set: React.Dispatch<React.SetStateAction<Set<T>>>) => {
-    set((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const totalSelected = selectedFiles.size + selectedFolders.size;
-
-  function toggleSelectionMode() {
-    setSelectionMode((prev) => !prev);
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
-
-  function clearSelection() {
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
 
   function navigateToFolder(path: string, folderName: string) {
     setBreadcrumbs((prev) => [...prev, { path, name: folderName }]);
@@ -97,7 +57,7 @@ export function Component() {
   }
 
   if (!dropboxConnected) {
-    return <NotConnected onConnect={() => startDropboxLogin()} />;
+    return <NotConnectedState provider="Dropbox" description="Connect your Dropbox account to browse your files." buttonLabel="Connect Dropbox" buttonIcon={<FolderOpen className="h-4 w-4" />} onConnect={() => startDropboxLogin()} />;
   }
 
   const items = data?.items ?? [];
@@ -319,12 +279,7 @@ export function Component() {
         <CopyToBar
           sourceProvider="dropbox"
           selectedCount={totalSelected}
-          selectedLabel={
-            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
-            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
-            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
-            ' selected'
-          }
+          selectedLabel={formatSelectionCount(selectedFiles.size, selectedFolders.size)}
           onClearSelection={clearSelection}
           onCopyTo={(dest) => setActiveDialog(dest)}
         />

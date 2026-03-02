@@ -30,8 +30,8 @@ export function Component() {
 
   function redirectAfterLogin() {
     const redirect = localStorage.getItem('redirect');
-    if (redirect) {
-      localStorage.removeItem('redirect');
+    localStorage.removeItem('redirect');
+    if (redirect && redirect.startsWith('/') && !redirect.includes('//')) {
       navigate(redirect);
     } else {
       navigate('/connections');

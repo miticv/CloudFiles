@@ -35,7 +35,7 @@ export function getDropboxRefreshToken(): string | null {
 
 export function isDropboxTokenExpired(): boolean {
   const expiresAt = localStorage.getItem(DROPBOX_EXPIRES_KEY);
-  if (!expiresAt) return false; // no expiry info, assume valid
+  if (!expiresAt) return true; // no expiry info, assume expired
   // Consider expired if within 5 minutes of expiry
   return Date.now() > parseInt(expiresAt, 10) - 5 * 60 * 1000;
 }

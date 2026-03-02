@@ -30,7 +30,6 @@ jobs:
         run: |
           sed -e "s|__PRODUCTION_API_URL__|${{ secrets.PRODUCTION_API_URL }}|g" \
               -e "s|__GOOGLE_CLIENT_ID__|${{ secrets.GOOGLE_CLIENT_ID }}|g" \
-              -e "s|__GOOGLE_CLIENT_SECRET__|${{ secrets.GOOGLE_CLIENT_SECRET }}|g" \
               -e "s|__AZURE_TENANT_ID__|${{ secrets.AZURE_TENANT_ID }}|g" \
               -e "s|__AZURE_CLIENT_ID__|${{ secrets.AZURE_CLIENT_ID }}|g" \
               -e "s|__ADMIN_EMAIL__|${{ secrets.ADMIN_EMAIL }}|g" \

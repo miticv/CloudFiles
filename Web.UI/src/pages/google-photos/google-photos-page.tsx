@@ -10,7 +10,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import { Image as ImageIcon, CloudOff, X, HelpCircle } from 'lucide-react';
+import { NotConnectedState } from '@/components/not-connected-state';
+import { Image as ImageIcon, X, HelpCircle } from 'lucide-react';
 import { useGooglePhotosStore } from '@/stores/google-photos.store';
 import { CopyToBar } from '@/components/copy-to-bar';
 import { type CopyProviderId } from '@/lib/providers';
@@ -19,28 +20,6 @@ import { CopyToGcsDialog } from './copy-to-gcs-dialog';
 import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
 import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
 
-// ─── Not-Connected State ───
-function NotConnected({ onConnect }: { onConnect: () => void }) {
-  return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center space-y-4 max-w-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <CloudOff className="h-8 w-8 text-slate-400" />
-        </div>
-        <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-foreground">Google not connected</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect your Google account to select and copy photos from Google Photos.
-          </p>
-        </div>
-        <Button onClick={onConnect}>
-          <ImageIcon className="h-4 w-4" />
-          Connect Google
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Main Component ───
 export function Component() {
@@ -168,7 +147,7 @@ export function Component() {
   }
 
   if (!googleConnected) {
-    return <NotConnected onConnect={() => login('google')} />;
+    return <NotConnectedState provider="Google" description="Connect your Google account to select and copy photos from Google Photos." buttonLabel="Connect Google" buttonIcon={<ImageIcon className="h-4 w-4" />} onConnect={() => login('google')} />;
   }
 
   return (

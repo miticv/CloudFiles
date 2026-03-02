@@ -114,9 +114,9 @@ namespace CloudFiles
                     return new BadRequestObjectResult("email, displayName, and password are required.");
                 }
 
-                if (request.Password.Length < 6)
+                if (request.Password.Length < 8)
                 {
-                    return new BadRequestObjectResult("Password must be at least 6 characters.");
+                    return new BadRequestObjectResult("Password must be at least 8 characters.");
                 }
 
                 var user = await UserTableUtility.CreateLocalUserAsync(request.Email, request.DisplayName, request.Password).ConfigureAwait(false);

@@ -1,5 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { useFileSelection } from '@/hooks/use-file-selection';
+import { NotConnectedState } from '@/components/not-connected-state';
 import { useOidc } from '@/auth/oidc-provider';
 import { useBuckets, useGcsFiles } from '@/api/google-storage.api';
 import { Button } from '@/components/ui/button';
@@ -10,9 +12,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
-import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { cn, formatFileSize, formatSelectionCount, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, CloudOff, CheckSquare, HelpCircle } from 'lucide-react';
+import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, CheckSquare, HelpCircle } from 'lucide-react';
 import { CopyGcsToAzureDialog } from './copy-gcs-to-azure-dialog';
 import { CopyGcsToDropboxDialog } from './copy-gcs-to-dropbox-dialog';
 import { CopyGcsToDriveDialog } from './copy-gcs-to-drive-dialog';
@@ -30,28 +32,6 @@ interface BreadcrumbSegment {
 const LS_BUCKET_KEY = 'gcs_bucket_name';
 const LS_PROJECT_KEY = 'gcs_project_id';
 
-// ─── Not-Connected State ───
-function NotConnected({ onConnect }: { onConnect: () => void }) {
-  return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center space-y-4 max-w-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <CloudOff className="h-8 w-8 text-slate-400" />
-        </div>
-        <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-foreground">Google not connected</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect your Google account to browse Google Cloud Storage buckets and files.
-          </p>
-        </div>
-        <Button onClick={onConnect}>
-          <Cloud className="h-4 w-4" />
-          Connect Google
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Setup View ───
 function SetupView({
@@ -255,9 +235,10 @@ function BrowseView({
   onBack: () => void;
 }) {
   const [currentPath, setCurrentPath] = useState<string | null>(null);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
+  const {
+    selectionMode, selectedFiles, selectedFolders, setSelectedFiles, setSelectedFolders,
+    toggleItem, totalSelected, toggleSelectionMode, clearSelection,
+  } = useFileSelection();
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
   const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
   const { data: items, isLoading, error, refetch } = useGcsFiles(bucket, currentPath);
@@ -275,15 +256,6 @@ function BrowseView({
     }
   }
 
-  const toggleItem = useCallback((path: string, set: React.Dispatch<React.SetStateAction<Set<string>>>) => {
-    set((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
-  }, []);
-
   const selectedFileObjects = useMemo(
     () => [
       ...files.filter((f) => selectedFiles.has(f.itemPath)),
@@ -291,19 +263,6 @@ function BrowseView({
     ],
     [files, folders, selectedFiles, selectedFolders],
   );
-
-  const totalSelected = selectedFiles.size + selectedFolders.size;
-
-  function toggleSelectionMode() {
-    setSelectionMode((prev) => !prev);
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
-
-  function clearSelection() {
-    setSelectedFiles(new Set());
-    setSelectedFolders(new Set());
-  }
 
   function navigateToFolder(path: string) {
     setCurrentPath(path);
@@ -545,12 +504,7 @@ function BrowseView({
         <CopyToBar
           sourceProvider="gcs"
           selectedCount={totalSelected}
-          selectedLabel={
-            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
-            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
-            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
-            ' selected'
-          }
+          selectedLabel={formatSelectionCount(selectedFiles.size, selectedFolders.size)}
           onClearSelection={clearSelection}
           onCopyTo={(dest) => setActiveDialog(dest)}
         />
@@ -593,7 +547,7 @@ export function Component() {
   }
 
   if (!googleConnected) {
-    return <NotConnected onConnect={() => login('google')} />;
+    return <NotConnectedState provider="Google" description="Connect your Google account to browse Google Cloud Storage buckets and files." buttonLabel="Connect Google" buttonIcon={<Cloud className="h-4 w-4" />} onConnect={() => login('google')} />;
   }
 
   return (

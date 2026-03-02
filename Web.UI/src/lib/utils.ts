@@ -62,6 +62,13 @@ export function getFileTypeBadgeColor(ext: string): string {
   }
 }
 
+export function formatSelectionCount(fileCount: number, folderCount: number): string {
+  const parts: string[] = [];
+  if (fileCount > 0) parts.push(`${fileCount} file${fileCount !== 1 ? 's' : ''}`);
+  if (folderCount > 0) parts.push(`${folderCount} folder${folderCount !== 1 ? 's' : ''}`);
+  return parts.join(' and ') + ' selected';
+}
+
 export function extractError(error: unknown): string {
   if (!error) return 'An unknown error occurred';
   if (typeof error === 'string') return error;

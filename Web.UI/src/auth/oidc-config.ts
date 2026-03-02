@@ -4,7 +4,6 @@ import { env } from '@/env';
 export const googleManager = new UserManager({
   authority: 'https://accounts.google.com',
   client_id: env.googleClientId,
-  client_secret: env.googleClientSecret,
   redirect_uri: window.location.origin,
   post_logout_redirect_uri: window.location.origin,
   response_type: 'code',

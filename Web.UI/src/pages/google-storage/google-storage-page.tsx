@@ -547,8 +547,9 @@ export function Component() {
   const { providers, login } = useOidc();
   const googleConnected = providers.find((p) => p.configId === 'google')?.authenticated ?? false;
 
-  const [view, setView] = useState<View>('setup');
-  const [activeBucket, setActiveBucket] = useState<string | null>(null);
+  const savedBucket = localStorage.getItem(LS_BUCKET_KEY);
+  const [view, setView] = useState<View>(savedBucket ? 'browse' : 'setup');
+  const [activeBucket, setActiveBucket] = useState<string | null>(savedBucket);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   function handleBrowseBucket(bucket: string) {

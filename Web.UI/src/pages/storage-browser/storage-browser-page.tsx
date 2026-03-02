@@ -69,7 +69,7 @@ function loadState(): BrowseSelection | null {
 // ─── Component ───
 
 export function Component() {
-  usePageTitle('Storage Browser');
+  usePageTitle('Azure Storage');
 
   const navigate = useNavigate();
   const { providers, login } = useOidc();
@@ -300,8 +300,7 @@ export function Component() {
                 Back
               </Button>
             )}
-            <h1 className="text-xl font-semibold text-foreground">Storage Browser</h1>
-            <Badge variant="info">Azure</Badge>
+            <h1 className="text-xl font-semibold text-foreground">Azure Storage</h1>
           </div>
         </div>
 

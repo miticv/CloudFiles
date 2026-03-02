@@ -21,7 +21,7 @@ export function useNavigation(): MenuItem[] {
       }));
 
     const items: MenuItem[] = [
-      { name: 'Storage Browser', type: 'link', icon: 'HardDrive', path: '/storage-browser' },
+      { name: 'Azure Storage', type: 'link', icon: 'HardDrive', path: '/storage-browser' },
       { name: 'Google Storage', type: 'link', icon: 'Cloud', path: '/google-storage' },
       { name: 'Google Drive', type: 'link', icon: 'FolderOpen', path: '/google-drive' },
       { name: 'Google Photos', type: 'link', icon: 'Image', path: '/google-photos' },

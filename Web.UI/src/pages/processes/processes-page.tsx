@@ -722,12 +722,14 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
 
   const canRetry =
     parent.runtimeStatus === OrchestrationRuntimeStatus.Completed && parent.hasFailedFiles ||
-    parent.runtimeStatus === OrchestrationRuntimeStatus.Failed;
+    parent.runtimeStatus === OrchestrationRuntimeStatus.Failed ||
+    parent.runtimeStatus === OrchestrationRuntimeStatus.Terminated;
 
   const canTerminate =
     parent.runtimeStatus === OrchestrationRuntimeStatus.Running ||
     parent.runtimeStatus === OrchestrationRuntimeStatus.Pending;
 
+  const [terminateConfirmOpen, setTerminateConfirmOpen] = useState(false);
   const [restartError, setRestartError] = useState<string | null>(null);
 
   const handleRestart = useCallback(async () => {
@@ -809,6 +811,20 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
             )}
           </div>
         </div>
+
+        {/* Quick terminate on header */}
+        {canTerminate && (
+          <span
+            role="button"
+            tabIndex={0}
+            title="Terminate"
+            className="shrink-0 ml-1 p-1.5 rounded-md text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); setTerminateConfirmOpen(true); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setTerminateConfirmOpen(true); } }}
+          >
+            <StopCircle className="w-4 h-4" />
+          </span>
+        )}
       </button>
 
       {/* Expanded detail */}
@@ -883,33 +899,31 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-1">
               {canTerminate && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={terminate.isPending}>
-                      <StopCircle className={cn('w-3.5 h-3.5 mr-1.5', terminate.isPending && 'animate-spin')} />
-                      {terminate.isPending ? 'Terminating...' : 'Terminate'}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Terminate Process</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to terminate this running process? Files already copied will remain,
-                        but the remaining transfers will be stopped.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => terminate.mutate(parent.instanceId)}
-                        className="bg-orange-600 text-white hover:bg-orange-700"
-                      >
-                        Terminate
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button variant="outline" size="sm" disabled={terminate.isPending} onClick={() => setTerminateConfirmOpen(true)}>
+                  <StopCircle className={cn('w-3.5 h-3.5 mr-1.5', terminate.isPending && 'animate-spin')} />
+                  {terminate.isPending ? 'Terminating...' : 'Terminate'}
+                </Button>
               )}
+              <AlertDialog open={terminateConfirmOpen} onOpenChange={setTerminateConfirmOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Terminate Process</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to terminate this running process? Files already copied will remain,
+                      but the remaining transfers will be stopped.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => terminate.mutate(parent.instanceId)}
+                      className="bg-orange-600 text-white hover:bg-orange-700"
+                    >
+                      Terminate
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               {canRetry && (
                 <Button
                   variant="outline"

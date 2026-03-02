@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useOidc } from '@/auth/oidc-provider';
 import { useCreateSession, usePollSession, usePickedItems, getImageProxyPath } from '@/api/google-photos.api';
+import { apiClient } from '@/auth/axios-client';
 import { SecureImage } from '@/components/ui/secure-image';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -10,7 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Image as ImageIcon, CloudOff, X, HelpCircle } from 'lucide-react';
-import type { PickedMediaItem } from '@/api/types';
+import { useGooglePhotosStore } from '@/stores/google-photos.store';
 import { CopyToBar } from '@/components/copy-to-bar';
 import { type CopyProviderId } from '@/lib/providers';
 import { CopyToAzureDialog } from './copy-to-azure-dialog';
@@ -48,10 +49,10 @@ export function Component() {
   const { providers, login } = useOidc();
   const googleConnected = providers.find((p) => p.configId === 'google')?.authenticated ?? false;
 
-  // All accumulated items from completed sessions
-  const [savedItems, setSavedItems] = useState<PickedMediaItem[]>([]);
-  // Sessions that have already been committed to savedItems
-  const [processedSessions, setProcessedSessions] = useState<Set<string>>(new Set());
+  // Persistent state (survives navigation)
+  const { savedItems, processedSessions, addItems, clearAll } = useGooglePhotosStore();
+
+  // Transient state (resets on navigation — that's fine)
   const [polling, setPolling] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
@@ -76,41 +77,28 @@ export function Component() {
   // Derive the display list: saved items + any currently fetched items (deduped)
   const pickedItems = useMemo(() => {
     if (!fetchedItems || fetchedItems.length === 0) return savedItems;
-    // Only include fetched items that aren't already saved
     const existingIds = new Set(savedItems.map((item) => item.id));
     const deduped = fetchedItems.filter((item) => !existingIds.has(item.id));
     if (deduped.length === 0) return savedItems;
     return [...savedItems, ...deduped];
   }, [savedItems, fetchedItems]);
 
-  // Commit fetched items to permanent state once loaded
-  const commitFetchedItems = useCallback(() => {
-    if (!fetchedItems || fetchedItems.length === 0 || !sessionId) return;
-    if (processedSessions.has(sessionId)) return;
-
-    setSavedItems((prev) => {
-      const existingIds = new Set(prev.map((item) => item.id));
-      const deduped = fetchedItems.filter((item) => !existingIds.has(item.id));
-      return deduped.length > 0 ? [...prev, ...deduped] : prev;
-    });
-    setProcessedSessions((prev) => new Set(prev).add(sessionId));
-    setPolling(false);
-    setSessionId(null);
-  }, [fetchedItems, sessionId, processedSessions]);
-
-  // When items are fetched, commit them and clean up
-  // This fires when fetchedItems query transitions from loading to loaded
-  const prevFetchedRef = useRef<PickedMediaItem[] | undefined>(undefined);
+  // When items are fetched, commit them to the store and clean up
+  const prevFetchedRef = useRef(false);
   useEffect(() => {
-    // Only fire when fetchedItems changes from undefined/empty to populated
-    if (fetchedItems && fetchedItems.length > 0 && prevFetchedRef.current !== fetchedItems) {
-      prevFetchedRef.current = fetchedItems;
-      commitFetchedItems();
+    if (fetchedItems && fetchedItems.length > 0 && sessionId && !prevFetchedRef.current) {
+      prevFetchedRef.current = true;
+      addItems(fetchedItems, sessionId);
+      setPolling(false);
+      setSessionId(null);
       // Close popup
       if (popupRef.current && !popupRef.current.closed) {
         popupRef.current.close();
       }
       popupRef.current = null;
+    }
+    if (!fetchedItems || fetchedItems.length === 0) {
+      prevFetchedRef.current = false;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedItems]);
@@ -169,9 +157,8 @@ export function Component() {
   }, [createSession]);
 
   function handleClear() {
-    setSavedItems([]);
-    setProcessedSessions(new Set());
-    prevFetchedRef.current = undefined;
+    clearAll();
+    prevFetchedRef.current = false;
     setPolling(false);
     setSessionId(null);
     if (popupRef.current && !popupRef.current.closed) {
@@ -213,28 +200,33 @@ export function Component() {
                   </DialogHeader>
                   <div className="space-y-4 text-sm text-muted-foreground">
                     <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
-                      <p className="font-medium">The Google Photos Picker API only shows albums that were created by this application.</p>
-                      <p className="mt-1">This is a restriction imposed by Google &mdash; third-party apps cannot access albums you created manually in Google Photos.</p>
+                      <p className="font-medium">The Google Photos Picker only shows albums created by this app.</p>
+                      <p className="mt-1">This is a Google restriction &mdash; third-party apps cannot see albums you created manually in Google Photos.</p>
                     </div>
+
                     <div>
-                      <p className="font-medium text-foreground mb-2">How to move photos out of Google Photos:</p>
-                      <ol className="list-decimal list-inside space-y-2">
+                      <p className="font-medium text-foreground mb-2">Good to know:</p>
+                      <ul className="list-disc list-inside space-y-2">
                         <li>
-                          <span className="font-medium text-foreground">Use Google Takeout</span> &mdash; Go to{' '}
-                          <a href="https://takeout.google.com" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">takeout.google.com</a>,
-                          select Google Photos, and export your library. Google will send you download links for zip archives.
+                          Your selected photos <span className="font-medium text-foreground">stay on this page</span> even if you navigate to other pages and come back.
                         </li>
                         <li>
-                          <span className="font-medium text-foreground">Upload to Google Drive</span> &mdash; Extract the downloaded archives and upload the photos to a folder in Google Drive.
+                          However, if you <span className="font-medium text-foreground">refresh the browser</span> or close the tab, your selection will be lost and you&apos;ll need to pick again. This is because Google only allows access to your photos for a short time after you select them.
                         </li>
                         <li>
-                          <span className="font-medium text-foreground">Use CloudFiles to copy</span> &mdash; Navigate to the Google Drive page in this app and use the &ldquo;Copy to Azure&rdquo; or other copy actions to transfer files to your desired destination.
+                          For best results, <span className="font-medium text-foreground">start your copy job soon</span> after selecting photos &mdash; the links expire after about 60 minutes.
                         </li>
-                      </ol>
+                      </ul>
                     </div>
-                    <p className="text-xs">
-                      Alternatively, you can upload photos directly to Google Drive from the Google Photos mobile app using the &ldquo;Save to device&rdquo; option, then sync with Drive.
-                    </p>
+
+                    <div>
+                      <p className="font-medium text-foreground mb-2">Alternative: use Google Takeout</p>
+                      <p>
+                        If you want to move a large number of photos, go to{' '}
+                        <a href="https://takeout.google.com" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">takeout.google.com</a>,
+                        export your Google Photos library, then upload the files to Google Drive. From there you can use the Google Drive page in this app to copy them anywhere.
+                      </p>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -322,11 +314,19 @@ export function Component() {
             {pickedItems.map((item) => (
               <Tooltip key={item.id}>
                 <TooltipTrigger asChild>
-                  <a
-                    href={item.mediaFile.baseUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
                     className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100 cursor-pointer"
+                    onClick={async () => {
+                      const proxyPath = getImageProxyPath(item.mediaFile.baseUrl, 2048, 2048);
+                      try {
+                        const res = await apiClient.get(proxyPath, { responseType: 'blob' });
+                        const url = URL.createObjectURL(res.data);
+                        window.open(url, '_blank');
+                      } catch {
+                        // Fallback: URL may have expired
+                      }
+                    }}
                   >
                     <SecureImage
                       secureUrl={getImageProxyPath(item.mediaFile.baseUrl, 256, 256)}
@@ -334,7 +334,7 @@ export function Component() {
                       className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
-                  </a>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{item.mediaFile.filename}</p>
@@ -369,25 +369,25 @@ export function Component() {
         open={activeDialog === 'azure'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedItems={pickedItems}
-        onSuccess={() => setSavedItems([])}
+        onSuccess={() => clearAll()}
       />
       <CopyToGcsDialog
         open={activeDialog === 'gcs'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedItems={pickedItems}
-        onSuccess={() => setSavedItems([])}
+        onSuccess={() => clearAll()}
       />
       <CopyToDropboxDialog
         open={activeDialog === 'dropbox'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedItems={pickedItems}
-        onSuccess={() => setSavedItems([])}
+        onSuccess={() => clearAll()}
       />
       <CopyToGoogleDriveDialog
         open={activeDialog === 'google-drive'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedItems={pickedItems}
-        onSuccess={() => setSavedItems([])}
+        onSuccess={() => clearAll()}
       />
 
       {/* Bottom Selection Bar */}

@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
 import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, Upload } from 'lucide-react';
+import { isAxiosError } from 'axios';
 
 // Google Docs MIME types that cannot be downloaded/copied
 const GOOGLE_DOCS_MIMES = new Set([
@@ -210,7 +211,14 @@ export function Component() {
         {/* Error */}
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            Failed to load Drive files. Please check your connection and try again.
+            <p className="font-medium">Failed to load Drive files.</p>
+            {isAxiosError(error) && error.response?.data && (
+              <p className="mt-1 text-xs text-red-600">
+                {typeof error.response.data === 'string'
+                  ? error.response.data
+                  : JSON.stringify(error.response.data)}
+              </p>
+            )}
           </div>
         )}
 

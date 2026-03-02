@@ -37,6 +37,11 @@ namespace CloudFiles
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
+            catch (InvalidOperationException ex)
+            {
+                log.LogError(ex, $"Google Drive API error in {Constants.GoogleDriveFileList}");
+                return new BadRequestObjectResult(ex.Message);
+            }
             catch (Exception ex)
             {
                 log.LogError(ex, $"Unexpected error in {Constants.GoogleDriveFileList}");

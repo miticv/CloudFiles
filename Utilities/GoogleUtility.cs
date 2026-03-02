@@ -487,7 +487,10 @@ namespace CloudFiles.Utilities
             }
             else
             {
-                throw new InvalidOperationException($"ProxyPickerImageAsync error: {response.StatusCode}");
+                var msg = response.StatusCode == System.Net.HttpStatusCode.Forbidden
+                    ? "Google Photos download URL has expired. Photo URLs are only valid for ~60 minutes after selection. Please start a new job instead of retrying."
+                    : $"ProxyPickerImageAsync error: {response.StatusCode}";
+                throw new InvalidOperationException(msg);
             }
         }
 

@@ -36,10 +36,10 @@ const statusConfig: Record<OrchestrationRuntimeStatus, { label: string; color: s
 // ─── Friendly name mapping ───
 
 const friendlyNames: Record<string, string> = {
-  azurestoragetogooglephotosOrchestrator: 'Azure Storage → Google Photos',
-  copyazureblobstogooglephotosOrchestrator: 'Azure Storage → Google Photos',
-  googlestoragetogooglephotosOrchestrator: 'Google Cloud Storage → Google Photos',
-  copygooglestoragetogooglephotosOrchestrator: 'Google Cloud Storage → Google Photos',
+  azurestoragetogooglephotosorchestrator: 'Azure Storage → Google Photos',
+  copyazureblobstogooglephotosorchestrator: 'Azure Storage → Google Photos',
+  googlestoragetogooglephotosorchestrator: 'Google Cloud Storage → Google Photos',
+  copygooglestoragetogooglephotosorchestrator: 'Google Cloud Storage → Google Photos',
   googlephotostoazureorchestrator: 'Google Photos → Azure Storage',
   copygooglephotostoazureorchestrator: 'Google Photos → Azure Storage',
   googledrivetoazureorchestrator: 'Google Drive → Azure Storage',
@@ -531,12 +531,20 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
     parent.runtimeStatus === OrchestrationRuntimeStatus.Completed && parent.hasFailedFiles ||
     parent.runtimeStatus === OrchestrationRuntimeStatus.Failed;
 
+  const [restartError, setRestartError] = useState<string | null>(null);
+
   const handleRestart = useCallback(async () => {
+    setRestartError(null);
     const azureAccessToken = await oidc.getAccessToken('azure-storage');
-    restart.mutate({
-      instanceId: parent.instanceId,
-      azureAccessToken: azureAccessToken ?? undefined,
-    });
+    restart.mutate(
+      {
+        instanceId: parent.instanceId,
+        azureAccessToken: azureAccessToken ?? undefined,
+      },
+      {
+        onError: (err) => setRestartError(extractError(err)),
+      },
+    );
   }, [oidc, restart, parent.instanceId]);
 
   return (
@@ -672,6 +680,13 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Spinner size={14} />
                 <span>Loading details...</span>
+              </div>
+            )}
+
+            {/* Restart error */}
+            {restartError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {restartError}
               </div>
             )}
 

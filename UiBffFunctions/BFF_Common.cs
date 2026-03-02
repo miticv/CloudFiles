@@ -125,10 +125,14 @@ namespace CloudFiles
                 // Top-level orchestrator names.
                 var parentOrchestratorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    "azureStorageToGooglePhotosOrchestrator",
-                    "googleStorageToGooglePhotosOrchestrator",
-                    "googlePhotosToAzureOrchestrator",
-                    "googleDriveToAzureOrchestrator"
+                    Constants.AzureStorageToGooglePhotosOrchestrator,
+                    Constants.GoogleStorageToGooglePhotosOrchestrator,
+                    Constants.GooglePhotosToAzureOrchestrator,
+                    Constants.GoogleDriveToAzureOrchestrator,
+                    Constants.GcsToAzureOrchestrator,
+                    Constants.AzureToGcsOrchestrator,
+                    Constants.DropboxToAzureOrchestrator,
+                    Constants.AzureToDropboxOrchestrator,
                 };
 
                 // Collect parent orchestration metadata only (small page size avoids gRPC 4MB limit).
@@ -323,6 +327,18 @@ namespace CloudFiles
                 if (string.IsNullOrEmpty(instance.SerializedInput))
                 {
                     return new BadRequestObjectResult(new { error = "Instance has no input to restart with" });
+                }
+
+                // Google Photos Picker baseUrls expire after ~60 minutes.
+                // Reject restart for GooglePhotosToAzure jobs older than 50 minutes.
+                var isGooglePhotosToAzure = instance.Name.Contains("GooglePhotosToAzure", StringComparison.OrdinalIgnoreCase)
+                    || instance.Name.Contains("googlePhotosToAzure", StringComparison.Ordinal);
+                if (isGooglePhotosToAzure && instance.CreatedAt < DateTimeOffset.UtcNow.AddMinutes(-50))
+                {
+                    return new BadRequestObjectResult(new
+                    {
+                        error = "This Google Photos job cannot be retried because the photo download URLs have expired (valid for ~60 minutes). Please start a new job from the Google Photos page."
+                    });
                 }
 
                 // Parse original input, replace tokens with fresh ones

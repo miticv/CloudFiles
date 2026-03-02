@@ -11,7 +11,7 @@
 			"**/obj": true
 		},
 		"claudeCode.useTerminal": false,
-		"claudeCode.allowDangerouslySkipPermissions": false,
+		"claudeCode.allowDangerouslySkipPermissions": true,
 		"claudeCode.environmentVariables": [
 			
 		]

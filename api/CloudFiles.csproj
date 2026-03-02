@@ -8,11 +8,6 @@
     <AssemblyName>CloudFiles</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Web.UI\**" />
-    <EmbeddedResource Remove="Web.UI\**" />
-    <None Remove="Web.UI\**" />
-  </ItemGroup>
-  <ItemGroup>
     <!-- Core isolated worker packages -->
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.22.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.17.4" />

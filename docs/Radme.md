@@ -23,10 +23,10 @@ Run 3 terminals:
 npx azurite --silent --location .azurite
 
 # Terminal 2: Backend (Azure Functions)
-func start
+cd api && func start
 
 # Terminal 3: Frontend (Vite dev server at http://localhost:4200)
-cd Web.UI && npm run dev
+cd web && npm run dev
 ```
 
 ## Secrets Setup
@@ -35,12 +35,12 @@ cd Web.UI && npm run dev
 ```bash
 bash setup-secrets.sh
 ```
-This pulls secrets from the "CloudFiles" Bitwarden item and generates `local.settings.json` and `Web.UI/src/env.ts`.
+This pulls secrets from the "CloudFiles" Bitwarden item and generates `api/local.settings.json` and `web/src/env.ts`.
 
 **Option B — Manual:**
 ```bash
-cp local.settings.example.json local.settings.json
-cp Web.UI/src/env.template.ts Web.UI/src/env.ts
+cp api/local.settings.example.json api/local.settings.json
+cp web/src/env.template.ts web/src/env.ts
 ```
 Then fill in the placeholder values in both files.
 
@@ -64,10 +64,11 @@ Then fill in the placeholder values in both files.
 
 ```bash
 # Frontend
-cd Web.UI
+cd web
 npm ci && npm run lint && npm run build
 
 # Backend
+cd api
 dotnet restore && dotnet build
 ```
 

@@ -12,17 +12,18 @@ All cloud operations use the logged-in user's own OAuth tokens (no service accou
 
 ## Build & Development Commands
 
-### Frontend (`Web.UI/`)
+### Frontend (`web/`)
 ```bash
-cd Web.UI
+cd web
 npm ci                  # install dependencies
 npm run dev             # dev server (Vite, proxies /api to localhost:7071)
 npm run build           # production build (tsc + vite build)
 npm run lint            # ESLint
 ```
 
-### Backend (root)
+### Backend (`api/`)
 ```bash
+cd api
 dotnet restore          # restore NuGet packages
 dotnet build            # build
 func start              # run Azure Functions locally
@@ -31,22 +32,22 @@ func start              # run Azure Functions locally
 ### Local Development (3 terminals)
 ```bash
 npx azurite --silent --location .azurite   # Terminal 1: storage emulator
-func start                                  # Terminal 2: backend
-cd Web.UI && npm run dev                    # Terminal 3: frontend at http://localhost:4200
+cd api && func start                        # Terminal 2: backend
+cd web && npm run dev                       # Terminal 3: frontend at http://localhost:4200
 ```
 
 ### Secrets Setup
 ```bash
-bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + env.ts
-# Or manually: cp local.settings.example.json local.settings.json
-#              cp Web.UI/src/env.template.ts Web.UI/src/env.ts
+bash setup-secrets.sh   # pulls from Bitwarden, generates api/local.settings.json + web/src/env.ts
+# Or manually: cp api/local.settings.example.json api/local.settings.json
+#              cp web/src/env.template.ts web/src/env.ts
 ```
 
 ## Architecture
 
-### Backend (.NET 8, Azure Functions v4 isolated worker)
+### Backend (.NET 8, Azure Functions v4 isolated worker, `api/`)
 
-- **`UiBffFunctions/`** — HTTP trigger functions (BFF endpoints). Each file handles a cloud provider:
+- **`api/Functions/`** — HTTP trigger functions (BFF endpoints). Each file handles a cloud provider:
   - `BFF_AzureFiles.cs` — Blob Storage file operations
   - `BFF_AzureManagement.cs` — Azure subscription/resource hierarchy
   - `BFF_GooglePhotos.cs` — Google Photos operations & picker
@@ -54,13 +55,14 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
   - `BFF_Common.cs` — Health check, token validation
   - `BFF_Auth.cs` — User registration/login (OAuth + local), JWT session management
   - `BFF_Admin.cs` — Admin user management (list, update)
-- **`Utilities/`** — Cloud SDK wrappers: `AzureUtility.cs`, `GoogleUtility.cs`, `CommonUtility.cs`, `UserTableUtility.cs`
-- **`Models/Constants.cs`** — All function and orchestrator name constants
-- **`AzureToGoogle/`**, **`GoogleToGoogle/`** — Durable Functions for photo migrations: parallel upload in batches of 50 with retry (3 attempts, exponential backoff) → `batchCreate` per batch
-- **`GooglePhotosToAzure/`** — Durable Functions for photo migration using parallel fan-out/fan-in
-- **`Program.cs`** — Host builder; uses Newtonsoft JSON with camelCase serialization
+- **`api/Utilities/`** — Cloud SDK wrappers: `AzureUtility.cs`, `GoogleUtility.cs`, `CommonUtility.cs`, `UserTableUtility.cs`
+- **`api/Models/Constants.cs`** — All function and orchestrator name constants
+- **`api/Pipelines/`** — Durable Functions for file/photo migrations between providers (20 pipeline folders, each with HttpFunctions, OrchestratorFunctions, ActivityFunctions):
+  - Google Photos writes process files in chunks of 50: fan-out parallel uploads with retry (3 attempts, exponential backoff 5s/10s/20s via `TaskOptions.FromRetryPolicy`), then one `batchCreate` call per chunk
+  - Azure Blob writes use standard fan-out/fan-in (no concurrent write quota)
+- **`api/Program.cs`** — Host builder; uses Newtonsoft JSON with camelCase serialization
 
-### Frontend (React + Vite + TypeScript, `Web.UI/src/`)
+### Frontend (React + Vite + TypeScript, `web/src/`)
 
 - **`auth/`** — Multi-provider OIDC authentication + app auth:
   - `oidc-config.ts` — Three `UserManager` instances (google, azure, azure-storage) from `oidc-client-ts`
@@ -116,19 +118,18 @@ Azure requires separate tokens per resource audience. The Axios interceptor in `
 - Lucide React for icons
 
 ### Backend
-- All function names defined in `Models/Constants.cs` — reference these, don't use string literals
+- All function names defined in `api/Models/Constants.cs` — reference these, don't use string literals
 - Token extraction: `CommonUtility.GetTokenFromHeaders(req)` for Google; `AzureUtility.VerifyAzure*HeaderTokenIsValid(req)` for Azure
 - Newtonsoft `[JsonProperty("name")]` for JSON serialization (not System.Text.Json)
 - Durable Functions follow orchestrator → activity pattern
-- **Google Photos writes** process files in chunks of 50: fan-out parallel uploads with retry (3 attempts, exponential backoff 5s/10s/20s via `TaskOptions.FromRetryPolicy`), then one `batchCreate` call per chunk. `HttpRequestException` propagates from activities so Durable Functions retries automatically; `TaskFailedException` is caught in the orchestrator's `SafeUpload` wrapper to record failures gracefully. See `AzureToGoogle/` and `GoogleToGoogle/`
-- **Azure Blob writes** use standard fan-out/fan-in (no concurrent write quota). See `GooglePhotosToAzure/`
+- `HttpRequestException` propagates from activities so Durable Functions retries automatically; `TaskFailedException` is caught in the orchestrator's `SafeUpload` wrapper to record failures gracefully
 
 ## Post-Change Verification
 
 After implementing any changes, always run the relevant checks before considering work complete:
 
-- **Frontend changes (`Web.UI/`):** Run `npm run lint` and `npm run build`
-- **Backend changes (root):** Run `dotnet build`
+- **Frontend changes (`web/`):** Run `npm run lint` and `npm run build`
+- **Backend changes (`api/`):** Run `dotnet build`
 
 ## CI/CD
 

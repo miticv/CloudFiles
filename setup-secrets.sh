@@ -97,7 +97,7 @@ echo ""
 
 # --- Generate local.settings.json ---
 
-LOCAL_SETTINGS="$SCRIPT_DIR/local.settings.json"
+LOCAL_SETTINGS="$SCRIPT_DIR/api/local.settings.json"
 cat > "$LOCAL_SETTINGS" <<EOF
 {
   "IsEncrypted": false,
@@ -121,11 +121,11 @@ cat > "$LOCAL_SETTINGS" <<EOF
   }
 }
 EOF
-echo "Generated: local.settings.json"
+echo "Generated: api/local.settings.json"
 
-# --- Generate Web.UI/src/env.ts (local dev) ---
+# --- Generate web/src/env.ts (local dev) ---
 
-ENV_TS="$SCRIPT_DIR/Web.UI/src/env.ts"
+ENV_TS="$SCRIPT_DIR/web/src/env.ts"
 
 cat > "$ENV_TS" <<EOF
 export const env = {
@@ -142,7 +142,7 @@ export const env = {
   featureAppleDrive: false,
 };
 EOF
-echo "Generated: Web.UI/src/env.ts"
+echo "Generated: web/src/env.ts"
 
 echo ""
 echo "=== Done! All config files have been populated from Bitwarden. ==="

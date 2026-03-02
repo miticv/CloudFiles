@@ -14,6 +14,7 @@ interface OidcContextValue {
   logout: (configId: OidcConfigId) => void;
   logoutAll: () => void;
   getAccessToken: (configId: OidcConfigId) => Promise<string | null>;
+  refreshProviderStatus: () => Promise<void>;
   ready: boolean;
 }
 
@@ -198,7 +199,7 @@ export function OidcProvider({ children }: { children: ReactNode }) {
   const isAnyAuthenticated = providers.some(p => p.authenticated);
 
   const contextValue: OidcContextValue = {
-    providers, isAnyAuthenticated, login, logout, logoutAll, getAccessToken, ready,
+    providers, isAnyAuthenticated, login, logout, logoutAll, getAccessToken, refreshProviderStatus, ready,
   };
 
   // Block rendering children while processing OIDC callback

@@ -1,8 +1,8 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useOidc } from '@/auth/oidc-provider';
 import { useAuth } from '@/auth/auth-context';
-import { startPCloudLogin, setPCloudAuth, clearPCloudAuth, isPCloudConnected } from '@/auth/pcloud-auth';
-import { startDropboxLogin, setDropboxAuth, clearDropboxAuth, isDropboxConnected } from '@/auth/dropbox-auth';
+import { startPCloudLogin, setPCloudAuth, clearPCloudAuth } from '@/auth/pcloud-auth';
+import { startDropboxLogin, setDropboxAuth, clearDropboxAuth } from '@/auth/dropbox-auth';
 import { useExchangePCloudCode } from '@/api/pcloud.api';
 import { useExchangeDropboxCode } from '@/api/dropbox.api';
 import { env } from '@/env';
@@ -53,13 +53,13 @@ export function Component() {
   usePageTitle('Connections');
 
   const oidc = useOidc();
+  const { refreshProviderStatus } = oidc;
   const auth = useAuth();
   const processedRef = useRef(false);
   const pcloudProcessedRef = useRef(false);
   const dropboxProcessedRef = useRef(false);
   const [pcloudLoading, setPcloudLoading] = useState(false);
   const [dropboxLoading, setDropboxLoading] = useState(false);
-  const [renderKey, setRenderKey] = useState(0);
   const exchangeCode = useExchangePCloudCode();
   const exchangeDropboxCode = useExchangeDropboxCode();
 
@@ -113,6 +113,7 @@ export function Component() {
       .then((response) => {
         setPCloudAuth(response.accessToken, response.hostname);
         console.log('[Connections] pCloud connected successfully');
+        return refreshProviderStatus();
       })
       .catch((err) => {
         console.error('[Connections] pCloud OAuth exchange failed:', err);
@@ -120,7 +121,7 @@ export function Component() {
       .finally(() => {
         setPcloudLoading(false);
       });
-  }, [exchangeCode]);
+  }, [exchangeCode, refreshProviderStatus]);
 
   // Process Dropbox OAuth callback (code in URL params, no locationid = Dropbox)
   useEffect(() => {
@@ -147,6 +148,7 @@ export function Component() {
       .then((response) => {
         setDropboxAuth(response.accessToken, response.refreshToken, response.expiresIn);
         console.log('[Connections] Dropbox connected successfully');
+        return refreshProviderStatus();
       })
       .catch((err) => {
         console.error('[Connections] Dropbox OAuth exchange failed:', err);
@@ -154,11 +156,9 @@ export function Component() {
       .finally(() => {
         setDropboxLoading(false);
       });
-  }, [exchangeDropboxCode]);
+  }, [exchangeDropboxCode, refreshProviderStatus]);
 
   function isConnected(providerId: string): boolean {
-    if (providerId === 'pcloud') return isPCloudConnected();
-    if (providerId === 'dropbox') return isDropboxConnected();
     return oidc.providers.some(
       (p) => p.configId === providerId && p.authenticated
     );
@@ -179,12 +179,12 @@ export function Component() {
   function handleDisconnect(providerId: string) {
     if (providerId === 'pcloud') {
       clearPCloudAuth();
-      setRenderKey(k => k + 1);
+      refreshProviderStatus();
       return;
     }
     if (providerId === 'dropbox') {
       clearDropboxAuth();
-      setRenderKey(k => k + 1);
+      refreshProviderStatus();
       return;
     }
     oidc.logout(providerId as 'google' | 'azure');
@@ -227,7 +227,7 @@ export function Component() {
         </div>
 
         {/* Provider cards */}
-        <div key={renderKey} className="space-y-4 mb-8">
+        <div className="space-y-4 mb-8">
           {allProviders.map((provider) => {
             const connected = isConnected(provider.id);
             const Icon = provider.icon;

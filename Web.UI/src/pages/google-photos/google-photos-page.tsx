@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useOidc } from '@/auth/oidc-provider';
-import { useCreateSession, usePollSession, usePickedItems, getImageProxyUrl } from '@/api/google-photos.api';
+import { useCreateSession, usePollSession, usePickedItems, getImageProxyPath } from '@/api/google-photos.api';
+import { SecureImage } from '@/components/ui/secure-image';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -282,11 +283,10 @@ export function Component() {
                     rel="noopener noreferrer"
                     className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100 cursor-pointer"
                   >
-                    <img
-                      src={getImageProxyUrl(item.mediaFile.baseUrl, 256, 256)}
+                    <SecureImage
+                      secureUrl={getImageProxyPath(item.mediaFile.baseUrl, 256, 256)}
                       alt={item.mediaFile.filename}
                       className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
                   </a>

@@ -1,8 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/auth/axios-client';
 import type { PickingSession, PickedMediaItem, PickedMediaItemsResponse } from './types';
-import { env } from '@/env';
-
 export function useCreateSession() {
   return useMutation({
     mutationFn: () => apiClient.post<PickingSession>('google/photos/sessions', {}).then(r => r.data),
@@ -37,7 +35,7 @@ export function useDeleteSession() {
   });
 }
 
-export function getImageProxyUrl(baseUrl: string, width: number, height: number): string {
+export function getImageProxyPath(baseUrl: string, width: number, height: number): string {
   const sizedUrl = `${baseUrl}=w${width}-h${height}-c`;
-  return `${env.api}google/photos/image?url=${encodeURIComponent(sizedUrl)}`;
+  return `google/photos/image?url=${encodeURIComponent(sizedUrl)}`;
 }

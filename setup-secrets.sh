@@ -70,6 +70,10 @@ AZURE_CLIENT_ID=$(get_field "$ITEM_JSON" "AzureClientId")
 PRODUCTION_API_URL=$(get_field "$ITEM_JSON" "ProductionApiUrl")
 JWT_SECRET=$(get_field "$ITEM_JSON" "JwtSecret")
 ADMIN_EMAILS=$(get_field "$ITEM_JSON" "AdminEmails")
+DROPBOX_KEY=$(get_field "$ITEM_JSON" "DropBoxKey")
+DROPBOX_SECRET=$(get_field "$ITEM_JSON" "DropBoxSecret")
+PCLOUD_CLIENT_ID=$(get_field "$ITEM_JSON" "PCloudClientId")
+PCLOUD_CLIENT_SECRET=$(get_field "$ITEM_JSON" "PCloudClientSecret")
 
 # Validate required fields
 MISSING=()
@@ -79,6 +83,8 @@ MISSING=()
 [ -z "$AZURE_CLIENT_ID" ] && MISSING+=("AzureClientId")
 [ -z "$JWT_SECRET" ] && MISSING+=("JwtSecret")
 [ -z "$ADMIN_EMAILS" ] && MISSING+=("AdminEmails")
+[ -z "$DROPBOX_KEY" ] && MISSING+=("DropBoxKey")
+[ -z "$DROPBOX_SECRET" ] && MISSING+=("DropBoxSecret")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
     echo "Error: Missing required fields in Bitwarden item '$BW_ITEM_NAME':"
@@ -102,7 +108,11 @@ cat > "$LOCAL_SETTINGS" <<EOF
     "AzureTenantId": "$AZURE_TENANT_ID",
     "IS_RUNNING_LOCALLY": "true",
     "ADMIN_EMAILS": "$ADMIN_EMAILS",
-    "JWT_SECRET": "$JWT_SECRET"
+    "JWT_SECRET": "$JWT_SECRET",
+    "PCloudClientId": "$PCLOUD_CLIENT_ID",
+    "PCloudClientSecret": "$PCLOUD_CLIENT_SECRET",
+    "DropBoxKey": "$DROPBOX_KEY",
+    "DropBoxSecret": "$DROPBOX_SECRET"
   },
   "Host": {
     "LocalHttpPort": 7071,
@@ -113,40 +123,26 @@ cat > "$LOCAL_SETTINGS" <<EOF
 EOF
 echo "Generated: local.settings.json"
 
-# --- Generate environment.ts (dev) ---
+# --- Generate Web.UI/src/env.ts (local dev) ---
 
-ENV_DIR="$SCRIPT_DIR/Web.UI/src/environments"
-ENV_DEV="$ENV_DIR/environment.ts"
+ENV_TS="$SCRIPT_DIR/Web.UI/src/env.ts"
 
-cat > "$ENV_DEV" <<EOF
-export const environment = {
-    production: false,
-    api: '/api/',
-    googleClientId: '$GOOGLE_CLIENT_ID',
-    googleClientSecret: '$GOOGLE_CLIENT_SECRET',
-    azureTenantId: '$AZURE_TENANT_ID',
-    azureClientId: '$AZURE_CLIENT_ID',
-    adminEmail: '$ADMIN_EMAILS',
+cat > "$ENV_TS" <<EOF
+export const env = {
+  production: false,
+  api: '/api/',
+  googleClientId: '$GOOGLE_CLIENT_ID',
+  googleClientSecret: '$GOOGLE_CLIENT_SECRET',
+  azureTenantId: '$AZURE_TENANT_ID',
+  azureClientId: '$AZURE_CLIENT_ID',
+  adminEmail: '$ADMIN_EMAILS',
+  pCloudClientId: '$PCLOUD_CLIENT_ID',
+  dropboxClientId: '$DROPBOX_KEY',
+  featurePCloud: false,
+  featureAppleDrive: false,
 };
 EOF
-echo "Generated: Web.UI/src/environments/environment.ts"
-
-# --- Generate environment.prod.ts ---
-
-ENV_PROD="$ENV_DIR/environment.prod.ts"
-
-cat > "$ENV_PROD" <<EOF
-export const environment = {
-    production: true,
-    api: '${PRODUCTION_API_URL:-https://api.cloud-files.link/api/}',
-    googleClientId: '$GOOGLE_CLIENT_ID',
-    googleClientSecret: '$GOOGLE_CLIENT_SECRET',
-    azureTenantId: '$AZURE_TENANT_ID',
-    azureClientId: '$AZURE_CLIENT_ID',
-    adminEmail: '$ADMIN_EMAILS',
-};
-EOF
-echo "Generated: Web.UI/src/environments/environment.prod.ts"
+echo "Generated: Web.UI/src/env.ts"
 
 echo ""
 echo "=== Done! All config files have been populated from Bitwarden. ==="

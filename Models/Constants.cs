@@ -87,6 +87,27 @@
         public const string PCloudOAuthCallback = "pcloudOAuthCallback";
         public const string PCloudFileList = "pcloudFileList";
 
+        // BFF Dropbox
+        public const string DropboxOAuthCallback = "dropboxOAuthCallback";
+        public const string DropboxFileList = "dropboxFileList";
+        public const string DropboxFileListContinue = "dropboxFileListContinue";
+        public const string DropboxDownloadFile = "dropboxDownloadFile";
+        public const string DropboxUploadFile = "dropboxUploadFile";
+
+        // automation Dropbox to Azure
+        public const string ProcessDropboxToAzure_Start = "processDropboxToAzure_Start";
+        public const string DropboxToAzureOrchestrator = "dropboxToAzureOrchestrator";
+        public const string DropboxToAzurePrepareList = "dropboxToAzurePrepareList";
+        public const string CopyDropboxToAzureOrchestrator = "copyDropboxToAzureOrchestrator";
+        public const string CopyDropboxFileToAzureBlob = "copyDropboxFileToAzureBlob";
+
+        // automation Azure to Dropbox
+        public const string ProcessAzureToDropbox_Start = "processAzureToDropbox_Start";
+        public const string AzureToDropboxOrchestrator = "azureToDropboxOrchestrator";
+        public const string AzureToDropboxPrepareList = "azureToDropboxPrepareList";
+        public const string CopyAzureToDropboxOrchestrator = "copyAzureToDropboxOrchestrator";
+        public const string CopyAzureBlobToDropboxFile = "copyAzureBlobToDropboxFile";
+
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";
         public const string AuthLocalLogin = "authLocalLogin";

@@ -48,9 +48,15 @@ namespace CloudFiles
                          ?? throw new UnauthorizedAccessException("Could not extract email from Azure token.");
                     displayName = jwt.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? email;
                 }
+                else if (request.Provider == "dropbox")
+                {
+                    var account = await DropboxUtility.GetAccountInfoAsync(request.AccessToken).ConfigureAwait(false);
+                    email = account.Email;
+                    displayName = account.Name?.DisplayName ?? email;
+                }
                 else
                 {
-                    return new BadRequestObjectResult("Provider must be 'google' or 'azure'.");
+                    return new BadRequestObjectResult("Provider must be 'google', 'azure', or 'dropbox'.");
                 }
 
                 var user = await UserTableUtility.GetOrCreateOAuthUserAsync(email, displayName, request.Provider).ConfigureAwait(false);

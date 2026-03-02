@@ -8,7 +8,11 @@
     "IS_RUNNING_LOCALLY": "true",
     "FEATURE_FLAG_TEST_FAIL_FILENAME_CONTAINS": "",
     "JWT_SECRET": "<random-256-bit-secret-for-signing-tokens>",
-    "ADMIN_EMAILS": "<comma-separated-admin-emails>"
+    "ADMIN_EMAILS": "<comma-separated-admin-emails>",
+    "PCloudClientId": "<pcloud-client-id>",
+    "PCloudClientSecret": "<pcloud-client-secret>",
+    "DropBoxKey": "<drop-box-key>",
+    "DropBoxSecret": "<drop-box-secret>"
   },
   "Host": {
     "LocalHttpPort": 7071,

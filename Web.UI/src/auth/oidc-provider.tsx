@@ -3,6 +3,7 @@ import type { User } from 'oidc-client-ts';
 import { googleManager, azureManager, azureStorageManager, getManager, type OidcConfigId } from './oidc-config';
 import { useAuth } from './auth-context';
 import { isPCloudConnected, clearPCloudAuth } from './pcloud-auth';
+import { isDropboxConnected, clearDropboxAuth } from './dropbox-auth';
 import { Spinner } from '@/components/ui/spinner';
 import type { ProviderStatus } from '@/api/types';
 
@@ -36,6 +37,7 @@ export function OidcProvider({ children }: { children: ReactNode }) {
   const [providers, setProviders] = useState<ProviderStatus[]>([
     ...PROVIDER_IDS.map(id => ({ configId: id, authenticated: false })),
     { configId: 'pcloud', authenticated: false },
+    { configId: 'dropbox', authenticated: false },
   ]);
   const [ready, setReady] = useState(false);
   const [processingCallback, setProcessingCallback] = useState(!!capturedCallbackUrl);
@@ -53,7 +55,8 @@ export function OidcProvider({ children }: { children: ReactNode }) {
       })
     );
     const pcloudStatus: ProviderStatus = { configId: 'pcloud', authenticated: isPCloudConnected() };
-    setProviders([...oidcStatuses, pcloudStatus]);
+    const dropboxStatus: ProviderStatus = { configId: 'dropbox', authenticated: isDropboxConnected() };
+    setProviders([...oidcStatuses, pcloudStatus, dropboxStatus]);
   }, []);
 
   // Initialize: process callbacks and check existing sessions
@@ -179,6 +182,7 @@ export function OidcProvider({ children }: { children: ReactNode }) {
   const logoutAll = useCallback(() => {
     console.log('[Auth] logout all providers');
     clearPCloudAuth();
+    clearDropboxAuth();
     Promise.all(PROVIDER_IDS.map(id => getManager(id).removeUser())).then(refreshProviderStatus);
   }, [refreshProviderStatus]);
 

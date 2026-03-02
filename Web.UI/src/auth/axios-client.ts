@@ -2,6 +2,7 @@ import axios from 'axios';
 import { env } from '@/env';
 import { getManager, type OidcConfigId } from './oidc-config';
 import { getPCloudToken, getPCloudHostname, clearPCloudAuth } from './pcloud-auth';
+import { getDropboxToken, clearDropboxAuth } from './dropbox-auth';
 
 export const apiClient = axios.create({
   baseURL: env.api,
@@ -11,14 +12,18 @@ export const apiClient = axios.create({
   },
 });
 
-type TokenConfigId = OidcConfigId | 'cloudfiles' | 'pcloud';
+type TokenConfigId = OidcConfigId | 'cloudfiles' | 'pcloud' | 'dropbox';
 
 function getConfigIdForUrl(url: string): TokenConfigId | null {
   if (url.includes('manage/') || url.includes('auth/me')) return 'cloudfiles';
+  if (url.includes('pcloud/oauth/')) return 'cloudfiles';
+  if (url.includes('dropbox/oauth/')) return 'cloudfiles';
   if (url.includes('auth/')) return null;
   if (url.includes('pcloud/')) return 'pcloud';
+  if (url.includes('dropbox/')) return 'dropbox';
   if (url.includes('azure/files/')) return 'azure-storage';
   if (url.includes('azure/')) return 'azure';
+  if (url.includes('process/DropboxToAzure/') || url.includes('process/AzureToDropbox/')) return 'dropbox';
   if (url.includes('google/') || url.includes('process/')) return 'google';
   return null;
 }
@@ -46,6 +51,14 @@ apiClient.interceptors.request.use(async (config) => {
     }
     if (hostname) {
       config.headers['X-PCloud-Hostname'] = hostname;
+    }
+    return config;
+  }
+
+  if (configId === 'dropbox') {
+    const token = getDropboxToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   }
@@ -80,6 +93,10 @@ apiClient.interceptors.response.use(
       } else if (configId === 'pcloud') {
         console.warn('[Auth Interceptor] 401 from pCloud — token revoked:', url);
         clearPCloudAuth();
+        window.location.href = '/connections';
+      } else if (configId === 'dropbox') {
+        console.warn('[Auth Interceptor] 401 from Dropbox — token expired:', url);
+        clearDropboxAuth();
         window.location.href = '/connections';
       } else if (configId) {
         console.warn(`[Auth Interceptor] 401 from "${configId}" — token expired:`, url);

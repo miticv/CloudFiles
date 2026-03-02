@@ -4,6 +4,7 @@ import type {
   StartJobResponse, OrchestrationInstance, ProcessListParams,
   StartMigrationRequest, StartGoogleStorageRequest, StartGooglePhotosToAzureRequest,
   StartGoogleDriveToAzureRequest, StartGcsToAzureRequest, StartAzureToGcsRequest,
+  StartDropboxToAzureRequest, StartAzureToDropboxRequest,
 } from './types';
 
 export function useProcesses(params?: ProcessListParams, refetchInterval?: number | false) {
@@ -91,5 +92,19 @@ export function useStartAzureToGcs() {
   return useMutation({
     mutationFn: (request: StartAzureToGcsRequest) =>
       apiClient.post<StartJobResponse>('process/AzureToGcs/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDropboxToAzure() {
+  return useMutation({
+    mutationFn: (request: StartDropboxToAzureRequest) =>
+      apiClient.post<StartJobResponse>('process/DropboxToAzure/start', request).then(r => r.data),
+  });
+}
+
+export function useStartAzureToDropbox() {
+  return useMutation({
+    mutationFn: (request: StartAzureToDropboxRequest) =>
+      apiClient.post<StartJobResponse>('process/AzureToDropbox/start', request).then(r => r.data),
   });
 }

@@ -7,4 +7,5 @@ export const env = {
   azureClientId: '__AZURE_CLIENT_ID__',
   adminEmail: '__ADMIN_EMAIL__',
   pCloudClientId: '__PCLOUD_CLIENT_ID__',
+  dropboxClientId: '__DROPBOX_CLIENT_ID__',
 };

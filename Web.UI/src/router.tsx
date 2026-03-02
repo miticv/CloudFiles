@@ -68,6 +68,10 @@ export const router = createBrowserRouter([
         lazy: () => import('@/pages/pcloud/pcloud-page'),
       },
       {
+        path: 'dropbox',
+        lazy: () => import('@/pages/dropbox/dropbox-page'),
+      },
+      {
         path: 'apple-drive',
         lazy: () => import('@/pages/apple-drive/apple-drive-page'),
       },

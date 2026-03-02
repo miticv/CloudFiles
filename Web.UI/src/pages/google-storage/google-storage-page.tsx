@@ -9,7 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { cn, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, Upload, CloudOff } from 'lucide-react';
+import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, Upload, X, CloudOff } from 'lucide-react';
+import { CopyGcsToAzureDialog } from './copy-gcs-to-azure-dialog';
 
 type View = 'setup' | 'buckets' | 'browse';
 
@@ -229,6 +230,7 @@ function BrowseView({
 }) {
   const [currentPath, setCurrentPath] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const { data: items, isLoading, error, refetch } = useGcsFiles(bucket, currentPath);
 
   const folders = useMemo(() => items?.filter((f) => f.isFolder) ?? [], [items]);
@@ -270,6 +272,15 @@ function BrowseView({
       return next;
     });
   }, [files]);
+
+  const selectedFileObjects = useMemo(
+    () => files.filter((f) => selectedFiles.has(f.itemPath)),
+    [files, selectedFiles],
+  );
+
+  function clearSelection() {
+    setSelectedFiles(new Set());
+  }
 
   function navigateToFolder(path: string) {
     setCurrentPath(path);
@@ -318,10 +329,16 @@ function BrowseView({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {selectedFiles.size > 0 && (
-            <Button size="sm">
-              <Upload className="h-3.5 w-3.5" />
-              Copy to Azure ({selectedFiles.size})
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={clearSelection}>
+                <X className="h-3.5 w-3.5" />
+                Clear
+              </Button>
+              <Button size="sm" onClick={() => setCopyDialogOpen(true)}>
+                <Upload className="h-3.5 w-3.5" />
+                Copy to Azure ({selectedFiles.size})
+              </Button>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
             <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
@@ -433,6 +450,15 @@ function BrowseView({
           )}
         </div>
       )}
+
+      {/* Copy to Azure Dialog */}
+      <CopyGcsToAzureDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        selectedFiles={selectedFileObjects}
+        bucketName={bucket}
+        onSuccess={clearSelection}
+      />
     </div>
   );
 }

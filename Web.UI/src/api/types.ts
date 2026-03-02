@@ -173,6 +173,31 @@ export interface PCloudTokenResponse {
   hostname: string;
 }
 
+// ─── Dropbox ───
+export interface DropboxItem {
+  id: string;
+  name: string;
+  pathDisplay: string;
+  pathLower: string;
+  isFolder: boolean;
+  size: number;
+  serverModified: string;
+  contentHash: string;
+}
+
+export interface DropboxFolderResponse {
+  items: DropboxItem[];
+  cursor: string;
+  hasMore: boolean;
+}
+
+export interface DropboxTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  accountId: string;
+}
+
 // ─── Processes ───
 export interface MigrationItem {
   itemPath: string;
@@ -310,6 +335,30 @@ export interface UserDto {
   isActive: boolean;
   partitionKey: string;
   rowKey: string;
+}
+
+// ─── Dropbox Migrations ───
+export interface DropboxFileForCopy {
+  path: string;
+  name: string;
+  size: number;
+}
+
+export interface StartDropboxToAzureRequest {
+  items: DropboxFileForCopy[];
+  accountName: string;
+  containerName: string;
+  destinationFolder: string;
+  azureAccessToken: string;
+  startedBy: string;
+}
+
+export interface StartAzureToDropboxRequest {
+  selectedItems: AzureSelectedItem[];
+  accountName: string;
+  containerName: string;
+  destinationFolder: string;
+  startedBy: string;
 }
 
 // ─── Navigation ───

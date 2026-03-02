@@ -2,12 +2,14 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useOidc } from '@/auth/oidc-provider';
 import { useAuth } from '@/auth/auth-context';
 import { startPCloudLogin, setPCloudAuth, clearPCloudAuth, isPCloudConnected } from '@/auth/pcloud-auth';
+import { startDropboxLogin, setDropboxAuth, clearDropboxAuth, isDropboxConnected } from '@/auth/dropbox-auth';
 import { useExchangePCloudCode } from '@/api/pcloud.api';
+import { useExchangeDropboxCode } from '@/api/dropbox.api';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { Chrome, Building2, CloudCog, Check, X, Cloud } from 'lucide-react';
+import { Chrome, Building2, CloudCog, Droplets, Check, X, Cloud } from 'lucide-react';
 
 const OIDC_PROVIDERS = [
   {
@@ -37,6 +39,15 @@ const PCLOUD_PROVIDER = {
   iconBg: 'bg-teal-50',
 };
 
+const DROPBOX_PROVIDER = {
+  id: 'dropbox' as const,
+  name: 'Dropbox',
+  description: 'Access your Dropbox files and folders.',
+  icon: Droplets,
+  iconColor: 'text-blue-500',
+  iconBg: 'bg-blue-50',
+};
+
 export function Component() {
   usePageTitle('Connections');
 
@@ -44,8 +55,11 @@ export function Component() {
   const auth = useAuth();
   const processedRef = useRef(false);
   const pcloudProcessedRef = useRef(false);
+  const dropboxProcessedRef = useRef(false);
   const [pcloudLoading, setPcloudLoading] = useState(false);
+  const [dropboxLoading, setDropboxLoading] = useState(false);
   const exchangeCode = useExchangePCloudCode();
+  const exchangeDropboxCode = useExchangeDropboxCode();
 
   // Process pending OIDC OAuth login (user returns from OAuth redirect)
   const processPendingOAuth = useCallback(async () => {
@@ -106,8 +120,43 @@ export function Component() {
       });
   }, [exchangeCode]);
 
+  // Process Dropbox OAuth callback (code in URL params, no locationid = Dropbox)
+  useEffect(() => {
+    if (dropboxProcessedRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const locationid = params.get('locationid');
+
+    // Dropbox returns code without locationid (pCloud returns locationid)
+    if (!code || locationid) return;
+
+    // Also skip if this is an OIDC callback (has state param)
+    if (params.has('state')) return;
+
+    dropboxProcessedRef.current = true;
+    setDropboxLoading(true);
+
+    // Clean URL immediately
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const redirectUri = `${window.location.origin}/connections`;
+    exchangeDropboxCode.mutateAsync({ code, redirectUri })
+      .then((response) => {
+        setDropboxAuth(response.accessToken, response.refreshToken, response.expiresIn);
+        console.log('[Connections] Dropbox connected successfully');
+      })
+      .catch((err) => {
+        console.error('[Connections] Dropbox OAuth exchange failed:', err);
+      })
+      .finally(() => {
+        setDropboxLoading(false);
+      });
+  }, [exchangeDropboxCode]);
+
   function isConnected(providerId: string): boolean {
     if (providerId === 'pcloud') return isPCloudConnected();
+    if (providerId === 'dropbox') return isDropboxConnected();
     return oidc.providers.some(
       (p) => p.configId === providerId && p.authenticated
     );
@@ -118,6 +167,10 @@ export function Component() {
       startPCloudLogin();
       return;
     }
+    if (providerId === 'dropbox') {
+      startDropboxLogin();
+      return;
+    }
     oidc.login(providerId as 'google' | 'azure');
   }
 
@@ -126,6 +179,11 @@ export function Component() {
       clearPCloudAuth();
       // Force re-render
       setPcloudLoading(false);
+      return;
+    }
+    if (providerId === 'dropbox') {
+      clearDropboxAuth();
+      setDropboxLoading(false);
       return;
     }
     oidc.logout(providerId as 'google' | 'azure');
@@ -148,6 +206,7 @@ export function Component() {
   const allProviders = [
     ...OIDC_PROVIDERS.map((p) => ({ ...p, type: 'oidc' as const })),
     { ...PCLOUD_PROVIDER, type: 'pcloud' as const },
+    { ...DROPBOX_PROVIDER, type: 'dropbox' as const },
   ];
 
   return (
@@ -171,7 +230,7 @@ export function Component() {
           {allProviders.map((provider) => {
             const connected = isConnected(provider.id);
             const Icon = provider.icon;
-            const loading = provider.id === 'pcloud' && pcloudLoading;
+            const loading = (provider.id === 'pcloud' && pcloudLoading) || (provider.id === 'dropbox' && dropboxLoading);
 
             return (
               <div

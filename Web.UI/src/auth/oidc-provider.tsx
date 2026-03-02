@@ -126,6 +126,13 @@ export function OidcProvider({ children }: { children: ReactNode }) {
     init();
   }, [refreshProviderStatus, auth]);
 
+  // Listen for auth-status-changed events from the axios interceptor
+  useEffect(() => {
+    const handler = () => refreshProviderStatus();
+    window.addEventListener('auth-status-changed', handler);
+    return () => window.removeEventListener('auth-status-changed', handler);
+  }, [refreshProviderStatus]);
+
   // Event listeners for token lifecycle
   useEffect(() => {
     const managers = [

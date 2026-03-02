@@ -9,7 +9,7 @@ export function getDropboxToken(): string | null {
 }
 
 export function isDropboxConnected(): boolean {
-  return !!getDropboxToken();
+  return !!getDropboxToken() && !isDropboxTokenExpired();
 }
 
 export function setDropboxAuth(accessToken: string, refreshToken: string, expiresIn: number): void {

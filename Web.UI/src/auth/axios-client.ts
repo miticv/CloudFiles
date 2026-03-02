@@ -73,7 +73,7 @@ apiClient.interceptors.request.use(async (config) => {
         } catch {
           console.warn('[Auth Interceptor] Dropbox token refresh failed — clearing auth');
           clearDropboxAuth();
-          window.location.href = '/connections';
+          window.dispatchEvent(new Event('auth-status-changed'));
           return config;
         }
       }
@@ -114,7 +114,7 @@ apiClient.interceptors.response.use(
       } else if (configId === 'pcloud') {
         console.warn('[Auth Interceptor] 401 from pCloud — token revoked:', url);
         clearPCloudAuth();
-        window.location.href = '/connections';
+        window.dispatchEvent(new Event('auth-status-changed'));
       } else if (configId === 'dropbox') {
         const refreshToken = getDropboxRefreshToken();
         if (refreshToken && !error.config._dropboxRetried) {
@@ -134,13 +134,13 @@ apiClient.interceptors.response.use(
         }
         console.warn('[Auth Interceptor] 401 from Dropbox — token expired:', url);
         clearDropboxAuth();
-        window.location.href = '/connections';
+        window.dispatchEvent(new Event('auth-status-changed'));
       } else if (configId) {
         console.warn(`[Auth Interceptor] 401 from "${configId}" — token expired:`, url);
         try {
           await getManager(configId as OidcConfigId).removeUser();
         } catch { /* ignore */ }
-        window.location.href = '/connections';
+        window.dispatchEvent(new Event('auth-status-changed'));
       }
     }
     return Promise.reject(error);

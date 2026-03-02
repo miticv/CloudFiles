@@ -56,7 +56,8 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(DurableFunctionsInstances));
             try
             {
-                var (_, userEmail) = await GoogleUtility.VerifyGoogleHeaderTokenWithEmail(req).ConfigureAwait(false);
+                var token = CommonUtility.GetTokenFromHeaders(req);
+                var (userEmail, isAdmin) = UserTableUtility.ValidateJwtAndGetClaims(token);
                 var statuses = new List<OrchestrationRuntimeStatus>();
 
                 // Response page size (how many items the client sees per page)
@@ -193,10 +194,6 @@ namespace CloudFiles
                     }
                 }
 
-                // Check admin privileges.
-                var adminEmails = (Environment.GetEnvironmentVariable("ADMIN_EMAILS") ?? "")
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                var isAdmin = adminEmails.Any(e => string.Equals(e, userEmail, StringComparison.OrdinalIgnoreCase));
                 var showAll = isAdmin && string.Equals(req.Query["all"], "true", StringComparison.OrdinalIgnoreCase);
 
                 List<OrchestrationMetadata> instances;
@@ -293,7 +290,8 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(GetInstance));
             try
             {
-                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                var token = CommonUtility.GetTokenFromHeaders(req);
+                UserTableUtility.ValidateJwt(token);
                 var instance = await starter.GetInstanceAsync(instanceId, getInputsAndOutputs: true).ConfigureAwait(false);
                 if (instance == null)
                 {
@@ -334,7 +332,8 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(PurgeInstance));
             try
             {
-                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                var token = CommonUtility.GetTokenFromHeaders(req);
+                UserTableUtility.ValidateJwt(token);
                 log.LogInformation($"Purging orchestration instance '{instanceId}'.");
                 var result = await starter.PurgeInstanceAsync(instanceId).ConfigureAwait(false);
                 return new OkObjectResult(new { instanceId, purged = result != null });
@@ -435,7 +434,8 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(TerminateInstance));
             try
             {
-                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                var token = CommonUtility.GetTokenFromHeaders(req);
+                UserTableUtility.ValidateJwt(token);
                 log.LogInformation($"Terminating orchestration instance '{instanceId}'.");
                 var instance = await starter.GetInstanceAsync(instanceId).ConfigureAwait(false);
                 if (instance == null)

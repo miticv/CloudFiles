@@ -18,6 +18,14 @@ export const googleManager = new UserManager({
   automaticSilentRenew: true,
   userStore: new WebStorageStateStore({ store: localStorage }),
   extraQueryParams: { access_type: 'offline', prompt: 'consent' },
+  metadata: {
+    issuer: 'https://accounts.google.com',
+    authorization_endpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+    token_endpoint: `${env.api}google/oauth/token`,
+    userinfo_endpoint: 'https://openidconnect.googleapis.com/v1/userinfo',
+    jwks_uri: 'https://www.googleapis.com/oauth2/v3/certs',
+    revocation_endpoint: 'https://oauth2.googleapis.com/revoke',
+  },
 });
 
 export const azureManager = new UserManager({

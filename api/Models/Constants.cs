@@ -194,6 +194,9 @@
         public const string CopyGooglePhotosToGoogleDriveOrchestrator = "copyGooglePhotosToGoogleDriveOrchestrator";
         public const string CopyGooglePhotoToDriveFile = "copyGooglePhotoToDriveFile";
 
+        // Google OAuth
+        public const string GoogleOAuthToken = "googleOAuthToken";
+
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";
         public const string AuthLocalLogin = "authLocalLogin";

@@ -23,6 +23,7 @@ function getConfigIdForUrl(url: string): TokenConfigId | null {
   if (url.includes('dropbox/')) return 'dropbox';
   if (url.includes('azure/files/')) return 'azure-storage';
   if (url.includes('azure/')) return 'azure';
+  if (url.includes('process/instances')) return 'cloudfiles';
   if (url.includes('process/DropboxToAzure/') || url.includes('process/AzureToDropbox/')
     || url.includes('process/DropboxToGcs/') || url.includes('process/DropboxToGooglePhotos/')
     || url.includes('process/DropboxToGoogleDrive/')) return 'dropbox';

@@ -21,7 +21,7 @@ React 19 SPA (Vite)  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob S
 
 ## Tech Stack
 
-### Frontend (`Web.UI/`)
+### Frontend (`web/`)
 | Technology | Purpose |
 |---|---|
 | React 19 | UI framework |
@@ -34,7 +34,7 @@ React 19 SPA (Vite)  ──>  Azure Functions v4 (.NET 8)  ──>  Azure Blob S
 | React Router 7 | Routing (lazy-loaded pages) |
 | oidc-client-ts | Multi-provider OIDC authentication (Google, Azure) |
 
-### Backend (root)
+### Backend (`api/`)
 | Technology | Purpose |
 |---|---|
 | .NET 8 | Runtime |
@@ -60,8 +60,8 @@ winget install Microsoft.DotNet.SDK.8
    ```bash
    git clone <repo-url>
    cd CloudFiles
-   dotnet restore
-   cd Web.UI && npm install
+   cd api && dotnet restore && cd ..
+   cd web && npm install && cd ..
    ```
 
 2. **Configure secrets** — choose one:
@@ -74,8 +74,8 @@ winget install Microsoft.DotNet.SDK.8
 
    **Option B: Manual** — copy templates and fill in values:
    ```bash
-   cp local.settings.example.json local.settings.json
-   cp Web.UI/src/env.template.ts Web.UI/src/env.ts
+   cp api/local.settings.example.json api/local.settings.json
+   cp web/src/env.template.ts web/src/env.ts
    ```
 
 3. **Run locally** (3 terminals):
@@ -84,19 +84,36 @@ winget install Microsoft.DotNet.SDK.8
    npx azurite --silent --location .azurite
 
    # Terminal 2: Backend
-   func start
+   cd api && func start
 
    # Terminal 3: Frontend (http://localhost:4200)
-   cd Web.UI && npm run dev
+   cd web && npm run dev
    ```
+
+### Required Bitwarden Fields
+
+| Field | Used In |
+|---|---|
+| `GoogleClientId` | Backend + Frontend |
+| `GoogleClientSecret` | Backend |
+| `AzureTenantId` | Backend + Frontend |
+| `AzureClientId` | Frontend |
+| `JwtSecret` | Backend |
+| `AdminEmails` | Backend + Frontend |
+| `DropBoxKey` | Backend + Frontend |
+| `DropBoxSecret` | Backend |
+| `PCloudClientId` | Backend + Frontend |
+| `PCloudClientSecret` | Backend |
+| `ProductionApiUrl` | CI/CD only |
 
 ### Environment Variables
 
-**Backend** (`local.settings.json`):
+**Backend** (`api/local.settings.json`):
 | Variable | Description |
 |----------|-------------|
 | `AzureWebJobsStorage` | Azure Storage connection string (or `UseDevelopmentStorage=true`) |
 | `GooglePhotoClientId` | Google OAuth Client ID — used for token validation |
+| `GoogleClientSecret` | Google OAuth Client Secret — used for token exchange proxy |
 | `AzureTenantId` | Azure AD Tenant ID |
 | `JWT_SECRET` | Secret for signing CloudFiles session JWTs |
 | `ADMIN_EMAILS` | Comma-separated admin email addresses |
@@ -105,11 +122,10 @@ winget install Microsoft.DotNet.SDK.8
 | `DropBoxKey` | Dropbox OAuth App Key |
 | `DropBoxSecret` | Dropbox OAuth App Secret |
 
-**Frontend** (`env.ts`):
+**Frontend** (`web/src/env.ts`):
 | Variable | Description |
 |----------|-------------|
 | `googleClientId` | Google OAuth Client ID |
-| `googleClientSecret` | Google OAuth Client Secret |
 | `azureTenantId` | Azure AD Tenant ID |
 | `azureClientId` | Azure App Registration Client ID |
 | `pCloudClientId` | pCloud OAuth Client ID |
@@ -224,7 +240,7 @@ The Axios interceptor (`axios-client.ts`) attaches the correct Bearer token base
 
 ## Feature Flags
 
-Backend feature flags are set as environment variables — in `local.settings.json` for local dev, or in Azure Portal → Function App → **Configuration → Application settings** for deployed environments.
+Backend feature flags are set as environment variables — in `api/local.settings.json` for local dev, or in Azure Portal → Function App → **Configuration → Application settings** for deployed environments.
 
 | Variable                                   | Values                  | Description                                              |
 |--------------------------------------------|-------------------------|----------------------------------------------------------|
@@ -260,34 +276,42 @@ CI/CD via GitHub Actions:
 ```
 CloudFiles/
 ├── .github/workflows/          # CI/CD pipelines
-├── AzureToGcs/                 # Durable Functions: Azure → Google Cloud Storage
-├── AzureToGoogle/              # Durable Functions: Azure → Google Photos
-├── GoogleDriveToAzure/         # Durable Functions: Google Drive → Azure
-├── GooglePhotosToAzure/        # Durable Functions: Google Photos → Azure
-├── GoogleStorageToAzure/       # Durable Functions: Google Storage → Azure
-├── GoogleToGoogle/             # Durable Functions: GCS → Google Photos
-├── Models/                     # Shared data models
-│   ├── Azure/                  # Azure resource models
-│   └── Google/                 # Google API models
-├── UiBffFunctions/             # BFF HTTP trigger functions
-│   ├── BFF_Admin.cs            # Admin user management
-│   ├── BFF_Auth.cs             # User auth (OAuth + local), JWT sessions
-│   ├── BFF_AzureFiles.cs       # Azure Blob Storage operations
-│   ├── BFF_AzureManagement.cs  # Azure subscription/resource browsing
-│   ├── BFF_Common.cs           # Health check, token validation
-│   ├── BFF_Dropbox.cs          # Dropbox file operations
-│   ├── BFF_GoogleDrive.cs      # Google Drive operations
-│   ├── BFF_GooglePhotos.cs     # Google Photos operations
-│   ├── BFF_GoogleStorage.cs    # Google Cloud Storage browsing
-│   └── BFF_PCloud.cs           # pCloud file operations
-├── Utilities/
-│   ├── AzureUtility.cs         # Azure Blob + Resource Manager
-│   ├── CommonUtility.cs        # Shared helpers
-│   ├── DropboxUtility.cs       # Dropbox API client
-│   ├── GoogleUtility.cs        # Google Storage + Photos + Drive
-│   ├── PCloudUtility.cs        # pCloud API client
-│   └── UserTableUtility.cs     # Azure Table Storage user management
-├── Web.UI/                     # React 19 frontend
+├── api/                        # .NET 8 Azure Functions backend
+│   ├── Functions/              # BFF HTTP trigger functions
+│   │   ├── BFF_Admin.cs        # Admin user management
+│   │   ├── BFF_Auth.cs         # User auth (OAuth + local), JWT sessions
+│   │   ├── BFF_AzureFiles.cs   # Azure Blob Storage operations
+│   │   ├── BFF_AzureManagement.cs # Azure subscription/resource browsing
+│   │   ├── BFF_Common.cs       # Health check, token validation
+│   │   ├── BFF_Dropbox.cs      # Dropbox file operations
+│   │   ├── BFF_GoogleDrive.cs  # Google Drive operations
+│   │   ├── BFF_GooglePhotos.cs # Google Photos operations
+│   │   ├── BFF_GoogleStorage.cs # Google Cloud Storage browsing
+│   │   └── BFF_PCloud.cs       # pCloud file operations
+│   ├── Pipelines/              # Durable Functions: migration orchestrations
+│   │   ├── AzureToGoogle/      # Azure → Google Photos
+│   │   ├── AzureToGcs/         # Azure → Google Cloud Storage
+│   │   ├── AzureToGoogleDrive/ # Azure → Google Drive
+│   │   ├── AzureToDropbox/     # Azure → Dropbox
+│   │   ├── GooglePhotosToAzure/# Google Photos → Azure
+│   │   ├── GoogleToGoogle/     # GCS → Google Photos
+│   │   ├── GoogleDriveToAzure/ # Google Drive → Azure
+│   │   ├── GoogleStorageToAzure/ # GCS → Azure
+│   │   └── ...                 # (20 pipeline folders total)
+│   ├── Models/                 # Shared data models
+│   │   ├── Azure/              # Azure resource models
+│   │   └── Google/             # Google API models
+│   ├── Utilities/
+│   │   ├── AzureUtility.cs     # Azure Blob + Resource Manager
+│   │   ├── CommonUtility.cs    # Shared helpers
+│   │   ├── DropboxUtility.cs   # Dropbox API client
+│   │   ├── GoogleUtility.cs    # Google Storage + Photos + Drive
+│   │   ├── PCloudUtility.cs    # pCloud API client
+│   │   └── UserTableUtility.cs # Azure Table Storage user management
+│   ├── CloudFiles.csproj
+│   ├── Program.cs
+│   └── host.json
+├── web/                        # React 19 frontend
 │   └── src/
 │       ├── api/                # TanStack Query hooks per provider
 │       ├── auth/               # OIDC + custom OAuth, auth guards, axios interceptor
@@ -308,7 +332,11 @@ CloudFiles/
 │       │   └── storage-browser/# Azure subscription/RG/account hierarchy
 │       ├── stores/             # Zustand stores
 │       └── router.tsx          # Route definitions
-├── CloudFiles.csproj
-├── Program.cs
-└── host.json
+├── CloudFiles.sln
+└── setup-secrets.sh
 ```
+
+## Reference Links
+
+- [Durable Functions overview](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-overview?tabs=csharp)
+- [Durable Functions entities](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-entities?tabs=csharp)

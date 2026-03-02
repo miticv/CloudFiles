@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.AspNetCore.Http;
@@ -207,6 +211,52 @@ namespace CloudFiles
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
+            }
+        }
+
+        [Function(Constants.GoogleOAuthToken)]
+        public static async Task<IActionResult> GoogleOAuthToken(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "google/oauth/token")] HttpRequest req,
+            FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(GoogleOAuthToken));
+            try
+            {
+                var clientSecret = Environment.GetEnvironmentVariable("GoogleClientSecret");
+                if (string.IsNullOrEmpty(clientSecret))
+                {
+                    log.LogError("GoogleClientSecret environment variable is not configured");
+                    return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                }
+
+                // Read the form-encoded body from oidc-client-ts
+                var body = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
+                var formParams = HttpUtility.ParseQueryString(body);
+
+                // Add client_secret and forward to Google
+                formParams["client_secret"] = clientSecret;
+
+                using var client = new HttpClient();
+                var content = new FormUrlEncodedContent(
+                    formParams.AllKeys
+                        .Where(k => k != null)
+                        .Select(k => new KeyValuePair<string, string>(k!, formParams[k!] ?? ""))
+                );
+
+                var response = await client.PostAsync("https://oauth2.googleapis.com/token", content).ConfigureAwait(false);
+                var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                return new ContentResult
+                {
+                    Content = responseBody,
+                    ContentType = "application/json",
+                    StatusCode = (int)response.StatusCode
+                };
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error proxying Google OAuth token exchange");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }
 

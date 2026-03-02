@@ -291,6 +291,69 @@ namespace CloudFiles
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }
+
+        [Function(Constants.ProcessRestartInstance)]
+        public static async Task<IActionResult> RestartInstance(
+           [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "process/instances/{instanceId}/restart")] HttpRequest req,
+           [DurableClient] DurableTaskClient starter,
+           string instanceId,
+           FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(RestartInstance));
+            try
+            {
+                var googleAccessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+
+                // Read optional azure storage token from request body
+                string? azureAccessToken = null;
+                string body = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    var bodyObj = JObject.Parse(body);
+                    azureAccessToken = bodyObj.Value<string>("azureAccessToken");
+                }
+
+                // Get original instance
+                var instance = await starter.GetInstanceAsync(instanceId, getInputsAndOutputs: true).ConfigureAwait(false);
+                if (instance == null)
+                {
+                    return new NotFoundObjectResult(new { error = "Instance not found" });
+                }
+
+                if (string.IsNullOrEmpty(instance.SerializedInput))
+                {
+                    return new BadRequestObjectResult(new { error = "Instance has no input to restart with" });
+                }
+
+                // Parse original input, replace tokens with fresh ones
+                var input = JObject.Parse(instance.SerializedInput);
+                input["accessToken"] = googleAccessToken;
+                if (!string.IsNullOrEmpty(azureAccessToken))
+                {
+                    input["azureAccessToken"] = azureAccessToken;
+                }
+
+                string newInstanceId = await starter.ScheduleNewOrchestrationInstanceAsync(
+                    instance.Name, input).ConfigureAwait(false);
+                log.LogInformation($"Restarted instance '{instanceId}' as new instance '{newInstanceId}'.");
+
+                return new OkObjectResult(new { instanceId = newInstanceId, restartedFrom = instanceId });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Error restarting instance {instanceId}");
+                return new ObjectResult(new { error = ex.Message })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
+            }
+        }
+
         /// <summary>
         /// Strip large arrays from serializedInput, keeping only summary fields
         /// for the list view (startedBy, albumTitle, accountName, counts, etc.).

@@ -122,6 +122,22 @@ namespace CloudFiles.AzureToGoogle
                     log.LogInformation($"BatchCreate batch {batchNum}: {uploaded.Count} items");
                     var batchResult = await context.CallActivityAsync<NewMediaItemResultRoot>(
                         Constants.BatchCreateGoogleMediaItems, batchRequest);
+
+                    // Fill in missing filenames for failed batchCreate items.
+                    // Google Photos returns mediaItem=null for failures, losing the filename.
+                    // Correlate via uploadToken back to the original batch request.
+                    var tokenToFilename = batchRequest.Items.ToDictionary(x => x.UploadToken, x => x.FileName);
+                    foreach (var r in batchResult.NewMediaItemResults)
+                    {
+                        if ((r.MediaItem == null || string.IsNullOrEmpty(r.MediaItem.Filename))
+                            && !string.IsNullOrEmpty(r.UploadToken)
+                            && tokenToFilename.TryGetValue(r.UploadToken, out var fn))
+                        {
+                            r.MediaItem ??= new MediaItem();
+                            r.MediaItem.Filename = fn;
+                        }
+                    }
+
                     response.NewMediaItemResults.AddRange(batchResult.NewMediaItemResults);
                 }
             }

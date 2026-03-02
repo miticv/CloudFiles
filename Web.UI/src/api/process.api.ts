@@ -40,6 +40,18 @@ export function usePurgeProcess() {
   });
 }
 
+export function useRestartProcess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ instanceId, azureAccessToken }: { instanceId: string; azureAccessToken?: string }) =>
+      apiClient.post<{ instanceId: string; restartedFrom: string }>(
+        `process/instances/${instanceId}/restart`,
+        azureAccessToken ? { azureAccessToken } : undefined,
+      ).then(r => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['processes'] }),
+  });
+}
+
 export function useStartMigration() {
   return useMutation({
     mutationFn: (request: StartMigrationRequest) =>

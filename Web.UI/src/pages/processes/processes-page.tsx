@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useAuth } from '@/auth/auth-context';
-import { useProcesses, useProcessInstance, usePurgeProcess } from '@/api/process.api';
+import { useProcesses, useProcessInstance, usePurgeProcess, useRestartProcess } from '@/api/process.api';
+import { useOidc } from '@/auth/oidc-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
@@ -34,14 +35,23 @@ const statusConfig: Record<OrchestrationRuntimeStatus, { label: string; color: s
 
 // ─── Friendly name mapping ───
 
+const friendlyNames: Record<string, string> = {
+  azurestoragetoGooglephotosOrchestrator: 'Azure Storage \u2192 Google Photos',
+  copyazureblobstogooglephotosOrchestrator: 'Azure Storage \u2192 Google Photos',
+  googlestoragetoGooglephotosOrchestrator: 'Google Cloud Storage \u2192 Google Photos',
+  copygooglestoragetogooglephotosOrchestrator: 'Google Cloud Storage \u2192 Google Photos',
+  googlephotostoazureOrchestrator: 'Google Photos \u2192 Azure Storage',
+  copygooglephotostoazureOrchestrator: 'Google Photos \u2192 Azure Storage',
+  googledrivetoazureOrchestrator: 'Google Drive \u2192 Azure Storage',
+  copygoogledrivetoazureOrchestrator: 'Google Drive \u2192 Azure Storage',
+  gcstoazureOrchestrator: 'Google Cloud Storage \u2192 Azure Storage',
+  copygcstoazureOrchestrator: 'Google Cloud Storage \u2192 Azure Storage',
+  azuretogcsOrchestrator: 'Azure Storage \u2192 Google Cloud Storage',
+  copyazuretogcsOrchestrator: 'Azure Storage \u2192 Google Cloud Storage',
+};
+
 function getFriendlyName(rawName: string): string {
-  if (rawName.includes('AzureStorageToGooglePhotos')) return 'Azure \u2192 Google Photos';
-  if (rawName.includes('GoogleStorageToGooglePhotos')) return 'GCS \u2192 Google Photos';
-  if (rawName.includes('GooglePhotosToAzure')) return 'Google Photos \u2192 Azure';
-  if (rawName.includes('GoogleDriveToAzure')) return 'Google Drive \u2192 Azure';
-  if (rawName.includes('GoogleStorageToAzure') || rawName.includes('GcsToAzure')) return 'GCS \u2192 Azure';
-  if (rawName.includes('AzureToGcs')) return 'Azure \u2192 GCS';
-  return rawName;
+  return friendlyNames[rawName.toLowerCase()] ?? rawName;
 }
 
 // ─── Grouping logic ───
@@ -484,6 +494,8 @@ interface ProcessGroupCardProps {
 
 function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: ProcessGroupCardProps) {
   const { parent, children } = group;
+  const oidc = useOidc();
+  const restart = useRestartProcess();
   const cfg = statusConfig[parent.runtimeStatus] ?? statusConfig[OrchestrationRuntimeStatus.Pending];
   const StatusIcon = cfg.icon;
   const friendlyName = getFriendlyName(parent.name);
@@ -510,6 +522,18 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
     () => fileResults?.filter((f) => !f.success) ?? [],
     [fileResults]
   );
+
+  const canRetry =
+    parent.runtimeStatus === OrchestrationRuntimeStatus.Completed && parent.hasFailedFiles ||
+    parent.runtimeStatus === OrchestrationRuntimeStatus.Failed;
+
+  const handleRestart = useCallback(async () => {
+    const azureAccessToken = await oidc.getAccessToken('azure-storage');
+    restart.mutate({
+      instanceId: parent.instanceId,
+      azureAccessToken: azureAccessToken ?? undefined,
+    });
+  }, [oidc, restart, parent.instanceId]);
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
@@ -648,7 +672,18 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center justify-end gap-2 pt-1">
+              {canRetry && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRestart}
+                  disabled={restart.isPending}
+                >
+                  <RotateCcw className={cn('w-3.5 h-3.5 mr-1.5', restart.isPending && 'animate-spin')} />
+                  {restart.isPending ? 'Restarting...' : 'Retry'}
+                </Button>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={isPurging}>

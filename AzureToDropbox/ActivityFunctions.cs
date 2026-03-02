@@ -34,6 +34,8 @@ namespace CloudFiles.AzureToDropbox
             var preparedList = new List<AzureToDropboxItemPrepared>();
             foreach (var item in expandedItemsList)
             {
+                if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
+
                 var filename = item.ItemPath.Split('/').Last();
                 var destPath = string.IsNullOrEmpty(request.DestinationFolder)
                     ? $"/{item.ItemPath}"

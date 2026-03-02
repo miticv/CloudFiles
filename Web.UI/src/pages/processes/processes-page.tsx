@@ -791,18 +791,22 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
                 </span>
               </>
             )}
-            {startedBy && parseStartedByBadges(startedBy, friendlyName).map((pe, i) => (
-              <span
-                key={i}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0 text-[10px] font-medium',
-                  providerBadgeColors[pe.provider] ?? 'bg-slate-50 text-slate-700 border-slate-200'
-                )}
-              >
-                {pe.provider && <span className="opacity-60">{pe.provider}</span>}
-                {pe.email}
+            {startedBy && (
+              <span className="ml-auto flex items-center gap-1 flex-wrap justify-end">
+                {parseStartedByBadges(startedBy, friendlyName).map((pe, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-md border px-1.5 py-0 text-[10px] font-medium',
+                      providerBadgeColors[pe.provider] ?? 'bg-slate-50 text-slate-700 border-slate-200'
+                    )}
+                  >
+                    {pe.provider && <span className="opacity-60">{pe.provider}</span>}
+                    {pe.email}
+                  </span>
+                ))}
               </span>
-            ))}
+            )}
           </div>
         </div>
       </button>

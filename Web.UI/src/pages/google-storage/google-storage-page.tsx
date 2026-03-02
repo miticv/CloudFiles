@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, CloudOff, CheckSquare } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, CloudOff, CheckSquare, HelpCircle } from 'lucide-react';
 import { CopyGcsToAzureDialog } from './copy-gcs-to-azure-dialog';
 import { CopyGcsToDropboxDialog } from './copy-gcs-to-dropbox-dialog';
 import { CopyGcsToDriveDialog } from './copy-gcs-to-drive-dialog';
@@ -94,6 +95,15 @@ function SetupView({
               <Search className="h-4 w-4 text-indigo-600" />
             </div>
             <h2 className="text-base font-semibold text-foreground">Browse by Bucket</h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-sm">
+                <p>A bucket is a top-level storage container in Google Cloud Storage. The name is chosen by whoever created the bucket (e.g. <strong>my-company-photos</strong>, <strong>project-backups-2024</strong>).</p>
+                <p className="mt-1">Find it in the <strong>Google Cloud Console</strong> &rarr; <strong>Cloud Storage</strong> &rarr; <strong>Buckets</strong>. The bucket name is shown in the Name column.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <p className="text-sm text-muted-foreground">
             Enter a bucket name to browse its contents directly.
@@ -121,6 +131,15 @@ function SetupView({
               <Cloud className="h-4 w-4 text-emerald-600" />
             </div>
             <h2 className="text-base font-semibold text-foreground">Find Buckets by Project</h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-sm">
+                <p>A project ID is the unique identifier for your Google Cloud project (e.g. <strong>my-project-123456</strong>).</p>
+                <p className="mt-1">Find it in the <strong>Google Cloud Console</strong> &rarr; project selector dropdown at the top. The ID is shown below the project name.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <p className="text-sm text-muted-foreground">
             Enter a GCP project ID to list all accessible buckets.

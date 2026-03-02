@@ -83,6 +83,10 @@
         public const string CopyAzureToGcsOrchestrator = "copyAzureToGcsOrchestrator";
         public const string CopyAzureBlobToGcsObject = "copyAzureBlobToGcsObject";
 
+        // BFF pCloud
+        public const string PCloudOAuthCallback = "pcloudOAuthCallback";
+        public const string PCloudFileList = "pcloudFileList";
+
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";
         public const string AuthLocalLogin = "authLocalLogin";

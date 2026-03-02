@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '@/env';
 import { getManager, type OidcConfigId } from './oidc-config';
+import { getPCloudToken, getPCloudHostname, clearPCloudAuth } from './pcloud-auth';
 
 export const apiClient = axios.create({
   baseURL: env.api,
@@ -10,11 +11,12 @@ export const apiClient = axios.create({
   },
 });
 
-type TokenConfigId = OidcConfigId | 'cloudfiles';
+type TokenConfigId = OidcConfigId | 'cloudfiles' | 'pcloud';
 
 function getConfigIdForUrl(url: string): TokenConfigId | null {
   if (url.includes('manage/') || url.includes('auth/me')) return 'cloudfiles';
   if (url.includes('auth/')) return null;
+  if (url.includes('pcloud/')) return 'pcloud';
   if (url.includes('azure/files/')) return 'azure-storage';
   if (url.includes('azure/')) return 'azure';
   if (url.includes('google/') || url.includes('process/')) return 'google';
@@ -32,6 +34,18 @@ apiClient.interceptors.request.use(async (config) => {
     const token = localStorage.getItem('cf_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  }
+
+  if (configId === 'pcloud') {
+    const token = getPCloudToken();
+    const hostname = getPCloudHostname();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (hostname) {
+      config.headers['X-PCloud-Hostname'] = hostname;
     }
     return config;
   }
@@ -63,6 +77,10 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('cf_token');
         localStorage.removeItem('cf_user');
         window.location.href = '/sessions/login';
+      } else if (configId === 'pcloud') {
+        console.warn('[Auth Interceptor] 401 from pCloud — token revoked:', url);
+        clearPCloudAuth();
+        window.location.href = '/connections';
       } else if (configId) {
         console.warn(`[Auth Interceptor] 401 from "${configId}" — token expired:`, url);
         try {

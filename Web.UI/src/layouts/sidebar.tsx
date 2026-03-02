@@ -2,13 +2,13 @@ import { NavLink } from 'react-router';
 import { cn } from '@/lib/utils';
 import { useNavigation } from '@/hooks/use-navigation';
 import {
-  HardDrive, Cloud, FolderOpen, Image, CloudOff, RefreshCw,
+  HardDrive, Cloud, FolderOpen, Image, CloudOff, CloudCog, RefreshCw,
   Users, Link as LinkIcon,
 } from 'lucide-react';
 import type { MenuItem } from '@/api/types';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
-  HardDrive, Cloud, FolderOpen, Image, CloudOff, RefreshCw, Users, Link: LinkIcon,
+  HardDrive, Cloud, FolderOpen, Image, CloudOff, CloudCog, RefreshCw, Users, Link: LinkIcon,
 };
 
 function NavItem({ item }: { item: MenuItem }) {

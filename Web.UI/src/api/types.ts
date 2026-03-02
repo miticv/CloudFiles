@@ -148,6 +148,31 @@ export interface AlbumListResponse {
   nextPageToken?: string;
 }
 
+// ─── pCloud ───
+export interface PCloudItem {
+  name: string;
+  fileId: number;
+  folderId: number;
+  isFolder: boolean;
+  size: number;
+  contentType: string;
+  created: string;
+  modified: string;
+  parentFolderId: number;
+  icon: string;
+}
+
+export interface PCloudFolderResponse {
+  items: PCloudItem[];
+  folderName: string;
+  folderId: number;
+}
+
+export interface PCloudTokenResponse {
+  accessToken: string;
+  hostname: string;
+}
+
 // ─── Processes ───
 export interface MigrationItem {
   itemPath: string;

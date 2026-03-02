@@ -342,11 +342,18 @@ namespace CloudFiles.Utilities
             do
             {
                 var page = await GoogleStorageListItemsAsync(prefix, nextPageToken).ConfigureAwait(false);
+                if (page.Items == null || page.Items.Count == 0)
+                {
+                    nextPageToken = page.NextPageToken;
+                    continue;
+                }
+
                 foreach (var p in page.Items)
                 {
                     if (!p.Name.StartsWith(speedFolder))
                     {
-                        var folders = p.Name.Replace(prefix + "/", "").Split("/");
+                        var relativeName = string.IsNullOrEmpty(prefix) ? p.Name : p.Name.Replace(prefix + "/", "");
+                        var folders = relativeName.Split("/");
                         result.TryAdd(speedFolder, folders.Length > 1);
                         speedFolder = folders[0];
                     }

@@ -72,6 +72,6 @@ namespace CloudFiles.Models.Google
         public string NextPageToken { get; set; } = default!;
 
         [JsonProperty("items")]
-        public List<GoogleStorageFileItem> Items { get; set; } = default!;
+        public List<GoogleStorageFileItem> Items { get; set; } = new List<GoogleStorageFileItem>();
     }
 }

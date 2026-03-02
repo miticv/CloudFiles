@@ -33,7 +33,7 @@ namespace CloudFiles
                 var googleUtility = GoogleUtility.Create(accessToken, bucket!);
 
                 log.LogInformation($"{Constants.GoogleFileList} function processing a request for bucket=`{bucket}`, path=`{path}`.");
-                var fileList = await googleUtility.ItemShallowListingAsync(path!).ConfigureAwait(false);
+                var fileList = await googleUtility.ItemShallowListingAsync(path ?? "").ConfigureAwait(false);
 
                 var uiObject = fileList.Select(s => new ItemUI
                 {
@@ -48,6 +48,11 @@ namespace CloudFiles
             {
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                log.LogError(ex, $"GCS API error in {Constants.GoogleFileList}");
+                return new ObjectResult(new { error = ex.Message }) { StatusCode = StatusCodes.Status502BadGateway };
             }
             catch (Exception ex)
             {
@@ -83,6 +88,11 @@ namespace CloudFiles
             {
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                log.LogError(ex, $"GCS API error in {Constants.GoogleStorageBucketList}");
+                return new ObjectResult(new { error = ex.Message }) { StatusCode = StatusCodes.Status502BadGateway };
             }
             catch (Exception ex)
             {

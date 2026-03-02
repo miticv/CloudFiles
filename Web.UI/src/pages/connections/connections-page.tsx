@@ -1,14 +1,15 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useOidc } from '@/auth/oidc-provider';
 import { useAuth } from '@/auth/auth-context';
+import { startPCloudLogin, setPCloudAuth, clearPCloudAuth, isPCloudConnected } from '@/auth/pcloud-auth';
+import { useExchangePCloudCode } from '@/api/pcloud.api';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { Chrome, Building2, Check, X, ArrowRight, Cloud } from 'lucide-react';
+import { Chrome, Building2, CloudCog, Check, X, Cloud } from 'lucide-react';
 
-const PROVIDERS = [
+const OIDC_PROVIDERS = [
   {
     id: 'google' as const,
     name: 'Google',
@@ -27,15 +28,26 @@ const PROVIDERS = [
   },
 ];
 
+const PCLOUD_PROVIDER = {
+  id: 'pcloud' as const,
+  name: 'pCloud',
+  description: 'Access your pCloud cloud storage.',
+  icon: CloudCog,
+  iconColor: 'text-teal-600',
+  iconBg: 'bg-teal-50',
+};
+
 export function Component() {
   usePageTitle('Connections');
 
-  const navigate = useNavigate();
   const oidc = useOidc();
   const auth = useAuth();
   const processedRef = useRef(false);
+  const pcloudProcessedRef = useRef(false);
+  const [pcloudLoading, setPcloudLoading] = useState(false);
+  const exchangeCode = useExchangePCloudCode();
 
-  // Process pending OAuth login (user returns from OAuth redirect)
+  // Process pending OIDC OAuth login (user returns from OAuth redirect)
   const processPendingOAuth = useCallback(async () => {
     if (processedRef.current) return;
     const pendingProvider = auth.oauthPending;
@@ -61,30 +73,64 @@ export function Component() {
     }
   }, [oidc.ready, processPendingOAuth]);
 
+  // Process pCloud OAuth callback (code + hostname in URL params)
+  useEffect(() => {
+    if (pcloudProcessedRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const locationid = params.get('locationid');
+
+    // pCloud redirects back with code + locationid + hostname
+    if (!code || !locationid) return;
+
+    // Derive hostname from locationid (1=US, 2=EU)
+    const pcloudHostname = params.get('hostname') || (locationid === '2' ? 'eapi.pcloud.com' : 'api.pcloud.com');
+
+    pcloudProcessedRef.current = true;
+    setPcloudLoading(true);
+
+    // Clean URL immediately
+    window.history.replaceState({}, '', window.location.pathname);
+
+    exchangeCode.mutateAsync({ code, hostname: pcloudHostname })
+      .then((response) => {
+        setPCloudAuth(response.accessToken, response.hostname);
+        console.log('[Connections] pCloud connected successfully');
+      })
+      .catch((err) => {
+        console.error('[Connections] pCloud OAuth exchange failed:', err);
+      })
+      .finally(() => {
+        setPcloudLoading(false);
+      });
+  }, [exchangeCode]);
+
   function isConnected(providerId: string): boolean {
+    if (providerId === 'pcloud') return isPCloudConnected();
     return oidc.providers.some(
       (p) => p.configId === providerId && p.authenticated
     );
   }
 
-  function handleConnect(providerId: 'google' | 'azure') {
-    oidc.login(providerId);
+  function handleConnect(providerId: string) {
+    if (providerId === 'pcloud') {
+      startPCloudLogin();
+      return;
+    }
+    oidc.login(providerId as 'google' | 'azure');
   }
 
-  function handleDisconnect(providerId: 'google' | 'azure') {
-    oidc.logout(providerId);
+  function handleDisconnect(providerId: string) {
+    if (providerId === 'pcloud') {
+      clearPCloudAuth();
+      // Force re-render
+      setPcloudLoading(false);
+      return;
+    }
+    oidc.logout(providerId as 'google' | 'azure');
     if (providerId === 'azure') {
       oidc.logout('azure-storage');
-    }
-  }
-
-  function handleContinue() {
-    const redirect = localStorage.getItem('redirect');
-    if (redirect) {
-      localStorage.removeItem('redirect');
-      navigate(redirect);
-    } else {
-      navigate('/file-manager');
     }
   }
 
@@ -98,6 +144,11 @@ export function Component() {
       </div>
     );
   }
+
+  const allProviders = [
+    ...OIDC_PROVIDERS.map((p) => ({ ...p, type: 'oidc' as const })),
+    { ...PCLOUD_PROVIDER, type: 'pcloud' as const },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-100">
@@ -117,9 +168,10 @@ export function Component() {
 
         {/* Provider cards */}
         <div className="space-y-4 mb-8">
-          {PROVIDERS.map((provider) => {
+          {allProviders.map((provider) => {
             const connected = isConnected(provider.id);
             const Icon = provider.icon;
+            const loading = provider.id === 'pcloud' && pcloudLoading;
 
             return (
               <div
@@ -139,7 +191,12 @@ export function Component() {
                     <h3 className="font-semibold text-card-foreground">
                       {provider.name}
                     </h3>
-                    {connected ? (
+                    {loading ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <Spinner size={12} />
+                        Connecting...
+                      </Badge>
+                    ) : connected ? (
                       <Badge variant="success" className="gap-1">
                         <Check className="w-3 h-3" />
                         Connected
@@ -169,6 +226,7 @@ export function Component() {
                   ) : (
                     <Button
                       size="sm"
+                      disabled={loading}
                       onClick={() => handleConnect(provider.id)}
                     >
                       Connect
@@ -180,17 +238,6 @@ export function Component() {
           })}
         </div>
 
-        {/* Continue button */}
-        <div className="text-center">
-          <Button
-            size="lg"
-            className="min-w-[200px]"
-            onClick={handleContinue}
-          >
-            Continue
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
       </div>
     </div>
   );

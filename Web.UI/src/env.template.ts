@@ -6,4 +6,5 @@ export const env = {
   azureTenantId: '__AZURE_TENANT_ID__',
   azureClientId: '__AZURE_CLIENT_ID__',
   adminEmail: '__ADMIN_EMAIL__',
+  pCloudClientId: '__PCLOUD_CLIENT_ID__',
 };

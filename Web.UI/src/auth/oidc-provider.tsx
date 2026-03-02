@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import type { User } from 'oidc-client-ts';
 import { googleManager, azureManager, azureStorageManager, getManager, type OidcConfigId } from './oidc-config';
 import { useAuth } from './auth-context';
+import { isPCloudConnected, clearPCloudAuth } from './pcloud-auth';
 import { Spinner } from '@/components/ui/spinner';
 import type { ProviderStatus } from '@/api/types';
 
@@ -32,15 +33,16 @@ const capturedCallbackUrl = (() => {
 export function OidcProvider({ children }: { children: ReactNode }) {
   const auth = useAuth();
 
-  const [providers, setProviders] = useState<ProviderStatus[]>(
-    PROVIDER_IDS.map(id => ({ configId: id, authenticated: false }))
-  );
+  const [providers, setProviders] = useState<ProviderStatus[]>([
+    ...PROVIDER_IDS.map(id => ({ configId: id, authenticated: false })),
+    { configId: 'pcloud', authenticated: false },
+  ]);
   const [ready, setReady] = useState(false);
   const [processingCallback, setProcessingCallback] = useState(!!capturedCallbackUrl);
   const initializedRef = useRef(false);
 
   const refreshProviderStatus = useCallback(async () => {
-    const statuses = await Promise.all(
+    const oidcStatuses = await Promise.all(
       PROVIDER_IDS.map(async (configId) => {
         try {
           const user = await getManager(configId).getUser();
@@ -50,7 +52,8 @@ export function OidcProvider({ children }: { children: ReactNode }) {
         }
       })
     );
-    setProviders(statuses);
+    const pcloudStatus: ProviderStatus = { configId: 'pcloud', authenticated: isPCloudConnected() };
+    setProviders([...oidcStatuses, pcloudStatus]);
   }, []);
 
   // Initialize: process callbacks and check existing sessions
@@ -175,6 +178,7 @@ export function OidcProvider({ children }: { children: ReactNode }) {
 
   const logoutAll = useCallback(() => {
     console.log('[Auth] logout all providers');
+    clearPCloudAuth();
     Promise.all(PROVIDER_IDS.map(id => getManager(id).removeUser())).then(refreshProviderStatus);
   }, [refreshProviderStatus]);
 

@@ -6,6 +6,9 @@ import { SecureImage } from '@/components/ui/secure-image';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
 import { Image as ImageIcon, CloudOff, X, Upload, HelpCircle } from 'lucide-react';
 import type { PickedMediaItem } from '@/api/types';
 
@@ -187,6 +190,47 @@ export function Component() {
                   {pickedItems.length} selected
                 </span>
               )}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    title="Google Photos limitations"
+                  >
+                    <HelpCircle className="h-4.5 w-4.5" />
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Google Photos API Limitations</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm text-muted-foreground">
+                    <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                      <p className="font-medium">The Google Photos Picker API only shows albums that were created by this application.</p>
+                      <p className="mt-1">This is a restriction imposed by Google &mdash; third-party apps cannot access albums you created manually in Google Photos.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-2">How to move photos out of Google Photos:</p>
+                      <ol className="list-decimal list-inside space-y-2">
+                        <li>
+                          <span className="font-medium text-foreground">Use Google Takeout</span> &mdash; Go to{' '}
+                          <a href="https://takeout.google.com" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">takeout.google.com</a>,
+                          select Google Photos, and export your library. Google will send you download links for zip archives.
+                        </li>
+                        <li>
+                          <span className="font-medium text-foreground">Upload to Google Drive</span> &mdash; Extract the downloaded archives and upload the photos to a folder in Google Drive.
+                        </li>
+                        <li>
+                          <span className="font-medium text-foreground">Use CloudFiles to copy</span> &mdash; Navigate to the Google Drive page in this app and use the &ldquo;Copy to Azure&rdquo; or other copy actions to transfer files to your desired destination.
+                        </li>
+                      </ol>
+                    </div>
+                    <p className="text-xs">
+                      Alternatively, you can upload photos directly to Google Drive from the Google Photos mobile app using the &ldquo;Save to device&rdquo; option, then sync with Drive.
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
             <p className="text-sm text-muted-foreground">
               Select photos from your Google Photos library to copy to Azure Blob Storage.

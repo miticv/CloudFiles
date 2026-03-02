@@ -37,6 +37,7 @@
         public const string ProcessPurgeInstance = "processPurgeInstance";
         public const string ProcessGetInstance = "processGetInstance";
         public const string ProcessRestartInstance = "processRestartInstance";
+        public const string ProcessTerminateInstance = "processTerminateInstance";
 
         // automation azure storage
         public const string AzureStorageToGooglePhotosOrchestrator = "azureStorageToGooglePhotosOrchestrator";

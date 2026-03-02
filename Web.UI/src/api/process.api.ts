@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/auth/axios-client';
 import type {
-  StartJobResponse, OrchestrationInstance, ProcessListParams,
+  StartJobResponse, OrchestrationInstance, ProcessListParams, ProcessListResponse,
   StartMigrationRequest, StartGoogleStorageRequest, StartGooglePhotosToAzureRequest,
   StartGoogleDriveToAzureRequest, StartGcsToAzureRequest, StartAzureToGcsRequest,
   StartDropboxToAzureRequest, StartAzureToDropboxRequest,
@@ -16,12 +16,16 @@ export function useProcesses(params?: ProcessListParams, refetchInterval?: numbe
     queryFn: () => {
       const searchParams = new URLSearchParams();
       if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString());
+      if (params?.page) searchParams.set('page', params.page.toString());
       if (params?.from) searchParams.set('from', params.from);
       if (params?.to) searchParams.set('to', params.to);
       if (params?.statusList?.length) searchParams.set('statusList', params.statusList.join(','));
+      if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
+      if (params?.sortDir) searchParams.set('sortDir', params.sortDir);
+      if (params?.names?.length) searchParams.set('names', params.names.join(','));
       if (params?.all) searchParams.set('all', 'true');
       const qs = searchParams.toString();
-      return apiClient.get<OrchestrationInstance[]>(`process/instances${qs ? '?' + qs : ''}`).then(r => r.data);
+      return apiClient.get<ProcessListResponse>(`process/instances${qs ? '?' + qs : ''}`).then(r => r.data);
     },
     refetchInterval,
   });
@@ -51,6 +55,17 @@ export function useRestartProcess() {
       apiClient.post<{ instanceId: string; restartedFrom: string }>(
         `process/instances/${instanceId}/restart`,
         azureAccessToken ? { azureAccessToken } : undefined,
+      ).then(r => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['processes'] }),
+  });
+}
+
+export function useTerminateProcess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (instanceId: string) =>
+      apiClient.post<{ instanceId: string; terminated: boolean }>(
+        `process/instances/${instanceId}/terminate`,
       ).then(r => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['processes'] }),
   });

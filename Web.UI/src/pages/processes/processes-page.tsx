@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useAuth } from '@/auth/auth-context';
-import { useProcesses, useProcessInstance, usePurgeProcess, useRestartProcess } from '@/api/process.api';
+import { useProcesses, useProcessInstance, usePurgeProcess, useRestartProcess, useTerminateProcess } from '@/api/process.api';
 import { useOidc } from '@/auth/oidc-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +10,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn, formatDateTime, formatRelative, formatFileSize, extractError } from '@/lib/utils';
 import {
-  RefreshCw, ChevronDown, ChevronRight, ChevronLeft, Trash2, RotateCcw, CheckCircle2, XCircle,
-  Clock, Ban, AlertCircle, Play, Users, Filter, Calendar, File, Folder, Timer,
+  RefreshCw, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Trash2, RotateCcw, CheckCircle2, XCircle,
+  Clock, Ban, AlertCircle, Play, Users, Filter, Calendar, File, Folder, Timer, StopCircle, AlertTriangle,
 } from 'lucide-react';
 import { OrchestrationRuntimeStatus } from '@/api/types';
 import type { OrchestrationInstance, ProcessListParams } from '@/api/types';
@@ -36,39 +39,56 @@ const statusConfig: Record<OrchestrationRuntimeStatus, { label: string; color: s
 // ─── Friendly name mapping ───
 
 const friendlyNames: Record<string, string> = {
-  azurestoragetogooglephotosorchestrator: 'Azure Storage → Google Photos',
-  copyazureblobstogooglephotosorchestrator: 'Azure Storage → Google Photos',
-  googlestoragetogooglephotosorchestrator: 'Google Cloud Storage → Google Photos',
-  copygooglestoragetogooglephotosorchestrator: 'Google Cloud Storage → Google Photos',
-  googlephotostoazureorchestrator: 'Google Photos → Azure Storage',
-  copygooglephotostoazureorchestrator: 'Google Photos → Azure Storage',
-  googledrivetoazureorchestrator: 'Google Drive → Azure Storage',
-  copygoogledrivetoazureorchestrator: 'Google Drive → Azure Storage',
-  gcstoazureorchestrator: 'Google Cloud Storage → Azure Storage',
-  copygcstoazureorchestrator: 'Google Cloud Storage → Azure Storage',
-  azuretogcsorchestrator: 'Azure Storage → Google Cloud Storage',
-  copyazuretogcsorchestrator: 'Azure Storage → Google Cloud Storage',
-  dropboxtoazureorchestrator: 'Dropbox → Azure Storage',
-  copydropboxtoazureorchestrator: 'Dropbox → Azure Storage',
-  azuretodropboxorchestrator: 'Azure Storage → Dropbox',
-  copyazuretodropboxorchestrator: 'Azure Storage → Dropbox',
-  gcstodropboxorchestrator: 'Google Cloud Storage → Dropbox',
-  copygcstodropboxorchestrator: 'Google Cloud Storage → Dropbox',
-  gcstodriveorchestrator: 'Google Cloud Storage → Google Drive',
-  copygcstodriveorchestrator: 'Google Cloud Storage → Google Drive',
-  dropboxtogcsorchestrator: 'Dropbox → Google Cloud Storage',
-  copydropboxtogcsorchestrator: 'Dropbox → Google Cloud Storage',
-  dropboxtogooglephotosorchestrator: 'Dropbox → Google Photos',
-  copydropboxtogooglephotosorchestrator: 'Dropbox → Google Photos',
-  dropboxtodriveorchestrator: 'Dropbox → Google Drive',
-  copydropboxtodriveorchestrator: 'Dropbox → Google Drive',
-  azuretodriveorchestrator: 'Azure Storage → Google Drive',
-  copyazuretodriveorchestrator: 'Azure Storage → Google Drive',
+  azurestoragetogooglephotosorchestrator: 'Azure Storage \u2192 Google Photos',
+  copyazureblobstogooglephotosorchestrator: 'Azure Storage \u2192 Google Photos',
+  googlestoragetogooglephotosorchestrator: 'Google Cloud Storage \u2192 Google Photos',
+  copygooglestoragetogooglephotosorchestrator: 'Google Cloud Storage \u2192 Google Photos',
+  googlephotostoazureorchestrator: 'Google Photos \u2192 Azure Storage',
+  copygooglephotostoazureorchestrator: 'Google Photos \u2192 Azure Storage',
+  googledrivetoazureorchestrator: 'Google Drive \u2192 Azure Storage',
+  copygoogledrivetoazureorchestrator: 'Google Drive \u2192 Azure Storage',
+  gcstoazureorchestrator: 'Google Cloud Storage \u2192 Azure Storage',
+  copygcstoazureorchestrator: 'Google Cloud Storage \u2192 Azure Storage',
+  azuretogcsorchestrator: 'Azure Storage \u2192 Google Cloud Storage',
+  copyazuretogcsorchestrator: 'Azure Storage \u2192 Google Cloud Storage',
+  dropboxtoazureorchestrator: 'Dropbox \u2192 Azure Storage',
+  copydropboxtoazureorchestrator: 'Dropbox \u2192 Azure Storage',
+  azuretodropboxorchestrator: 'Azure Storage \u2192 Dropbox',
+  copyazuretodropboxorchestrator: 'Azure Storage \u2192 Dropbox',
+  gcstodropboxorchestrator: 'Google Cloud Storage \u2192 Dropbox',
+  copygcstodropboxorchestrator: 'Google Cloud Storage \u2192 Dropbox',
+  gcstodriveorchestrator: 'Google Cloud Storage \u2192 Google Drive',
+  copygcstodriveorchestrator: 'Google Cloud Storage \u2192 Google Drive',
+  dropboxtogcsorchestrator: 'Dropbox \u2192 Google Cloud Storage',
+  copydropboxtogcsorchestrator: 'Dropbox \u2192 Google Cloud Storage',
+  dropboxtogooglephotosorchestrator: 'Dropbox \u2192 Google Photos',
+  copydropboxtogooglephotosorchestrator: 'Dropbox \u2192 Google Photos',
+  dropboxtodriveorchestrator: 'Dropbox \u2192 Google Drive',
+  copydropboxtodriveorchestrator: 'Dropbox \u2192 Google Drive',
+  azuretodriveorchestrator: 'Azure Storage \u2192 Google Drive',
+  copyazuretodriveorchestrator: 'Azure Storage \u2192 Google Drive',
 };
 
 function getFriendlyName(rawName: string): string {
   return friendlyNames[rawName.toLowerCase()] ?? rawName;
 }
+
+const PARENT_ORCHESTRATOR_TYPES = [
+  { value: 'azurestoragetogooglephotosorchestrator', label: 'Azure Storage \u2192 Google Photos' },
+  { value: 'googlestoragetogooglephotosorchestrator', label: 'Google Cloud Storage \u2192 Google Photos' },
+  { value: 'googlephotostoazureorchestrator', label: 'Google Photos \u2192 Azure Storage' },
+  { value: 'googledrivetoazureorchestrator', label: 'Google Drive \u2192 Azure Storage' },
+  { value: 'gcstoazureorchestrator', label: 'Google Cloud Storage \u2192 Azure Storage' },
+  { value: 'azuretogcsorchestrator', label: 'Azure Storage \u2192 Google Cloud Storage' },
+  { value: 'dropboxtoazureorchestrator', label: 'Dropbox \u2192 Azure Storage' },
+  { value: 'azuretodropboxorchestrator', label: 'Azure Storage \u2192 Dropbox' },
+  { value: 'gcstodropboxorchestrator', label: 'Google Cloud Storage \u2192 Dropbox' },
+  { value: 'gcstodriveorchestrator', label: 'Google Cloud Storage \u2192 Google Drive' },
+  { value: 'dropboxtogcsorchestrator', label: 'Dropbox \u2192 Google Cloud Storage' },
+  { value: 'dropboxtogooglephotosorchestrator', label: 'Dropbox \u2192 Google Photos' },
+  { value: 'dropboxtodriveorchestrator', label: 'Dropbox \u2192 Google Drive' },
+  { value: 'azuretodriveorchestrator', label: 'Azure Storage \u2192 Google Drive' },
+] as const;
 
 // ─── Grouping logic ───
 
@@ -101,8 +121,7 @@ function groupInstances(instances: OrchestrationInstance[]): ProcessGroup[] {
     groups.push({ parent: orphan, children: [] });
   }
 
-  groups.sort((a, b) => new Date(b.parent.createdAt).getTime() - new Date(a.parent.createdAt).getTime());
-
+  // Sorting is handled server-side; preserve the order returned by the API.
   return groups;
 }
 
@@ -218,20 +237,51 @@ interface ProviderEmail {
   email: string;
 }
 
-function parseStartedByBadges(startedBy: string): ProviderEmail[] {
+const nameToProvider: Record<string, string> = {
+  'azure storage': 'azure',
+  'google cloud storage': 'google',
+  'google photos': 'google',
+  'google drive': 'google',
+  'dropbox': 'dropbox',
+};
+
+function deriveProviders(friendlyName: string): string[] {
+  const lower = friendlyName.toLowerCase();
+  const providers: string[] = [];
+  for (const [key, provider] of Object.entries(nameToProvider)) {
+    if (lower.includes(key) && !providers.includes(provider)) {
+      providers.push(provider);
+    }
+  }
+  return providers;
+}
+
+function parseStartedByBadges(startedBy: string, friendlyName: string): ProviderEmail[] {
   // Format: "google:user@gmail.com|azure:user@gmail.com" or just "user@gmail.com"
-  return startedBy.split('|').map((part) => {
+  const entries = startedBy.split('|').map((part) => {
     const colonIdx = part.indexOf(':');
     if (colonIdx > 0) {
       return { provider: part.slice(0, colonIdx), email: part.slice(colonIdx + 1) };
     }
     return { provider: '', email: part };
   });
+
+  // If no entries have a provider prefix, derive from the process name
+  if (!entries.some(e => e.provider) && entries.length === 1) {
+    const providers = deriveProviders(friendlyName);
+    if (providers.length > 0) {
+      const email = entries[0].email;
+      return providers.map(p => ({ provider: p, email }));
+    }
+  }
+
+  return entries;
 }
 
 const providerBadgeColors: Record<string, string> = {
   google: 'bg-red-50 text-red-700 border-red-200',
   azure: 'bg-blue-50 text-blue-700 border-blue-200',
+  dropbox: 'bg-sky-50 text-sky-700 border-sky-200',
 };
 
 // ─── File folder grouping ───
@@ -283,37 +333,59 @@ export function Component() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedNames, setSelectedNames] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'createdAt' | 'lastUpdatedAt'>('lastUpdatedAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [onlyFailures, setOnlyFailures] = useState(false);
 
   // Build query params
   const params = useMemo<ProcessListParams>(() => {
-    const p: ProcessListParams = {};
+    const p: ProcessListParams = {
+      pageSize: PAGE_SIZE,
+      page: currentPage,
+      sortBy,
+      sortDir,
+    };
     if (selectedStatuses.size < FILTER_STATUSES.length) {
       p.statusList = Array.from(selectedStatuses);
     }
     if (fromDate) p.from = new Date(fromDate).toISOString();
     if (toDate) p.to = new Date(toDate + 'T23:59:59').toISOString();
+    if (selectedNames.length > 0) p.names = selectedNames;
     if (isAdmin && showAllUsers) p.all = true;
     return p;
-  }, [selectedStatuses, fromDate, toDate, isAdmin, showAllUsers]);
+  }, [selectedStatuses, fromDate, toDate, isAdmin, showAllUsers, currentPage, sortBy, sortDir, selectedNames]);
 
   const hasActiveFilter =
     selectedStatuses.has(OrchestrationRuntimeStatus.Running) ||
     selectedStatuses.has(OrchestrationRuntimeStatus.Pending);
   const refetchInterval = hasActiveFilter ? 5000 : false;
 
-  const { data: instances, isLoading, isError, error, refetch } = useProcesses(params, refetchInterval);
+  const { data: response, isLoading, isError, error, refetch } = useProcesses(params, refetchInterval);
 
   const purge = usePurgeProcess();
 
-  const groups = useMemo(() => groupInstances(instances ?? []), [instances]);
+  const allGroups = useMemo(() => groupInstances(response?.items ?? []), [response?.items]);
+  const groups = useMemo(
+    () => onlyFailures ? allGroups.filter(g => g.parent.hasFailedFiles) : allGroups,
+    [allGroups, onlyFailures],
+  );
 
-  const totalPages = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
+  const totalCount = response?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedGroups = groups.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paginatedGroups = groups; // Server already returns one page
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters or sort change (but not when page itself changes)
+  const filterKey = useMemo(
+    () => JSON.stringify({
+      s: Array.from(selectedStatuses).sort(),
+      f: fromDate, t: toDate, a: showAllUsers, sb: sortBy, sd: sortDir, n: selectedNames,
+    }),
+    [selectedStatuses, fromDate, toDate, showAllUsers, sortBy, sortDir, selectedNames],
+  );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => setCurrentPage(1), [params]);
+  useMemo(() => setCurrentPage(1), [filterKey]);
 
   const toggleGroup = useCallback((instanceId: string) => {
     setExpandedGroups((prev) => {
@@ -353,13 +425,33 @@ export function Component() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Processes</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {groups.length} orchestration group{groups.length !== 1 ? 's' : ''}
+            {totalCount} process{totalCount !== 1 ? 'es' : ''}
             {totalPages > 1 ? ` \u00b7 Page ${safePage} of ${totalPages}` : ''}
             {refetchInterval ? ' \u00b7 Auto-refreshing' : ''}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Sort controls */}
+          <Select value={sortBy} onValueChange={(val: 'createdAt' | 'lastUpdatedAt') => setSortBy(val)}>
+            <SelectTrigger className="w-36 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="lastUpdatedAt">Last Updated</SelectItem>
+              <SelectItem value="createdAt">Created</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
+            title={sortDir === 'asc' ? 'Ascending (oldest first)' : 'Descending (newest first)'}
+          >
+            {sortDir === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -404,6 +496,25 @@ export function Component() {
               </div>
             </div>
 
+            {/* Process type filter */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Process Type</Label>
+              <Select
+                value={selectedNames.length === 1 ? selectedNames[0] : '__all__'}
+                onValueChange={(val: string) => setSelectedNames(val === '__all__' ? [] : [val])}
+              >
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="All process types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All process types</SelectItem>
+                  {PARENT_ORCHESTRATOR_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Date range */}
             <div className="flex items-end gap-3">
               <div className="space-y-1.5">
@@ -438,6 +549,18 @@ export function Component() {
               </div>
             </div>
 
+            {/* Has failures filter */}
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <Checkbox
+                  checked={onlyFailures}
+                  onCheckedChange={(checked) => setOnlyFailures(checked === true)}
+                />
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-sm">Has failures only</span>
+              </label>
+            </div>
+
             {/* Admin: all users toggle */}
             {isAdmin && (
               <div className="flex items-center gap-2">
@@ -456,7 +579,7 @@ export function Component() {
       )}
 
       {/* Loading state */}
-      {isLoading && !instances && (
+      {isLoading && !response && (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <Spinner size={32} />
           <p className="mt-4 text-sm">Loading processes...</p>
@@ -551,6 +674,7 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
   const { parent, children } = group;
   const oidc = useOidc();
   const restart = useRestartProcess();
+  const terminate = useTerminateProcess();
   const cfg = statusConfig[parent.runtimeStatus] ?? statusConfig[OrchestrationRuntimeStatus.Pending];
   const StatusIcon = cfg.icon;
   const friendlyName = getFriendlyName(parent.name);
@@ -581,6 +705,10 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
   const canRetry =
     parent.runtimeStatus === OrchestrationRuntimeStatus.Completed && parent.hasFailedFiles ||
     parent.runtimeStatus === OrchestrationRuntimeStatus.Failed;
+
+  const canTerminate =
+    parent.runtimeStatus === OrchestrationRuntimeStatus.Running ||
+    parent.runtimeStatus === OrchestrationRuntimeStatus.Pending;
 
   const [restartError, setRestartError] = useState<string | null>(null);
 
@@ -634,7 +762,7 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground flex-wrap">
             <span>{formatRelative(parent.createdAt)}</span>
             {duration && (
               <>
@@ -645,6 +773,18 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
                 </span>
               </>
             )}
+            {startedBy && parseStartedByBadges(startedBy, friendlyName).map((pe, i) => (
+              <span
+                key={i}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0 text-[10px] font-medium',
+                  providerBadgeColors[pe.provider] ?? 'bg-slate-50 text-slate-700 border-slate-200'
+                )}
+              >
+                {pe.provider && <span className="opacity-60">{pe.provider}</span>}
+                {pe.email}
+              </span>
+            ))}
           </div>
         </div>
       </button>
@@ -660,29 +800,6 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
               <DetailRow label="Created" value={formatDateTime(parent.createdAt)} />
               <DetailRow label="Last Updated" value={formatDateTime(parent.lastUpdatedAt)} />
             </div>
-
-            {/* Started By badges */}
-            {startedBy && (
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Started By</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {parseStartedByBadges(startedBy).map((pe, i) => (
-                    <span
-                      key={i}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium',
-                        providerBadgeColors[pe.provider] ?? 'bg-slate-50 text-slate-700 border-slate-200'
-                      )}
-                    >
-                      {pe.provider && (
-                        <span className="opacity-60">{pe.provider}</span>
-                      )}
-                      {pe.email}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Custom status (progress) */}
             {customStatus && (
@@ -743,6 +860,34 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-1">
+              {canTerminate && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={terminate.isPending}>
+                      <StopCircle className={cn('w-3.5 h-3.5 mr-1.5', terminate.isPending && 'animate-spin')} />
+                      {terminate.isPending ? 'Terminating...' : 'Terminate'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Terminate Process</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to terminate this running process? Files already copied will remain,
+                        but the remaining transfers will be stopped.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => terminate.mutate(parent.instanceId)}
+                        className="bg-orange-600 text-white hover:bg-orange-700"
+                      >
+                        Terminate
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
               {canRetry && (
                 <Button
                   variant="outline"

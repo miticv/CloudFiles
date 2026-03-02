@@ -318,10 +318,21 @@ export interface OrchestrationInstance {
 
 export interface ProcessListParams {
   pageSize?: number;
+  page?: number;
   from?: string;
   to?: string;
   statusList?: number[];
+  sortBy?: 'createdAt' | 'lastUpdatedAt';
+  sortDir?: 'asc' | 'desc';
+  names?: string[];
   all?: boolean;
+}
+
+export interface ProcessListResponse {
+  items: OrchestrationInstance[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 // ─── Admin ───

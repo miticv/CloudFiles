@@ -59,11 +59,39 @@ namespace CloudFiles
                 var (_, userEmail) = await GoogleUtility.VerifyGoogleHeaderTokenWithEmail(req).ConfigureAwait(false);
                 var statuses = new List<OrchestrationRuntimeStatus>();
 
-                int pageSizeInt = 50;
-                var intSuccess = string.IsNullOrEmpty(req.Query["pageSize"]) || int.TryParse(req.Query["pageSize"], out pageSizeInt);
-                if (!intSuccess)
+                // Response page size (how many items the client sees per page)
+                int responsePageSize = 10;
+                if (!string.IsNullOrEmpty(req.Query["pageSize"]))
                 {
-                    throw new InvalidOperationException("pageSize must be int.");
+                    if (!int.TryParse(req.Query["pageSize"], out responsePageSize) || responsePageSize < 1 || responsePageSize > 100)
+                        throw new InvalidOperationException("pageSize must be between 1 and 100.");
+                }
+
+                // Page number (1-based)
+                int page = 1;
+                if (!string.IsNullOrEmpty(req.Query["page"]))
+                {
+                    if (!int.TryParse(req.Query["page"], out page) || page < 1)
+                        throw new InvalidOperationException("page must be a positive integer.");
+                }
+
+                // Sort field (default: lastUpdatedAt)
+                string sortBy = string.IsNullOrEmpty(req.Query["sortBy"]) ? "lastUpdatedAt" : req.Query["sortBy"].ToString();
+                if (sortBy != "createdAt" && sortBy != "lastUpdatedAt")
+                    throw new InvalidOperationException("sortBy must be 'createdAt' or 'lastUpdatedAt'.");
+
+                // Sort direction (default: desc)
+                string sortDir = string.IsNullOrEmpty(req.Query["sortDir"]) ? "desc" : req.Query["sortDir"].ToString();
+                if (sortDir != "asc" && sortDir != "desc")
+                    throw new InvalidOperationException("sortDir must be 'asc' or 'desc'.");
+
+                // Name filter (comma-separated orchestrator names)
+                HashSet<string> nameFilter = null;
+                if (!string.IsNullOrEmpty(req.Query["names"]))
+                {
+                    nameFilter = new HashSet<string>(
+                        req.Query["names"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                        StringComparer.OrdinalIgnoreCase);
                 }
 
                 // Default to the last 90 days when no date is provided.
@@ -108,7 +136,7 @@ namespace CloudFiles
 
                 // Fetch metadata without serialized inputs/outputs to avoid gRPC message-size limits.
                 // Use small page sizes to keep each gRPC response under the 4MB limit.
-                var effectivePageSize = Math.Min(pageSizeInt, 5);
+                var effectivePageSize = 5;
                 var queryFilter = new OrchestrationQuery
                 {
                     CreatedFrom = fromDate == DateTime.MinValue ? null : fromDate,
@@ -195,8 +223,29 @@ namespace CloudFiles
                     instances = parentInstances;
                 }
 
+                // Filter by orchestrator name(s) if requested.
+                if (nameFilter != null && nameFilter.Count > 0)
+                {
+                    instances = instances.Where(i => nameFilter.Contains(i.Name)).ToList();
+                }
+
+                // Sort.
+                instances = (sortBy, sortDir) switch
+                {
+                    ("createdAt", "asc") => instances.OrderBy(i => i.CreatedAt).ToList(),
+                    ("createdAt", "desc") => instances.OrderByDescending(i => i.CreatedAt).ToList(),
+                    ("lastUpdatedAt", "asc") => instances.OrderBy(i => i.LastUpdatedAt).ToList(),
+                    _ => instances.OrderByDescending(i => i.LastUpdatedAt).ToList(),
+                };
+
+                // Paginate.
+                int totalCount = instances.Count;
+                int totalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / responsePageSize));
+                page = Math.Min(page, totalPages);
+                var pagedInstances = instances.Skip((page - 1) * responsePageSize).Take(responsePageSize).ToList();
+
                 // Map to lightweight DTOs. Full data is fetched via the detail endpoint.
-                var result = instances.Select(i =>
+                var items = pagedInstances.Select(i =>
                 {
                     var detail = detailById.TryGetValue(i.InstanceId, out var d) ? d : null;
                     return new
@@ -213,7 +262,7 @@ namespace CloudFiles
                     };
                 }).ToList();
 
-                return new OkObjectResult(result);
+                return new OkObjectResult(new { items, totalCount, page, pageSize = responsePageSize });
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -373,6 +422,38 @@ namespace CloudFiles
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
+            }
+        }
+
+        [Function(Constants.ProcessTerminateInstance)]
+        public static async Task<IActionResult> TerminateInstance(
+           [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "process/instances/{instanceId}/terminate")] HttpRequest req,
+           [DurableClient] DurableTaskClient starter,
+           string instanceId,
+           FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(TerminateInstance));
+            try
+            {
+                _ = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                log.LogInformation($"Terminating orchestration instance '{instanceId}'.");
+                var instance = await starter.GetInstanceAsync(instanceId).ConfigureAwait(false);
+                if (instance == null)
+                {
+                    return new NotFoundObjectResult(new { error = "Instance not found" });
+                }
+                await starter.TerminateInstanceAsync(instanceId, "Terminated by user").ConfigureAwait(false);
+                return new OkObjectResult(new { instanceId, terminated = true });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Error terminating instance {instanceId}");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }
 

@@ -34,6 +34,8 @@ jobs:
               -e "s|__AZURE_TENANT_ID__|${{ secrets.AZURE_TENANT_ID }}|g" \
               -e "s|__AZURE_CLIENT_ID__|${{ secrets.AZURE_CLIENT_ID }}|g" \
               -e "s|__ADMIN_EMAIL__|${{ secrets.ADMIN_EMAIL }}|g" \
+              -e "s|__PCLOUD_CLIENT_ID__|${{ secrets.PCLOUD_CLIENT_ID }}|g" \
+              -e "s|__DROPBOX_CLIENT_ID__|${{ secrets.DROPBOX_CLIENT_ID }}|g" \
               env.template.ts > env.ts
       - name: Install dependencies
         working-directory: Web.UI

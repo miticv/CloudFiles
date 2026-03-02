@@ -569,10 +569,9 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
           <div className="px-4 py-3 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <DetailRow label="Instance ID" value={parent.instanceId} mono />
-              <DetailRow label="Name" value={parent.name} />
+              <DetailRow label="Name" value={friendlyName} />
               <DetailRow label="Created" value={formatDateTime(parent.createdAt)} />
               <DetailRow label="Last Updated" value={formatDateTime(parent.lastUpdatedAt)} />
-              {duration && <DetailRow label="Duration" value={duration} />}
             </div>
 
             {/* Started By badges */}
@@ -765,16 +764,18 @@ function FolderGroupRow({ group, showError }: { group: FolderGroup; showError: b
       {isOpen && (
         <div className="ml-6 pl-2 border-l border-border/50 space-y-0.5 py-0.5">
           {group.files.map((f, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-xs py-0.5">
-              <File className="w-3 h-3 text-muted-foreground shrink-0" />
-              <span className="text-foreground truncate">{f.filename}</span>
-              {f.contentLength != null && f.contentLength > 0 && (
-                <span className="text-muted-foreground shrink-0">{formatFileSize(f.contentLength)}</span>
-              )}
+            <div key={i} className="text-xs py-0.5">
+              <div className="flex items-center gap-1.5">
+                <File className="w-3 h-3 text-muted-foreground shrink-0" />
+                <span className="text-foreground break-all">{f.filename}</span>
+                {f.contentLength != null && f.contentLength > 0 && (
+                  <span className="text-muted-foreground shrink-0">{formatFileSize(f.contentLength)}</span>
+                )}
+              </div>
               {showError && f.errorMessage && (
-                <span className="text-red-600 truncate" title={f.errorMessage}>
+                <p className="text-red-600 ml-[18px] mt-0.5 break-words" title={f.errorMessage}>
                   {f.errorMessage}
-                </span>
+                </p>
               )}
             </div>
           ))}

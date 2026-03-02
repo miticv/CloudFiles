@@ -127,7 +127,8 @@ namespace CloudFiles
                 {
                     "azureStorageToGooglePhotosOrchestrator",
                     "googleStorageToGooglePhotosOrchestrator",
-                    "googlePhotosToAzureOrchestrator"
+                    "googlePhotosToAzureOrchestrator",
+                    "googleDriveToAzureOrchestrator"
                 };
 
                 // Collect parent orchestration metadata only (small page size avoids gRPC 4MB limit).

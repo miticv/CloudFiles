@@ -7,8 +7,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, Upload } from 'lucide-react';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, Upload, X } from 'lucide-react';
 import { isAxiosError } from 'axios';
+import { CopyToAzureDialog } from './copy-to-azure-dialog';
 
 // Google Docs MIME types that cannot be downloaded/copied
 const GOOGLE_DOCS_MIMES = new Set([
@@ -63,7 +64,9 @@ export function Component() {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ id: 'root', name: 'My Drive' }]);
   const [pageToken, setPageToken] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [accumulatedNextToken, setAccumulatedNextToken] = useState<string | null>(null);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
 
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
@@ -95,7 +98,21 @@ export function Component() {
   const googleDocsFiles = allFiles.filter((f) => GOOGLE_DOCS_MIMES.has(f.mimeType));
   const selectableFiles = regularFiles;
 
-  const allSelected = selectableFiles.length > 0 && selectableFiles.every((f) => selectedFiles.has(f.id));
+  const allFilesSelected = selectableFiles.length > 0 && selectableFiles.every((f) => selectedFiles.has(f.id));
+  const allFoldersSelected = folders.length > 0 && folders.every((f) => selectedFolders.has(f.id));
+  const allSelected = allFilesSelected && allFoldersSelected && (selectableFiles.length + folders.length) > 0;
+
+  const totalSelected = selectedFiles.size + selectedFolders.size;
+
+  // Get the actual file/folder objects for passing to dialog
+  const selectedFileObjects = useMemo(
+    () => allFiles.filter((f) => selectedFiles.has(f.id)),
+    [allFiles, selectedFiles],
+  );
+  const selectedFolderObjects = useMemo(
+    () => allFiles.filter((f) => selectedFolders.has(f.id)),
+    [allFiles, selectedFolders],
+  );
 
   function navigateToFolder(folderId: string, folderName: string) {
     setBreadcrumbs((prev) => [...prev, { id: folderId, name: folderName }]);
@@ -103,6 +120,7 @@ export function Component() {
     setAccumulatedFiles({ files: [], nextPageToken: null });
     setAccumulatedNextToken(null);
     setSelectedFiles(new Set());
+    setSelectedFolders(new Set());
   }
 
   function navigateToBreadcrumb(index: number) {
@@ -111,11 +129,11 @@ export function Component() {
     setAccumulatedFiles({ files: [], nextPageToken: null });
     setAccumulatedNextToken(null);
     setSelectedFiles(new Set());
+    setSelectedFolders(new Set());
   }
 
   function handleLoadMore() {
     if (!data) return;
-    // Save current accumulated state before loading next page
     setAccumulatedFiles({ files: allFiles, nextPageToken: data.nextPageToken });
     setAccumulatedNextToken(data.nextPageToken);
     setPageToken(data.nextPageToken);
@@ -133,17 +151,31 @@ export function Component() {
     });
   }
 
-  function toggleSelectAll() {
-    setSelectedFiles((prev) => {
-      if (selectableFiles.every((f) => prev.has(f.id))) {
-        const next = new Set(prev);
-        for (const f of selectableFiles) next.delete(f.id);
-        return next;
-      }
+  function toggleFolder(folderId: string) {
+    setSelectedFolders((prev) => {
       const next = new Set(prev);
-      for (const f of selectableFiles) next.add(f.id);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
       return next;
     });
+  }
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedFiles(new Set());
+      setSelectedFolders(new Set());
+    } else {
+      setSelectedFiles(new Set(selectableFiles.map((f) => f.id)));
+      setSelectedFolders(new Set(folders.map((f) => f.id)));
+    }
+  }
+
+  function clearSelection() {
+    setSelectedFiles(new Set());
+    setSelectedFolders(new Set());
   }
 
   if (!googleConnected) {
@@ -185,11 +217,17 @@ export function Component() {
             </nav>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {selectedFiles.size > 0 && (
-              <Button size="sm">
-                <Upload className="h-3.5 w-3.5" />
-                Copy to Azure ({selectedFiles.size})
-              </Button>
+            {totalSelected > 0 && (
+              <>
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  <X className="h-3.5 w-3.5" />
+                  Clear
+                </Button>
+                <Button size="sm" onClick={() => setCopyDialogOpen(true)}>
+                  <Upload className="h-3.5 w-3.5" />
+                  Copy to Azure ({totalSelected})
+                </Button>
+              </>
             )}
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
               <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
@@ -235,76 +273,94 @@ export function Component() {
         {/* Content */}
         {allFiles.length > 0 && (
           <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
-            {/* Folders */}
-            {folders.length > 0 && (
-              <div>
-                <div className="px-4 py-2 border-b border-border bg-muted/50">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Folders ({folders.length})
-                  </span>
-                </div>
-                <div className="divide-y divide-border">
-                  {folders.map((folder) => (
-                    <button
-                      key={folder.id}
-                      onClick={() => navigateToFolder(folder.id, folder.name)}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent cursor-pointer group"
-                    >
-                      <FolderOpen className="h-4 w-4 text-indigo-500 shrink-0" />
-                      <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
-                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </button>
-                  ))}
+            {/* Select All header */}
+            {(folders.length > 0 || selectableFiles.length > 0) && (
+              <div className="px-4 py-2 border-b border-border bg-muted/50 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {folders.length > 0 && selectableFiles.length > 0
+                    ? `${folders.length} folders, ${selectableFiles.length} files`
+                    : folders.length > 0
+                      ? `${folders.length} folders`
+                      : `${selectableFiles.length} files`}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="select-all-drive"
+                    checked={allSelected}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <label htmlFor="select-all-drive" className="text-xs text-muted-foreground cursor-pointer">
+                    Select All
+                  </label>
                 </div>
               </div>
             )}
 
+            {/* Folders */}
+            {folders.length > 0 && (
+              <div className="divide-y divide-border">
+                {folders.map((folder) => {
+                  const selected = selectedFolders.has(folder.id);
+                  return (
+                    <div
+                      key={folder.id}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2.5 transition-colors group',
+                        selected && 'bg-indigo-50/50'
+                      )}
+                    >
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => toggleFolder(folder.id)}
+                      />
+                      <button
+                        onClick={() => navigateToFolder(folder.id, folder.name)}
+                        className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer hover:text-indigo-600 transition-colors"
+                      >
+                        <FolderOpen className="h-4 w-4 text-indigo-500 shrink-0" />
+                        <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
+                        <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Separator between folders and files */}
+            {folders.length > 0 && selectableFiles.length > 0 && (
+              <div className="border-t border-border" />
+            )}
+
             {/* Selectable files */}
             {selectableFiles.length > 0 && (
-              <div>
-                <div className="px-4 py-2 border-b border-border bg-muted/50 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Files ({selectableFiles.length})
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="select-all-drive"
-                      checked={allSelected}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                    <label htmlFor="select-all-drive" className="text-xs text-muted-foreground cursor-pointer">
-                      Select All
-                    </label>
-                  </div>
-                </div>
-                <div className="divide-y divide-border">
-                  {selectableFiles.map((file) => {
-                    const ext = getFileExtension(file.name);
-                    const selected = selectedFiles.has(file.id);
-                    return (
-                      <div
-                        key={file.id}
-                        className={cn(
-                          'flex items-center gap-3 px-4 py-2.5 transition-colors',
-                          selected && 'bg-indigo-50/50'
-                        )}
-                      >
-                        <Checkbox
-                          checked={selected}
-                          onCheckedChange={() => toggleFile(file.id)}
-                        />
-                        <FileText className="h-4 w-4 text-slate-400 shrink-0" />
-                        <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
-                        {ext && (
-                          <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0', getFileTypeBadgeColor(ext))}>
-                            {ext.toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="divide-y divide-border">
+                {selectableFiles.map((file) => {
+                  const ext = getFileExtension(file.name);
+                  const selected = selectedFiles.has(file.id);
+                  return (
+                    <div
+                      key={file.id}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2.5 transition-colors',
+                        selected && 'bg-indigo-50/50'
+                      )}
+                    >
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => toggleFile(file.id)}
+                      />
+                      <FileText className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
+                      {ext && (
+                        <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0', getFileTypeBadgeColor(ext))}>
+                          {ext.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -324,7 +380,7 @@ export function Component() {
                         key={file.id}
                         className="flex items-center gap-3 px-4 py-2.5 opacity-50"
                       >
-                        <div className="w-4" /> {/* spacer for alignment with checkboxes */}
+                        <div className="w-4" />
                         <FileText className="h-4 w-4 text-slate-300 shrink-0" />
                         <span className="text-sm text-muted-foreground truncate flex-1">{file.name}</span>
                         <Badge variant="secondary" className="text-[10px] shrink-0">
@@ -360,6 +416,15 @@ export function Component() {
           </div>
         )}
       </div>
+
+      {/* Copy to Azure Dialog */}
+      <CopyToAzureDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={clearSelection}
+      />
     </div>
   );
 }

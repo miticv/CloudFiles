@@ -36,18 +36,22 @@ const statusConfig: Record<OrchestrationRuntimeStatus, { label: string; color: s
 // ─── Friendly name mapping ───
 
 const friendlyNames: Record<string, string> = {
-  azurestoragetoGooglephotosOrchestrator: 'Azure Storage \u2192 Google Photos',
-  copyazureblobstogooglephotosOrchestrator: 'Azure Storage \u2192 Google Photos',
-  googlestoragetoGooglephotosOrchestrator: 'Google Cloud Storage \u2192 Google Photos',
-  copygooglestoragetogooglephotosOrchestrator: 'Google Cloud Storage \u2192 Google Photos',
-  googlephotostoazureOrchestrator: 'Google Photos \u2192 Azure Storage',
-  copygooglephotostoazureOrchestrator: 'Google Photos \u2192 Azure Storage',
-  googledrivetoazureOrchestrator: 'Google Drive \u2192 Azure Storage',
-  copygoogledrivetoazureOrchestrator: 'Google Drive \u2192 Azure Storage',
-  gcstoazureOrchestrator: 'Google Cloud Storage \u2192 Azure Storage',
-  copygcstoazureOrchestrator: 'Google Cloud Storage \u2192 Azure Storage',
-  azuretogcsOrchestrator: 'Azure Storage \u2192 Google Cloud Storage',
-  copyazuretogcsOrchestrator: 'Azure Storage \u2192 Google Cloud Storage',
+  azurestoragetogooglephotosOrchestrator: 'Azure Storage → Google Photos',
+  copyazureblobstogooglephotosOrchestrator: 'Azure Storage → Google Photos',
+  googlestoragetogooglephotosOrchestrator: 'Google Cloud Storage → Google Photos',
+  copygooglestoragetogooglephotosOrchestrator: 'Google Cloud Storage → Google Photos',
+  googlephotostoazureorchestrator: 'Google Photos → Azure Storage',
+  copygooglephotostoazureorchestrator: 'Google Photos → Azure Storage',
+  googledrivetoazureorchestrator: 'Google Drive → Azure Storage',
+  copygoogledrivetoazureorchestrator: 'Google Drive → Azure Storage',
+  gcstoazureorchestrator: 'Google Cloud Storage → Azure Storage',
+  copygcstoazureorchestrator: 'Google Cloud Storage → Azure Storage',
+  azuretogcsorchestrator: 'Azure Storage → Google Cloud Storage',
+  copyazuretogcsorchestrator: 'Azure Storage → Google Cloud Storage',
+  dropboxtoazureorchestrator: 'Dropbox → Azure Storage',
+  copydropboxtoazureorchestrator: 'Dropbox → Azure Storage',
+  azuretodropboxorchestrator: 'Azure Storage → Dropbox',
+  copyazuretodropboxorchestrator: 'Azure Storage → Dropbox',
 };
 
 function getFriendlyName(rawName: string): string {

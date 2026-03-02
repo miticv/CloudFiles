@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useAuth } from '@/auth/auth-context';
-import { useProcesses, usePurgeProcess } from '@/api/process.api';
+import { useProcesses, useProcessInstance, usePurgeProcess } from '@/api/process.api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
@@ -12,10 +12,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { cn, formatDateTime, formatRelative, extractError } from '@/lib/utils';
+import { cn, formatDateTime, formatRelative, formatFileSize, extractError } from '@/lib/utils';
 import {
   RefreshCw, ChevronDown, ChevronRight, Trash2, RotateCcw, CheckCircle2, XCircle,
-  Clock, Ban, AlertCircle, Play, Users, Filter, Calendar,
+  Clock, Ban, AlertCircle, Play, Users, Filter, Calendar, File, Folder, Timer,
 } from 'lucide-react';
 import { OrchestrationRuntimeStatus } from '@/api/types';
 import type { OrchestrationInstance, ProcessListParams } from '@/api/types';
@@ -52,7 +52,6 @@ interface ProcessGroup {
 }
 
 function groupInstances(instances: OrchestrationInstance[]): ProcessGroup[] {
-  // Separate parents (name does NOT start with "copy") and children (name starts with "copy")
   const parents: OrchestrationInstance[] = [];
   const children: OrchestrationInstance[] = [];
 
@@ -64,22 +63,18 @@ function groupInstances(instances: OrchestrationInstance[]): ProcessGroup[] {
     }
   }
 
-  // Match children to parents: child's instanceId includes parent's instanceId
   const groups: ProcessGroup[] = parents.map((parent) => ({
     parent,
     children: children.filter((child) => child.instanceId.includes(parent.instanceId)),
   }));
 
-  // Find orphan children (not matched to any parent)
   const matchedChildIds = new Set(groups.flatMap((g) => g.children.map((c) => c.instanceId)));
   const orphans = children.filter((c) => !matchedChildIds.has(c.instanceId));
 
-  // Treat orphans as standalone groups
   for (const orphan of orphans) {
     groups.push({ parent: orphan, children: [] });
   }
 
-  // Sort groups by created date descending
   groups.sort((a, b) => new Date(b.parent.createdAt).getTime() - new Date(a.parent.createdAt).getTime());
 
   return groups;
@@ -87,21 +82,47 @@ function groupInstances(instances: OrchestrationInstance[]): ProcessGroup[] {
 
 // ─── Output parsing ───
 
-interface OutputSummary {
-  succeeded: number;
-  failed: number;
+interface FileResult {
+  filename: string;
+  path: string;
+  success: boolean;
+  errorMessage?: string;
+  contentLength?: number;
 }
 
-function parseOutput(serializedOutput: string | null | undefined): OutputSummary | null {
+function parseFileResults(serializedOutput: string | null | undefined): FileResult[] | null {
   if (!serializedOutput) return null;
   try {
     const parsed = JSON.parse(serializedOutput);
-    if (typeof parsed === 'object' && parsed !== null) {
-      return {
-        succeeded: parsed.succeeded ?? parsed.Succeeded ?? parsed.successCount ?? 0,
-        failed: parsed.failed ?? parsed.Failed ?? parsed.failCount ?? parsed.failedCount ?? 0,
-      };
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    // BlobCopyResult format: { results: [{ filename, blobPath, success, errorMessage, contentLength }] }
+    // GcsCopyResult format: { results: [{ filename, objectName, success, errorMessage, contentLength }] }
+    if (Array.isArray(parsed.results)) {
+      return parsed.results.map((r: Record<string, unknown>) => ({
+        filename: (r.filename ?? r.Filename ?? '') as string,
+        path: (r.blobPath ?? r.BlobPath ?? r.objectName ?? r.ObjectName ?? '') as string,
+        success: (r.success ?? r.Success ?? false) as boolean,
+        errorMessage: (r.errorMessage ?? r.ErrorMessage ?? undefined) as string | undefined,
+        contentLength: (r.contentLength ?? r.ContentLength ?? undefined) as number | undefined,
+      }));
     }
+
+    // NewMediaItemResult format: { newMediaItemResults: [{ mediaItem: { id, filename }, status: { message } }] }
+    if (Array.isArray(parsed.newMediaItemResults)) {
+      return parsed.newMediaItemResults.map((r: Record<string, unknown>) => {
+        const mediaItem = r.mediaItem as Record<string, unknown> | null;
+        const status = r.status as Record<string, unknown> | null;
+        const id = mediaItem?.id as string | null;
+        return {
+          filename: (mediaItem?.filename ?? '') as string,
+          path: '',
+          success: !!id && id.length > 0,
+          errorMessage: (!id ? (status?.message ?? 'Upload failed') : undefined) as string | undefined,
+        };
+      });
+    }
+
     return null;
   } catch {
     return null;
@@ -122,14 +143,89 @@ function parseCustomStatus(serializedCustomStatus: string | null | undefined): s
   if (!serializedCustomStatus) return null;
   try {
     const parsed = JSON.parse(serializedCustomStatus);
-    if (typeof parsed === 'string') return parsed;
-    if (typeof parsed === 'object' && parsed !== null) {
-      return parsed.message ?? parsed.status ?? JSON.stringify(parsed);
+    if (parsed === null || parsed === undefined) return null;
+    if (typeof parsed === 'string') return parsed || null;
+    if (typeof parsed === 'object') {
+      // Format progress object nicely: "42/150 - uploading photo.jpg"
+      if ('completed' in parsed && 'total' in parsed) {
+        const parts = [`${parsed.completed}/${parsed.total}`];
+        if (parsed.phase) parts.push(parsed.phase);
+        if (parsed.lastFile) parts.push(parsed.lastFile);
+        return parts.join(' \u2013 ');
+      }
+      return parsed.message ?? parsed.status ?? null;
     }
-    return String(parsed);
+    return null;
   } catch {
     return serializedCustomStatus;
   }
+}
+
+// ─── Duration formatting ───
+
+function formatDuration(startStr: string, endStr: string): string | null {
+  try {
+    const start = new Date(startStr).getTime();
+    const end = new Date(endStr).getTime();
+    const diffMs = end - start;
+    if (diffMs < 0) return null;
+
+    const seconds = Math.floor(diffMs / 1000);
+    if (seconds < 60) return `${seconds}s`;
+
+    const minutes = Math.floor(seconds / 60);
+    const remainSec = seconds % 60;
+    if (minutes < 60) return `${minutes}m ${remainSec}s`;
+
+    const hours = Math.floor(minutes / 60);
+    const remainMin = minutes % 60;
+    return `${hours}h ${remainMin}m`;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Started By badges ───
+
+interface ProviderEmail {
+  provider: string;
+  email: string;
+}
+
+function parseStartedByBadges(startedBy: string): ProviderEmail[] {
+  // Format: "google:user@gmail.com|azure:user@gmail.com" or just "user@gmail.com"
+  return startedBy.split('|').map((part) => {
+    const colonIdx = part.indexOf(':');
+    if (colonIdx > 0) {
+      return { provider: part.slice(0, colonIdx), email: part.slice(colonIdx + 1) };
+    }
+    return { provider: '', email: part };
+  });
+}
+
+const providerBadgeColors: Record<string, string> = {
+  google: 'bg-red-50 text-red-700 border-red-200',
+  azure: 'bg-blue-50 text-blue-700 border-blue-200',
+};
+
+// ─── File folder grouping ───
+
+interface FolderGroup {
+  folder: string;
+  files: FileResult[];
+}
+
+function groupByFolder(files: FileResult[]): FolderGroup[] {
+  const map = new Map<string, FileResult[]>();
+  for (const f of files) {
+    const lastSlash = f.path.lastIndexOf('/');
+    const folder = lastSlash > 0 ? f.path.slice(0, lastSlash + 1) : '/';
+    if (!map.has(folder)) map.set(folder, []);
+    map.get(folder)!.push(f);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([folder, files]) => ({ folder, files }));
 }
 
 // ─── Filter statuses ───
@@ -171,10 +267,6 @@ export function Component() {
     return p;
   }, [selectedStatuses, fromDate, toDate, isAdmin, showAllUsers]);
 
-  // Auto-refresh: if statuses filter includes Running or Pending, enable polling.
-  // The query's refetchInterval option also supports a callback that receives query data,
-  // but our API wrapper takes a static value. We derive the interval from filter state:
-  // if the user has Running or Pending in their filter, we poll every 5s.
   const hasActiveFilter =
     selectedStatuses.has(OrchestrationRuntimeStatus.Running) ||
     selectedStatuses.has(OrchestrationRuntimeStatus.Pending);
@@ -184,10 +276,8 @@ export function Component() {
 
   const purge = usePurgeProcess();
 
-  // Group instances
   const groups = useMemo(() => groupInstances(instances ?? []), [instances]);
 
-  // Toggle expand/collapse
   const toggleGroup = useCallback((instanceId: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -200,7 +290,6 @@ export function Component() {
     });
   }, []);
 
-  // Toggle status filter
   const toggleStatus = useCallback((status: OrchestrationRuntimeStatus) => {
     setSelectedStatuses((prev) => {
       const next = new Set(prev);
@@ -213,7 +302,6 @@ export function Component() {
     });
   }, []);
 
-  // Delete handler
   const handleDelete = useCallback(
     (instanceId: string) => {
       purge.mutate(instanceId);
@@ -400,8 +488,28 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
   const StatusIcon = cfg.icon;
   const friendlyName = getFriendlyName(parent.name);
   const startedBy = parseStartedBy(parent.serializedInput);
-  const customStatus = parseCustomStatus(parent.serializedCustomStatus);
-  const output = parseOutput(parent.serializedOutput);
+  const duration = formatDuration(parent.createdAt, parent.lastUpdatedAt);
+
+  // Fetch full detail when expanded (includes serializedOutput)
+  const { data: detail } = useProcessInstance(parent.instanceId, isExpanded);
+
+  const customStatus = parseCustomStatus(
+    detail?.serializedCustomStatus ?? parent.serializedCustomStatus
+  );
+
+  const fileResults = useMemo(
+    () => (detail ? parseFileResults(detail.serializedOutput) : null),
+    [detail]
+  );
+
+  const succeededFiles = useMemo(
+    () => fileResults?.filter((f) => f.success) ?? [],
+    [fileResults]
+  );
+  const failedFiles = useMemo(
+    () => fileResults?.filter((f) => !f.success) ?? [],
+    [fileResults]
+  );
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
@@ -433,11 +541,24 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
                 {children.length} sub-task{children.length !== 1 ? 's' : ''}
               </Badge>
             )}
+            {parent.hasFailedFiles && (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                Has failures
+              </Badge>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {formatRelative(parent.createdAt)}
-            {startedBy && <span> &middot; {startedBy}</span>}
-          </p>
+          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+            <span>{formatRelative(parent.createdAt)}</span>
+            {duration && (
+              <>
+                <span>&middot;</span>
+                <span className="inline-flex items-center gap-0.5">
+                  <Timer className="w-3 h-3" />
+                  {duration}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </button>
 
@@ -451,8 +572,31 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
               <DetailRow label="Name" value={parent.name} />
               <DetailRow label="Created" value={formatDateTime(parent.createdAt)} />
               <DetailRow label="Last Updated" value={formatDateTime(parent.lastUpdatedAt)} />
-              {startedBy && <DetailRow label="Started By" value={startedBy} />}
+              {duration && <DetailRow label="Duration" value={duration} />}
             </div>
+
+            {/* Started By badges */}
+            {startedBy && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Started By</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {parseStartedByBadges(startedBy).map((pe, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium',
+                        providerBadgeColors[pe.provider] ?? 'bg-slate-50 text-slate-700 border-slate-200'
+                      )}
+                    >
+                      {pe.provider && (
+                        <span className="opacity-60">{pe.provider}</span>
+                      )}
+                      {pe.email}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Custom status (progress) */}
             {customStatus && (
@@ -463,20 +607,44 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
             )}
 
             {/* Output summary */}
-            {output && (
+            {fileResults && (
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-foreground font-medium">{output.succeeded}</span>
+                  <span className="text-foreground font-medium">{succeededFiles.length}</span>
                   <span className="text-muted-foreground">succeeded</span>
                 </div>
-                {output.failed > 0 && (
+                {failedFiles.length > 0 && (
                   <div className="flex items-center gap-1.5 text-sm">
                     <XCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-foreground font-medium">{output.failed}</span>
+                    <span className="text-foreground font-medium">{failedFiles.length}</span>
                     <span className="text-muted-foreground">failed</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* File result lists */}
+            {fileResults && succeededFiles.length > 0 && (
+              <FileResultSection
+                title="Copied Files"
+                files={succeededFiles}
+                variant="success"
+              />
+            )}
+            {fileResults && failedFiles.length > 0 && (
+              <FileResultSection
+                title="Failed Files"
+                files={failedFiles}
+                variant="error"
+              />
+            )}
+
+            {/* Loading detail indicator */}
+            {isExpanded && !detail && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Spinner size={14} />
+                <span>Loading details...</span>
               </div>
             )}
 
@@ -532,13 +700,97 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
   );
 }
 
+// ─── File Result Section (collapsible) ───
+
+interface FileResultSectionProps {
+  title: string;
+  files: FileResult[];
+  variant: 'success' | 'error';
+}
+
+function FileResultSection({ title, files, variant }: FileResultSectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const folderGroups = useMemo(() => groupByFolder(files), [files]);
+  const colors = variant === 'success'
+    ? 'border-emerald-200 bg-emerald-50/50'
+    : 'border-red-200 bg-red-50/50';
+  const headerColors = variant === 'success'
+    ? 'text-emerald-700'
+    : 'text-red-700';
+
+  return (
+    <div className={cn('rounded-md border', colors)}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left cursor-pointer hover:bg-black/[0.02] transition-colors"
+      >
+        <span className="text-muted-foreground shrink-0">
+          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </span>
+        <span className={cn('text-xs font-medium', headerColors)}>
+          {title} ({files.length})
+        </span>
+      </button>
+      {isOpen && (
+        <div className="border-t border-inherit px-3 py-2 space-y-1">
+          {folderGroups.map((group) => (
+            <FolderGroupRow key={group.folder} group={group} showError={variant === 'error'} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Folder Group (collapsible) ───
+
+function FolderGroupRow({ group, showError }: { group: FolderGroup; showError: boolean }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full flex items-center gap-1.5 py-0.5 text-left cursor-pointer hover:bg-black/[0.02] rounded transition-colors"
+      >
+        <span className="text-muted-foreground shrink-0">
+          {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        </span>
+        <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+        <span className="text-xs font-medium text-foreground truncate">{group.folder}</span>
+        <span className="text-[10px] text-muted-foreground shrink-0">({group.files.length})</span>
+      </button>
+      {isOpen && (
+        <div className="ml-6 pl-2 border-l border-border/50 space-y-0.5 py-0.5">
+          {group.files.map((f, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-xs py-0.5">
+              <File className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="text-foreground truncate">{f.filename}</span>
+              {f.contentLength != null && f.contentLength > 0 && (
+                <span className="text-muted-foreground shrink-0">{formatFileSize(f.contentLength)}</span>
+              )}
+              {showError && f.errorMessage && (
+                <span className="text-red-600 truncate" title={f.errorMessage}>
+                  {f.errorMessage}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Child Instance Row ───
 
 function ChildInstanceRow({ instance }: { instance: OrchestrationInstance }) {
   const cfg = statusConfig[instance.runtimeStatus] ?? statusConfig[OrchestrationRuntimeStatus.Pending];
   const StatusIcon = cfg.icon;
-  const output = parseOutput(instance.serializedOutput);
   const customStatus = parseCustomStatus(instance.serializedCustomStatus);
+  const duration = formatDuration(instance.createdAt, instance.lastUpdatedAt);
 
   return (
     <div className="px-4 py-2.5 flex items-center gap-3">
@@ -557,11 +809,11 @@ function ChildInstanceRow({ instance }: { instance: OrchestrationInstance }) {
           {customStatus && <span> &middot; {customStatus}</span>}
         </p>
       </div>
-      {output && (
-        <div className="flex items-center gap-3 text-xs shrink-0">
-          <span className="text-emerald-600">{output.succeeded} ok</span>
-          {output.failed > 0 && <span className="text-red-600">{output.failed} fail</span>}
-        </div>
+      {duration && (
+        <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+          <Timer className="w-3 h-3" />
+          {duration}
+        </span>
       )}
       <span className="text-xs text-muted-foreground shrink-0">{formatRelative(instance.lastUpdatedAt)}</span>
     </div>

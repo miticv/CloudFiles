@@ -55,6 +55,10 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <LogOut size={14} />
             Sign Out
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <div className="px-2 py-1.5">
+            <p className="text-[11px] text-muted-foreground">v{__APP_VERSION__}</p>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

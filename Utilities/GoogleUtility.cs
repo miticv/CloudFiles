@@ -338,7 +338,7 @@ namespace CloudFiles.Utilities
         {
             var result = new Dictionary<string, bool>();
             var nextPageToken = "";
-            var speedFolder = new Guid().ToString();
+            string? currentGroup = null;
             do
             {
                 var page = await GoogleStorageListItemsAsync(prefix, nextPageToken).ConfigureAwait(false);
@@ -350,12 +350,15 @@ namespace CloudFiles.Utilities
 
                 foreach (var p in page.Items)
                 {
-                    if (!p.Name.StartsWith(speedFolder))
+                    var relativeName = string.IsNullOrEmpty(prefix) ? p.Name : p.Name.Replace(prefix + "/", "");
+                    var parts = relativeName.Split("/");
+                    var topLevel = parts[0];
+                    var isFolder = parts.Length > 1;
+
+                    if (topLevel != currentGroup)
                     {
-                        var relativeName = string.IsNullOrEmpty(prefix) ? p.Name : p.Name.Replace(prefix + "/", "");
-                        var folders = relativeName.Split("/");
-                        result.TryAdd(speedFolder, folders.Length > 1);
-                        speedFolder = folders[0];
+                        result.TryAdd(topLevel, isFolder);
+                        currentGroup = topLevel;
                     }
                 }
 

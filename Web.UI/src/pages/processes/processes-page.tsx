@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn, formatDateTime, formatRelative, formatFileSize, extractError } from '@/lib/utils';
 import {
-  RefreshCw, ChevronDown, ChevronRight, Trash2, RotateCcw, CheckCircle2, XCircle,
+  RefreshCw, ChevronDown, ChevronRight, ChevronLeft, Trash2, RotateCcw, CheckCircle2, XCircle,
   Clock, Ban, AlertCircle, Play, Users, Filter, Calendar, File, Folder, Timer,
 } from 'lucide-react';
 import { OrchestrationRuntimeStatus } from '@/api/types';
@@ -256,6 +256,8 @@ function groupByFolder(files: FileResult[]): FolderGroup[] {
 
 // ─── Filter statuses ───
 
+const PAGE_SIZE = 10;
+
 const FILTER_STATUSES = [
   OrchestrationRuntimeStatus.Running,
   OrchestrationRuntimeStatus.Completed,
@@ -280,6 +282,7 @@ export function Component() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Build query params
   const params = useMemo<ProcessListParams>(() => {
@@ -303,6 +306,14 @@ export function Component() {
   const purge = usePurgeProcess();
 
   const groups = useMemo(() => groupInstances(instances ?? []), [instances]);
+
+  const totalPages = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedGroups = groups.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Reset to page 1 when filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useMemo(() => setCurrentPage(1), [params]);
 
   const toggleGroup = useCallback((instanceId: string) => {
     setExpandedGroups((prev) => {
@@ -343,6 +354,7 @@ export function Component() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Processes</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {groups.length} orchestration group{groups.length !== 1 ? 's' : ''}
+            {totalPages > 1 ? ` \u00b7 Page ${safePage} of ${totalPages}` : ''}
             {refetchInterval ? ' \u00b7 Auto-refreshing' : ''}
           </p>
         </div>
@@ -482,7 +494,7 @@ export function Component() {
       {/* Process groups list */}
       {!isLoading && !isError && groups.length > 0 && (
         <div className="space-y-3">
-          {groups.map((group) => (
+          {paginatedGroups.map((group) => (
             <ProcessGroupCard
               key={group.parent.instanceId}
               group={group}
@@ -492,6 +504,33 @@ export function Component() {
               isPurging={purge.isPending}
             />
           ))}
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {safePage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

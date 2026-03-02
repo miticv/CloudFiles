@@ -59,6 +59,7 @@ export function Component() {
   const dropboxProcessedRef = useRef(false);
   const [pcloudLoading, setPcloudLoading] = useState(false);
   const [dropboxLoading, setDropboxLoading] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
   const exchangeCode = useExchangePCloudCode();
   const exchangeDropboxCode = useExchangeDropboxCode();
 
@@ -178,13 +179,12 @@ export function Component() {
   function handleDisconnect(providerId: string) {
     if (providerId === 'pcloud') {
       clearPCloudAuth();
-      // Force re-render
-      setPcloudLoading(false);
+      setRenderKey(k => k + 1);
       return;
     }
     if (providerId === 'dropbox') {
       clearDropboxAuth();
-      setDropboxLoading(false);
+      setRenderKey(k => k + 1);
       return;
     }
     oidc.logout(providerId as 'google' | 'azure');
@@ -227,7 +227,7 @@ export function Component() {
         </div>
 
         {/* Provider cards */}
-        <div className="space-y-4 mb-8">
+        <div key={renderKey} className="space-y-4 mb-8">
           {allProviders.map((provider) => {
             const connected = isConnected(provider.id);
             const Icon = provider.icon;

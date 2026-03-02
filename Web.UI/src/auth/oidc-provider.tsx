@@ -163,7 +163,9 @@ export function OidcProvider({ children }: { children: ReactNode }) {
     if (configId === 'azure') {
       localStorage.setItem('auth_chain', 'azure-storage');
     }
-    getManager(configId).signinRedirect();
+    getManager(configId).signinRedirect().catch((err) => {
+      console.error(`[Auth] signinRedirect failed for "${configId}":`, err);
+    });
   }, []);
 
   const logout = useCallback((configId: OidcConfigId) => {

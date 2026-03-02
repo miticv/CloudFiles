@@ -30,7 +30,8 @@ export const azureManager = new UserManager({
   response_type: 'code',
   scope: 'openid profile offline_access https://management.azure.com/user_impersonation',
   automaticSilentRenew: true,
-  userStore: new WebStorageStateStore({ store: localStorage }),
+  userStore: new WebStorageStateStore({ store: localStorage, prefix: 'oidc.azure.' }),
+  stateStore: new WebStorageStateStore({ store: localStorage, prefix: 'oidc.azure.' }),
 });
 
 export const azureStorageManager = new UserManager({
@@ -42,7 +43,8 @@ export const azureStorageManager = new UserManager({
   response_type: 'code',
   scope: 'openid profile offline_access https://storage.azure.com/user_impersonation',
   automaticSilentRenew: true,
-  userStore: new WebStorageStateStore({ store: localStorage }),
+  userStore: new WebStorageStateStore({ store: localStorage, prefix: 'oidc.azure-storage.' }),
+  stateStore: new WebStorageStateStore({ store: localStorage, prefix: 'oidc.azure-storage.' }),
 });
 
 export type OidcConfigId = 'google' | 'azure' | 'azure-storage';

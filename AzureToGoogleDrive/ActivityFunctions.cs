@@ -34,6 +34,8 @@ namespace CloudFiles.AzureToGoogleDrive
             var preparedList = new List<AzureToDriveItemPrepared>();
             foreach (var item in expandedItemsList)
             {
+                if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
+
                 var filename = item.ItemPath.Split('/').Last();
                 preparedList.Add(new AzureToDriveItemPrepared
                 {

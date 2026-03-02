@@ -29,6 +29,8 @@ namespace CloudFiles.AzureToGoogle
             log.LogInformation($"{Constants.AzureStorageToGooglePhotosPrepareList}: Preparing {expandedItemsList.Count} items...");
             var preparedList = new List<ItemPrepared>();
             foreach (var item in expandedItemsList) {
+                if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
+
                 preparedList.Add(new ItemPrepared(item, request.AccessToken, request.AlbumId,
                     request.AccountName, request.ContainerName, request.AzureAccessToken));
             }

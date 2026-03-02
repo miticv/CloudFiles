@@ -34,6 +34,8 @@ namespace CloudFiles.AzureToGcs
             var preparedList = new List<AzureToGcsItemPrepared>();
             foreach (var item in expandedItemsList)
             {
+                if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
+
                 var filename = item.ItemPath.Split('/').Last();
                 var destObjectName = string.IsNullOrEmpty(request.DestinationFolder)
                     ? item.ItemPath

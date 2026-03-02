@@ -33,6 +33,8 @@ namespace CloudFiles.GoogleStorageToGoogleDrive
             var preparedList = new List<GcsToDriveItemPrepared>();
             foreach (var item in expandedItemsList)
             {
+                if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
+
                 var filename = item.ItemPath.Split('/').Last();
                 preparedList.Add(new GcsToDriveItemPrepared
                 {

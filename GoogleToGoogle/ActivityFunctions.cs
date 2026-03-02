@@ -30,6 +30,8 @@ namespace CloudFiles.GoogleToGoogle
             var preparedList = new List<GoogleItemPrepared>();
             foreach (var item in expandedItemsList)
             {
+                if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
+
                 preparedList.Add(new GoogleItemPrepared(item, request.AccessToken, request.AlbumId));
             }
 

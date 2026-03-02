@@ -490,9 +490,10 @@ export interface ConnectionStatus {
 }
 
 export interface MenuItem {
-  type: 'link' | 'separator';
+  type: 'link' | 'separator' | 'group';
   name?: string;
   path?: string;
   icon?: string;
   connectionStatuses?: ConnectionStatus[];
+  children?: MenuItem[];
 }

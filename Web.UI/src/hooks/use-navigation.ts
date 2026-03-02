@@ -22,9 +22,14 @@ export function useNavigation(): MenuItem[] {
 
     const items: MenuItem[] = [
       { name: 'Azure Storage', type: 'link', icon: 'HardDrive', path: '/storage-browser' },
-      { name: 'Google Storage', type: 'link', icon: 'Cloud', path: '/google-storage' },
-      { name: 'Google Drive', type: 'link', icon: 'FolderOpen', path: '/google-drive' },
-      { name: 'Google Photos', type: 'link', icon: 'Image', path: '/google-photos' },
+      {
+        name: 'Google', type: 'group', icon: 'Chrome',
+        children: [
+          { name: 'Storage', type: 'link', icon: 'Cloud', path: '/google-storage' },
+          { name: 'Drive', type: 'link', icon: 'FolderOpen', path: '/google-drive' },
+          { name: 'Photos', type: 'link', icon: 'Image', path: '/google-photos' },
+        ],
+      },
       ...(env.featurePCloud ? [{ name: 'pCloud', type: 'link' as const, icon: 'CloudCog', path: '/pcloud' }] : []),
       { name: 'Dropbox', type: 'link', icon: 'Droplets', path: '/dropbox' },
       ...(env.featureAppleDrive ? [{ name: 'Apple iCloud Drive', type: 'link' as const, icon: 'CloudOff', path: '/apple-drive' }] : []),

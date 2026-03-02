@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePageTitle } from '@/hooks/use-page-title';
@@ -23,8 +23,12 @@ import {
   Image as ImageIcon,
   Upload,
   ArrowRight,
+  Cloudy,
+  Cloud,
 } from 'lucide-react';
 import type { FileItem, StorageContext } from '@/api/types';
+import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
+import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
 
 // ─── Helpers ───
 
@@ -93,6 +97,10 @@ export function Component() {
 
   // Detail file path for query
   const [detailPath, setDetailPath] = useState<string | null>(null);
+
+  // Copy dialog state
+  const [copyToDropboxOpen, setCopyToDropboxOpen] = useState(false);
+  const [copyToDriveOpen, setCopyToDriveOpen] = useState(false);
 
   // Read context from session storage on mount
   useEffect(() => {
@@ -181,6 +189,18 @@ export function Component() {
   const breadcrumbs = buildBreadcrumbs(context, currentPath);
   const totalSelected = selectedFiles.size + selectedFolders.size;
   const providerLabel = context.provider === 'azure' ? 'Azure Blob' : 'Google Cloud';
+
+  const selectedFileObjects = useMemo(
+    () =>
+      (items ?? []).filter(
+        (i) => selectedFiles.has(i.itemPath) || selectedFolders.has(i.itemPath),
+      ),
+    [items, selectedFiles, selectedFolders],
+  );
+
+  const handleCopySuccess = useCallback(() => {
+    clearSelection();
+  }, [clearSelection]);
 
   // ─── Render ───
 
@@ -482,6 +502,24 @@ export function Component() {
         </SheetContent>
       </Sheet>
 
+      {/* Copy Dialogs */}
+      <CopyToDropboxDialog
+        open={copyToDropboxOpen}
+        onOpenChange={setCopyToDropboxOpen}
+        selectedFiles={selectedFileObjects}
+        accountName={context.account ?? ''}
+        containerName={context.container ?? ''}
+        onSuccess={handleCopySuccess}
+      />
+      <CopyToGoogleDriveDialog
+        open={copyToDriveOpen}
+        onOpenChange={setCopyToDriveOpen}
+        selectedFiles={selectedFileObjects}
+        accountName={context.account ?? ''}
+        containerName={context.container ?? ''}
+        onSuccess={handleCopySuccess}
+      />
+
       {/* Bottom Selection Bar */}
       {selectionMode && totalSelected > 0 && (
         <div className="border-t border-border bg-card px-6 py-3">
@@ -518,6 +556,24 @@ export function Component() {
                 <Upload className="h-4 w-4" />
                 Copy to Google Cloud Storage
                 <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                size="sm"
+                className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => setCopyToDropboxOpen(true)}
+              >
+                <Cloudy className="h-4 w-4" />
+                Copy to Dropbox
+              </Button>
+
+              <Button
+                size="sm"
+                className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
+                onClick={() => setCopyToDriveOpen(true)}
+              >
+                <Cloud className="h-4 w-4" />
+                Copy to Google Drive
               </Button>
             </div>
           </div>

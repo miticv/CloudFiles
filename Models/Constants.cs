@@ -108,6 +108,48 @@
         public const string CopyAzureToDropboxOrchestrator = "copyAzureToDropboxOrchestrator";
         public const string CopyAzureBlobToDropboxFile = "copyAzureBlobToDropboxFile";
 
+        // automation GCS to Dropbox
+        public const string ProcessGcsToDropbox_Start = "processGcsToDropbox_Start";
+        public const string GcsToDropboxOrchestrator = "gcsToDropboxOrchestrator";
+        public const string GcsToDropboxPrepareList = "gcsToDropboxPrepareList";
+        public const string CopyGcsToDropboxOrchestrator = "copyGcsToDropboxOrchestrator";
+        public const string CopyGcsObjectToDropboxFile = "copyGcsObjectToDropboxFile";
+
+        // automation GCS to Google Drive
+        public const string ProcessGcsToDrive_Start = "processGcsToDrive_Start";
+        public const string GcsToDriveOrchestrator = "gcsToDriveOrchestrator";
+        public const string GcsToDrivePrepareList = "gcsToDrivePrepareList";
+        public const string CopyGcsToDriveOrchestrator = "copyGcsToDriveOrchestrator";
+        public const string CopyGcsObjectToDriveFile = "copyGcsObjectToDriveFile";
+
+        // automation Dropbox to GCS
+        public const string ProcessDropboxToGcs_Start = "processDropboxToGcs_Start";
+        public const string DropboxToGcsOrchestrator = "dropboxToGcsOrchestrator";
+        public const string DropboxToGcsPrepareList = "dropboxToGcsPrepareList";
+        public const string CopyDropboxToGcsOrchestrator = "copyDropboxToGcsOrchestrator";
+        public const string CopyDropboxFileToGcsObject = "copyDropboxFileToGcsObject";
+
+        // automation Dropbox to Google Photos
+        public const string ProcessDropboxToGooglePhotos_Start = "processDropboxToGooglePhotos_Start";
+        public const string DropboxToGooglePhotosOrchestrator = "dropboxToGooglePhotosOrchestrator";
+        public const string DropboxToGooglePhotosPrepareList = "dropboxToGooglePhotosPrepareList";
+        public const string CopyDropboxToGooglePhotosOrchestrator = "copyDropboxToGooglePhotosOrchestrator";
+        public const string UploadDropboxFileToGooglePhotos = "uploadDropboxFileToGooglePhotos";
+
+        // automation Dropbox to Google Drive
+        public const string ProcessDropboxToDrive_Start = "processDropboxToDrive_Start";
+        public const string DropboxToDriveOrchestrator = "dropboxToDriveOrchestrator";
+        public const string DropboxToDrivePrepareList = "dropboxToDrivePrepareList";
+        public const string CopyDropboxToDriveOrchestrator = "copyDropboxToDriveOrchestrator";
+        public const string CopyDropboxFileToDriveFile = "copyDropboxFileToDriveFile";
+
+        // automation Azure to Google Drive
+        public const string ProcessAzureToDrive_Start = "processAzureToDrive_Start";
+        public const string AzureToDriveOrchestrator = "azureToDriveOrchestrator";
+        public const string AzureToDrivePrepareList = "azureToDrivePrepareList";
+        public const string CopyAzureToDriveOrchestrator = "copyAzureToDriveOrchestrator";
+        public const string CopyAzureBlobToDriveFile = "copyAzureBlobToDriveFile";
+
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";
         public const string AuthLocalLogin = "authLocalLogin";

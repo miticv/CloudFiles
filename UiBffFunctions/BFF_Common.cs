@@ -133,6 +133,12 @@ namespace CloudFiles
                     Constants.AzureToGcsOrchestrator,
                     Constants.DropboxToAzureOrchestrator,
                     Constants.AzureToDropboxOrchestrator,
+                    Constants.GcsToDropboxOrchestrator,
+                    Constants.GcsToDriveOrchestrator,
+                    Constants.DropboxToGcsOrchestrator,
+                    Constants.DropboxToGooglePhotosOrchestrator,
+                    Constants.DropboxToDriveOrchestrator,
+                    Constants.AzureToDriveOrchestrator,
                 };
 
                 // Collect parent orchestration metadata only (small page size avoids gRPC 4MB limit).

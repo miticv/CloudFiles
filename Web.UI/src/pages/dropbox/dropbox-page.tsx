@@ -6,10 +6,16 @@ import { useDropboxFolder } from '@/api/dropbox.api';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, Upload } from 'lucide-react';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, Upload, ChevronDown } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { CopyToAzureDialog } from './copy-to-azure-dialog';
+import { CopyToGcsDialog } from './copy-to-gcs-dialog';
+import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
+import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
 
 interface BreadcrumbEntry {
   path: string;
@@ -51,7 +57,10 @@ export function Component() {
 
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
-  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [azureDialogOpen, setAzureDialogOpen] = useState(false);
+  const [gcsDialogOpen, setGcsDialogOpen] = useState(false);
+  const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
+  const [driveDialogOpen, setDriveDialogOpen] = useState(false);
 
   function navigateToFolder(path: string, folderName: string) {
     setBreadcrumbs((prev) => [...prev, { path, name: folderName }]);
@@ -132,10 +141,29 @@ export function Component() {
           </div>
           <div className="flex items-center gap-2">
             {totalSelected > 0 && (
-              <Button size="sm" onClick={() => setCopyDialogOpen(true)}>
-                <Upload className="h-3.5 w-3.5" />
-                Copy to Azure ({totalSelected})
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm">
+                    <Upload className="h-3.5 w-3.5" />
+                    Copy to... ({totalSelected})
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setAzureDialogOpen(true)}>
+                    Copy to Azure
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setGcsDialogOpen(true)}>
+                    Copy to Google Cloud Storage
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPhotosDialogOpen(true)}>
+                    Copy to Google Photos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDriveDialogOpen(true)}>
+                    Copy to Google Drive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
               <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
@@ -257,10 +285,40 @@ export function Component() {
         )}
       </div>
 
-      {/* Copy to Azure Dialog */}
+      {/* Copy Dialogs */}
       <CopyToAzureDialog
-        open={copyDialogOpen}
-        onOpenChange={setCopyDialogOpen}
+        open={azureDialogOpen}
+        onOpenChange={setAzureDialogOpen}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToGcsDialog
+        open={gcsDialogOpen}
+        onOpenChange={setGcsDialogOpen}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToGooglePhotosDialog
+        open={photosDialogOpen}
+        onOpenChange={setPhotosDialogOpen}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToGoogleDriveDialog
+        open={driveDialogOpen}
+        onOpenChange={setDriveDialogOpen}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}
         onSuccess={() => {

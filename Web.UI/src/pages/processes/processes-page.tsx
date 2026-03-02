@@ -52,6 +52,18 @@ const friendlyNames: Record<string, string> = {
   copydropboxtoazureorchestrator: 'Dropbox → Azure Storage',
   azuretodropboxorchestrator: 'Azure Storage → Dropbox',
   copyazuretodropboxorchestrator: 'Azure Storage → Dropbox',
+  gcstodropboxorchestrator: 'Google Cloud Storage → Dropbox',
+  copygcstodropboxorchestrator: 'Google Cloud Storage → Dropbox',
+  gcstodriveorchestrator: 'Google Cloud Storage → Google Drive',
+  copygcstodriveorchestrator: 'Google Cloud Storage → Google Drive',
+  dropboxtogcsorchestrator: 'Dropbox → Google Cloud Storage',
+  copydropboxtogcsorchestrator: 'Dropbox → Google Cloud Storage',
+  dropboxtogooglephotosorchestrator: 'Dropbox → Google Photos',
+  copydropboxtogooglephotosorchestrator: 'Dropbox → Google Photos',
+  dropboxtodriveorchestrator: 'Dropbox → Google Drive',
+  copydropboxtodriveorchestrator: 'Dropbox → Google Drive',
+  azuretodriveorchestrator: 'Azure Storage → Google Drive',
+  copyazuretodriveorchestrator: 'Azure Storage → Google Drive',
 };
 
 function getFriendlyName(rawName: string): string {

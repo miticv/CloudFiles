@@ -5,6 +5,9 @@ import type {
   StartMigrationRequest, StartGoogleStorageRequest, StartGooglePhotosToAzureRequest,
   StartGoogleDriveToAzureRequest, StartGcsToAzureRequest, StartAzureToGcsRequest,
   StartDropboxToAzureRequest, StartAzureToDropboxRequest,
+  StartGcsToDropboxRequest, StartGcsToDriveRequest,
+  StartDropboxToGcsRequest, StartDropboxToGooglePhotosRequest, StartDropboxToDriveRequest,
+  StartAzureToDriveRequest,
 } from './types';
 
 export function useProcesses(params?: ProcessListParams, refetchInterval?: number | false) {
@@ -106,5 +109,47 @@ export function useStartAzureToDropbox() {
   return useMutation({
     mutationFn: (request: StartAzureToDropboxRequest) =>
       apiClient.post<StartJobResponse>('process/AzureToDropbox/start', request).then(r => r.data),
+  });
+}
+
+export function useStartGcsToDropbox() {
+  return useMutation({
+    mutationFn: (request: StartGcsToDropboxRequest) =>
+      apiClient.post<StartJobResponse>('process/GoogleStorageToDropbox/start', request).then(r => r.data),
+  });
+}
+
+export function useStartGcsToDrive() {
+  return useMutation({
+    mutationFn: (request: StartGcsToDriveRequest) =>
+      apiClient.post<StartJobResponse>('process/GoogleStorageToDrive/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDropboxToGcs() {
+  return useMutation({
+    mutationFn: (request: StartDropboxToGcsRequest) =>
+      apiClient.post<StartJobResponse>('process/DropboxToGcs/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDropboxToGooglePhotos() {
+  return useMutation({
+    mutationFn: (request: StartDropboxToGooglePhotosRequest) =>
+      apiClient.post<StartJobResponse>('process/DropboxToGooglePhotos/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDropboxToDrive() {
+  return useMutation({
+    mutationFn: (request: StartDropboxToDriveRequest) =>
+      apiClient.post<StartJobResponse>('process/DropboxToGoogleDrive/start', request).then(r => r.data),
+  });
+}
+
+export function useStartAzureToDrive() {
+  return useMutation({
+    mutationFn: (request: StartAzureToDriveRequest) =>
+      apiClient.post<StartJobResponse>('process/AzureToGoogleDrive/start', request).then(r => r.data),
   });
 }

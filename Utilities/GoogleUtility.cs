@@ -526,6 +526,45 @@ namespace CloudFiles.Utilities
             }
         }
 
+        public static async Task<(string FileId, long Size)> UploadToDriveAsync(
+            byte[] data, string filename, string mimeType, string folderId, string accessToken)
+        {
+            using var client = new HttpClient();
+            var boundary = "drive_upload_boundary";
+
+            var metadata = JsonConvert.SerializeObject(new
+            {
+                name = filename,
+                parents = new[] { folderId }
+            });
+
+            var multipartContent = new MultipartContent("related", boundary);
+
+            var metadataPart = new StringContent(metadata, Encoding.UTF8, "application/json");
+            multipartContent.Add(metadataPart);
+
+            var filePart = new ByteArrayContent(data);
+            filePart.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+            multipartContent.Add(filePart);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+            var response = await client.PostAsync(url, multipartContent).ConfigureAwait(false);
+            var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var parsed = JsonConvert.DeserializeObject<dynamic>(result)!;
+                string fileId = parsed.id;
+                return (fileId, data.Length);
+            }
+            else
+            {
+                throw new InvalidOperationException($"UploadToDriveAsync error: {result}");
+            }
+        }
+
         public static async Task<byte[]> GetImageFromUrlAsync(string mediaUrl, string accessToken)
         {
             using var httpClient = new HttpClient();

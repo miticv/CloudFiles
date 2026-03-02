@@ -361,6 +361,58 @@ export interface StartAzureToDropboxRequest {
   startedBy: string;
 }
 
+// ─── GCS to Dropbox ───
+export interface StartGcsToDropboxRequest {
+  selectedItems: GcsSelectedItem[];
+  bucketName: string;
+  dropboxAccessToken: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── GCS to Google Drive ───
+export interface StartGcsToDriveRequest {
+  selectedItems: GcsSelectedItem[];
+  bucketName: string;
+  destinationFolderId: string;
+  startedBy: string;
+}
+
+// ─── Dropbox to GCS ───
+export interface StartDropboxToGcsRequest {
+  items: DropboxFileForCopy[];
+  googleAccessToken: string;
+  bucketName: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── Dropbox to Google Photos ───
+export interface StartDropboxToGooglePhotosRequest {
+  items: DropboxFileForCopy[];
+  googleAccessToken: string;
+  albumId: string;
+  albumTitle: string;
+  startedBy: string;
+}
+
+// ─── Dropbox to Google Drive ───
+export interface StartDropboxToDriveRequest {
+  items: DropboxFileForCopy[];
+  googleAccessToken: string;
+  destinationFolderId: string;
+  startedBy: string;
+}
+
+// ─── Azure to Google Drive ───
+export interface StartAzureToDriveRequest {
+  selectedItems: AzureSelectedItem[];
+  accountName: string;
+  containerName: string;
+  destinationFolderId: string;
+  startedBy: string;
+}
+
 // ─── Navigation ───
 export interface ConnectionStatus {
   configId: string;

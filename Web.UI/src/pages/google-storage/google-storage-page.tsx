@@ -9,8 +9,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { cn, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, Upload, X, CloudOff } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, Upload, X, CloudOff, ChevronDown, HardDrive, Cloudy } from 'lucide-react';
 import { CopyGcsToAzureDialog } from './copy-gcs-to-azure-dialog';
+import { CopyGcsToDropboxDialog } from './copy-gcs-to-dropbox-dialog';
+import { CopyGcsToDriveDialog } from './copy-gcs-to-drive-dialog';
 
 type View = 'setup' | 'buckets' | 'browse';
 
@@ -230,7 +235,9 @@ function BrowseView({
 }) {
   const [currentPath, setCurrentPath] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyToAzureOpen, setCopyToAzureOpen] = useState(false);
+  const [copyToDropboxOpen, setCopyToDropboxOpen] = useState(false);
+  const [copyToDriveOpen, setCopyToDriveOpen] = useState(false);
   const { data: items, isLoading, error, refetch } = useGcsFiles(bucket, currentPath);
 
   const folders = useMemo(() => items?.filter((f) => f.isFolder) ?? [], [items]);
@@ -334,10 +341,29 @@ function BrowseView({
                 <X className="h-3.5 w-3.5" />
                 Clear
               </Button>
-              <Button size="sm" onClick={() => setCopyDialogOpen(true)}>
-                <Upload className="h-3.5 w-3.5" />
-                Copy to Azure ({selectedFiles.size})
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm">
+                    <Upload className="h-3.5 w-3.5" />
+                    Copy to... ({selectedFiles.size})
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setCopyToAzureOpen(true)}>
+                    <HardDrive className="h-4 w-4" />
+                    Copy to Azure
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCopyToDropboxOpen(true)}>
+                    <Cloudy className="h-4 w-4" />
+                    Copy to Dropbox
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCopyToDriveOpen(true)}>
+                    <Cloud className="h-4 w-4" />
+                    Copy to Google Drive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
@@ -451,10 +477,24 @@ function BrowseView({
         </div>
       )}
 
-      {/* Copy to Azure Dialog */}
+      {/* Copy Dialogs */}
       <CopyGcsToAzureDialog
-        open={copyDialogOpen}
-        onOpenChange={setCopyDialogOpen}
+        open={copyToAzureOpen}
+        onOpenChange={setCopyToAzureOpen}
+        selectedFiles={selectedFileObjects}
+        bucketName={bucket}
+        onSuccess={clearSelection}
+      />
+      <CopyGcsToDropboxDialog
+        open={copyToDropboxOpen}
+        onOpenChange={setCopyToDropboxOpen}
+        selectedFiles={selectedFileObjects}
+        bucketName={bucket}
+        onSuccess={clearSelection}
+      />
+      <CopyGcsToDriveDialog
+        open={copyToDriveOpen}
+        onOpenChange={setCopyToDriveOpen}
         selectedFiles={selectedFileObjects}
         bucketName={bucket}
         onSuccess={clearSelection}

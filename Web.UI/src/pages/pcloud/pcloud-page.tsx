@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useOidc } from '@/auth/oidc-provider';
 import { startPCloudLogin } from '@/auth/pcloud-auth';
 import { usePCloudFolder } from '@/api/pcloud.api';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
+import { FileDetailSheet } from '@/components/file-detail-sheet';
+import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff } from 'lucide-react';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare, X } from 'lucide-react';
 import { isAxiosError } from 'axios';
 
 interface BreadcrumbEntry {
@@ -43,9 +46,35 @@ export function Component() {
   const pcloudConnected = providers.find((p) => p.configId === 'pcloud')?.authenticated ?? false;
 
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ folderId: 0, name: 'Root' }]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Set<number>>(new Set());
+  const [selectedFolders, setSelectedFolders] = useState<Set<number>>(new Set());
+  const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
   const { data, isLoading, error, refetch } = usePCloudFolder(currentFolder.folderId, pcloudConnected);
+
+  const toggleItem = useCallback(<T,>(id: T, set: React.Dispatch<React.SetStateAction<Set<T>>>) => {
+    set((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const totalSelected = selectedFiles.size + selectedFolders.size;
+
+  function toggleSelectionMode() {
+    setSelectionMode((prev) => !prev);
+    setSelectedFiles(new Set());
+    setSelectedFolders(new Set());
+  }
+
+  function clearSelection() {
+    setSelectedFiles(new Set());
+    setSelectedFolders(new Set());
+  }
 
   function navigateToFolder(folderId: number, folderName: string) {
     setBreadcrumbs((prev) => [...prev, { folderId, name: folderName }]);
@@ -64,8 +93,8 @@ export function Component() {
   const files = items.filter((i) => !i.isFolder);
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="space-y-4 p-6">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto space-y-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           {breadcrumbs.length > 1 && (
@@ -97,10 +126,21 @@ export function Component() {
               ))}
             </nav>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant={selectionMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={toggleSelectionMode}
+              className="gap-1.5"
+            >
+              <CheckSquare className="h-4 w-4" />
+              {selectionMode ? 'Exit Selection' : 'Select'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+              <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Loading */}
@@ -140,33 +180,50 @@ export function Component() {
         {/* Content */}
         {items.length > 0 && (
           <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
-            {/* Summary header */}
-            <div className="px-4 py-2 border-b border-border bg-muted/50">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {folders.length > 0 && files.length > 0
-                  ? `${folders.length} folders, ${files.length} files`
-                  : folders.length > 0
-                    ? `${folders.length} folders`
-                    : `${files.length} files`}
-              </span>
-            </div>
-
             {/* Folders */}
             {folders.length > 0 && (
-              <div className="divide-y divide-border">
-                {folders.map((folder) => (
-                  <button
-                    key={folder.folderId}
-                    onClick={() => navigateToFolder(folder.folderId, folder.name)}
-                    className="flex items-center gap-3 px-4 py-2.5 w-full text-left transition-colors hover:bg-muted/50 group cursor-pointer"
-                  >
-                    <FolderOpen className="h-4 w-4 text-indigo-500 shrink-0" />
-                    <span className="text-sm font-medium text-foreground truncate flex-1">
-                      {folder.name}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                  </button>
-                ))}
+              <div>
+                <div className="px-4 py-2 border-b border-border bg-muted/50">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Folders ({folders.length})
+                  </span>
+                </div>
+                <div className="divide-y divide-border">
+                  {folders.map((folder) => {
+                    const folderSelected = selectedFolders.has(folder.folderId);
+                    return (
+                      <button
+                        key={folder.folderId}
+                        onClick={() => {
+                          if (selectionMode) {
+                            toggleItem(folder.folderId, setSelectedFolders);
+                          } else {
+                            navigateToFolder(folder.folderId, folder.name);
+                          }
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent cursor-pointer group',
+                          folderSelected && 'bg-indigo-50/50'
+                        )}
+                      >
+                        {selectionMode && (
+                          <Checkbox
+                            checked={folderSelected}
+                            onCheckedChange={() => toggleItem(folder.folderId, setSelectedFolders)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <FolderOpen className="h-4 w-4 text-indigo-500 shrink-0" />
+                        <span className="text-sm font-medium text-foreground truncate flex-1">
+                          {folder.name}
+                        </span>
+                        {!selectionMode && (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -177,32 +234,88 @@ export function Component() {
 
             {/* Files */}
             {files.length > 0 && (
-              <div className="divide-y divide-border">
-                {files.map((file) => {
-                  const ext = getFileExtension(file.name);
-                  return (
-                    <div
-                      key={file.fileId}
-                      className="flex items-center gap-3 px-4 py-2.5"
-                    >
-                      <FileText className="h-4 w-4 text-slate-400 shrink-0" />
-                      <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {formatFileSize(file.size)}
-                      </span>
-                      {ext && (
-                        <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0', getFileTypeBadgeColor(ext))}>
-                          {ext.toUpperCase()}
+              <div>
+                <div className="px-4 py-2 border-b border-border bg-muted/50">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Files ({files.length})
+                  </span>
+                </div>
+                <div className="divide-y divide-border">
+                  {files.map((file) => {
+                    const ext = getFileExtension(file.name);
+                    const fileSelected = selectedFiles.has(file.fileId);
+                    return (
+                      <button
+                        key={file.fileId}
+                        onClick={() => {
+                          if (selectionMode) {
+                            toggleItem(file.fileId, setSelectedFiles);
+                          } else {
+                            setPreviewFile({
+                              name: file.name,
+                              path: breadcrumbs.map((b) => b.name).join(' / ') + ' / ' + file.name,
+                              size: file.size,
+                              lastModified: file.modified,
+                              contentType: file.contentType,
+                            });
+                          }
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent cursor-pointer',
+                          fileSelected && 'bg-indigo-50/50'
+                        )}
+                      >
+                        {selectionMode && (
+                          <Checkbox
+                            checked={fileSelected}
+                            onCheckedChange={() => toggleItem(file.fileId, setSelectedFiles)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <FileText className="h-4 w-4 text-slate-400 shrink-0" />
+                        <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {formatFileSize(file.size)}
                         </span>
-                      )}
-                    </div>
-                  );
-                })}
+                        {ext && (
+                          <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0', getFileTypeBadgeColor(ext))}>
+                            {ext.toUpperCase()}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* File Detail Sheet */}
+      <FileDetailSheet
+        open={previewFile !== null}
+        onClose={() => setPreviewFile(null)}
+        file={previewFile}
+      />
+
+      {/* Bottom Selection Bar */}
+      {selectionMode && totalSelected > 0 && (
+        <div className="border-t border-border bg-card px-6 py-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-foreground">
+              {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
+              {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
+              {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
+              {' '}selected
+            </span>
+            <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
+              <X className="h-3.5 w-3.5" />
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

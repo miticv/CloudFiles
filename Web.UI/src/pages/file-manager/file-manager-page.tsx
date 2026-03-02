@@ -6,11 +6,11 @@ import { useFileManagerStore } from '@/stores/file-manager.store';
 import { useFolder, useFileDetail } from '@/api/file-manager.api';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { FileDetailSheet } from '@/components/file-detail-sheet';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn, formatFileSize, formatDateTime, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
 import {
   Folder,
   FileText,
@@ -122,7 +122,6 @@ export function Component() {
 
   const {
     data: fileDetailData,
-    isLoading: detailLoading,
   } = useFileDetail(detailPath, context, !!detailPath);
 
   // Sync folder data to store
@@ -422,85 +421,18 @@ export function Component() {
       </div>
 
       {/* Detail Sheet */}
-      <Sheet open={showDetail} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <SheetContent side="right" className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle className="pr-6">File Details</SheetTitle>
-          </SheetHeader>
-
-          {detailLoading && (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size={24} />
-            </div>
-          )}
-
-          {currentFile && !detailLoading && (
-            <div className="mt-6 space-y-5">
-              {/* File name */}
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</p>
-                <p className="mt-1 text-sm font-medium text-foreground break-all">{currentFile.itemName}</p>
-              </div>
-
-              {/* Type badge */}
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Type</p>
-                <div className="mt-1">
-                  {(() => {
-                    const ext = getFileExtension(currentFile.itemName);
-                    return ext ? (
-                      <span className={cn('inline-block rounded px-2 py-0.5 text-xs font-semibold uppercase', getFileTypeBadgeColor(ext))}>
-                        {ext}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Unknown</span>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Size */}
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Size</p>
-                <p className="mt-1 text-sm text-foreground">{formatFileSize(currentFile.contentLength)}</p>
-              </div>
-
-              {/* Last Modified */}
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Last Modified</p>
-                <p className="mt-1 text-sm text-foreground">{formatDateTime(currentFile.lastModified)}</p>
-              </div>
-
-              {/* Content Type */}
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Content Type</p>
-                <p className="mt-1 text-sm text-foreground">{currentFile.contentType || '---'}</p>
-              </div>
-
-              {/* Path */}
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Path</p>
-                <p className="mt-1 text-sm text-muted-foreground break-all">{currentFile.itemPath}</p>
-              </div>
-
-              {/* Metadata */}
-              {currentFile.metadata && Object.keys(currentFile.metadata).length > 0 && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Metadata</p>
-                  <div className="mt-1 space-y-1">
-                    {Object.entries(currentFile.metadata).map(([key, value]) => (
-                      <div key={key} className="flex items-start gap-2 text-sm">
-                        <span className="font-medium text-foreground">{key}:</span>
-                        <span className="text-muted-foreground break-all">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      <FileDetailSheet
+        open={showDetail}
+        onClose={handleCloseDetail}
+        file={currentFile ? {
+          name: currentFile.itemName,
+          path: currentFile.itemPath,
+          size: currentFile.contentLength,
+          lastModified: currentFile.lastModified,
+          contentType: currentFile.contentType,
+          metadata: currentFile.metadata,
+        } : null}
+      />
 
       {/* Copy Dialogs */}
       <CopyToDropboxDialog

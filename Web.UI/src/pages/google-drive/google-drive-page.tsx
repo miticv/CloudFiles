@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
+import { FileDetailSheet } from '@/components/file-detail-sheet';
+import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, Upload, X } from 'lucide-react';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, X, CheckSquare, HardDrive } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { CopyToAzureDialog } from './copy-to-azure-dialog';
 
@@ -63,9 +65,11 @@ export function Component() {
 
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ id: 'root', name: 'My Drive' }]);
   const [pageToken, setPageToken] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [accumulatedNextToken, setAccumulatedNextToken] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
 
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
@@ -97,10 +101,6 @@ export function Component() {
   const regularFiles = allFiles.filter((f) => f.mimeType !== GOOGLE_FOLDER_MIME && !GOOGLE_DOCS_MIMES.has(f.mimeType));
   const googleDocsFiles = allFiles.filter((f) => GOOGLE_DOCS_MIMES.has(f.mimeType));
   const selectableFiles = regularFiles;
-
-  const allFilesSelected = selectableFiles.length > 0 && selectableFiles.every((f) => selectedFiles.has(f.id));
-  const allFoldersSelected = folders.length > 0 && folders.every((f) => selectedFolders.has(f.id));
-  const allSelected = allFilesSelected && allFoldersSelected && (selectableFiles.length + folders.length) > 0;
 
   const totalSelected = selectedFiles.size + selectedFolders.size;
 
@@ -163,14 +163,10 @@ export function Component() {
     });
   }
 
-  function toggleSelectAll() {
-    if (allSelected) {
-      setSelectedFiles(new Set());
-      setSelectedFolders(new Set());
-    } else {
-      setSelectedFiles(new Set(selectableFiles.map((f) => f.id)));
-      setSelectedFolders(new Set(folders.map((f) => f.id)));
-    }
+  function toggleSelectionMode() {
+    setSelectionMode((prev) => !prev);
+    setSelectedFiles(new Set());
+    setSelectedFolders(new Set());
   }
 
   function clearSelection() {
@@ -183,8 +179,8 @@ export function Component() {
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="space-y-4 p-6">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto space-y-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           {breadcrumbs.length > 1 && (
@@ -217,18 +213,15 @@ export function Component() {
             </nav>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {totalSelected > 0 && (
-              <>
-                <Button variant="outline" size="sm" onClick={clearSelection}>
-                  <X className="h-3.5 w-3.5" />
-                  Clear
-                </Button>
-                <Button size="sm" onClick={() => setCopyDialogOpen(true)}>
-                  <Upload className="h-3.5 w-3.5" />
-                  Copy to Azure ({totalSelected})
-                </Button>
-              </>
-            )}
+            <Button
+              variant={selectionMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={toggleSelectionMode}
+              className="gap-1.5"
+            >
+              <CheckSquare className="h-4 w-4" />
+              {selectionMode ? 'Exit Selection' : 'Select'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
               <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
               Refresh
@@ -273,57 +266,48 @@ export function Component() {
         {/* Content */}
         {allFiles.length > 0 && (
           <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
-            {/* Select All header */}
-            {(folders.length > 0 || selectableFiles.length > 0) && (
-              <div className="px-4 py-2 border-b border-border bg-muted/50 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {folders.length > 0 && selectableFiles.length > 0
-                    ? `${folders.length} folders, ${selectableFiles.length} files`
-                    : folders.length > 0
-                      ? `${folders.length} folders`
-                      : `${selectableFiles.length} files`}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="select-all-drive"
-                    checked={allSelected}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                  <label htmlFor="select-all-drive" className="text-xs text-muted-foreground cursor-pointer">
-                    Select All
-                  </label>
-                </div>
-              </div>
-            )}
-
             {/* Folders */}
             {folders.length > 0 && (
-              <div className="divide-y divide-border">
-                {folders.map((folder) => {
-                  const selected = selectedFolders.has(folder.id);
-                  return (
-                    <div
-                      key={folder.id}
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-2.5 transition-colors group',
-                        selected && 'bg-indigo-50/50'
-                      )}
-                    >
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={() => toggleFolder(folder.id)}
-                      />
+              <div>
+                <div className="px-4 py-2 border-b border-border bg-muted/50">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Folders ({folders.length})
+                  </span>
+                </div>
+                <div className="divide-y divide-border">
+                  {folders.map((folder) => {
+                    const selected = selectedFolders.has(folder.id);
+                    return (
                       <button
-                        onClick={() => navigateToFolder(folder.id, folder.name)}
-                        className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer hover:text-indigo-600 transition-colors"
+                        key={folder.id}
+                        onClick={() => {
+                          if (selectionMode) {
+                            toggleFolder(folder.id);
+                          } else {
+                            navigateToFolder(folder.id, folder.name);
+                          }
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent cursor-pointer group',
+                          selected && 'bg-indigo-50/50'
+                        )}
                       >
+                        {selectionMode && (
+                          <Checkbox
+                            checked={selected}
+                            onCheckedChange={() => toggleFolder(folder.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
                         <FolderOpen className="h-4 w-4 text-indigo-500 shrink-0" />
                         <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
-                        <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        {!selectionMode && (
+                          <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        )}
                       </button>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -334,33 +318,56 @@ export function Component() {
 
             {/* Selectable files */}
             {selectableFiles.length > 0 && (
-              <div className="divide-y divide-border">
-                {selectableFiles.map((file) => {
-                  const ext = getFileExtension(file.name);
-                  const selected = selectedFiles.has(file.id);
-                  return (
-                    <div
-                      key={file.id}
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-2.5 transition-colors',
-                        selected && 'bg-indigo-50/50'
-                      )}
-                    >
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={() => toggleFile(file.id)}
-                      />
-                      <FileText className="h-4 w-4 text-slate-400 shrink-0" />
-                      <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
-                      {ext && (
-                        <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0', getFileTypeBadgeColor(ext))}>
-                          {ext.toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
+              <div>
+                <div className="px-4 py-2 border-b border-border bg-muted/50">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Files ({selectableFiles.length})
+                  </span>
+                </div>
+                <div className="divide-y divide-border">
+                  {selectableFiles.map((file) => {
+                    const ext = getFileExtension(file.name);
+                    const selected = selectedFiles.has(file.id);
+                    return (
+                      <button
+                        key={file.id}
+                        onClick={() => {
+                          if (selectionMode) {
+                            toggleFile(file.id);
+                          } else {
+                            setPreviewFile({
+                              name: file.name,
+                              path: breadcrumbs.map((b) => b.name).join(' / ') + ' / ' + file.name,
+                              size: file.size ?? undefined,
+                              lastModified: file.modifiedTime,
+                              contentType: file.mimeType,
+                            });
+                          }
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent cursor-pointer',
+                          selected && 'bg-indigo-50/50'
+                        )}
+                      >
+                        {selectionMode && (
+                          <Checkbox
+                            checked={selected}
+                            onCheckedChange={() => toggleFile(file.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <FileText className="h-4 w-4 text-slate-400 shrink-0" />
+                        <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
+                        {ext && (
+                          <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0', getFileTypeBadgeColor(ext))}>
+                            {ext.toUpperCase()}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -417,6 +424,13 @@ export function Component() {
         )}
       </div>
 
+      {/* File Detail Sheet */}
+      <FileDetailSheet
+        open={previewFile !== null}
+        onClose={() => setPreviewFile(null)}
+        file={previewFile}
+      />
+
       {/* Copy to Azure Dialog */}
       <CopyToAzureDialog
         open={copyDialogOpen}
@@ -425,6 +439,32 @@ export function Component() {
         selectedFolders={selectedFolderObjects}
         onSuccess={clearSelection}
       />
+
+      {/* Bottom Selection Bar */}
+      {selectionMode && totalSelected > 0 && (
+        <div className="border-t border-border bg-card px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-foreground">
+                {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
+                {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
+                {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
+                {' '}selected
+              </span>
+              <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
+                <X className="h-3.5 w-3.5" />
+                Clear
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700" onClick={() => setCopyDialogOpen(true)}>
+                <HardDrive className="h-4 w-4" />
+                Copy to Azure
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

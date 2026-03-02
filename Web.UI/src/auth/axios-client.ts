@@ -13,11 +13,11 @@ export const apiClient = axios.create({
 type TokenConfigId = OidcConfigId | 'cloudfiles';
 
 function getConfigIdForUrl(url: string): TokenConfigId | null {
-  if (url.includes('/manage/') || url.includes('/auth/me')) return 'cloudfiles';
-  if (url.includes('/auth/')) return null;
-  if (url.includes('/azure/files/')) return 'azure-storage';
-  if (url.includes('/azure/')) return 'azure';
-  if (url.includes('/google/') || url.includes('/process/')) return 'google';
+  if (url.includes('manage/') || url.includes('auth/me')) return 'cloudfiles';
+  if (url.includes('auth/')) return null;
+  if (url.includes('azure/files/')) return 'azure-storage';
+  if (url.includes('azure/')) return 'azure';
+  if (url.includes('google/') || url.includes('process/')) return 'google';
   return null;
 }
 

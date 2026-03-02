@@ -271,6 +271,7 @@ export function Component() {
                               path: file.pathDisplay,
                               size: file.size,
                               lastModified: file.serverModified,
+                              downloadUrl: `dropbox/files/download?path=${encodeURIComponent(file.pathDisplay)}`,
                             });
                           }
                         }}

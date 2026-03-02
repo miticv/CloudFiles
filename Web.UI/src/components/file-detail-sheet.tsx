@@ -1,5 +1,11 @@
+import { useState, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { SecureImage } from '@/components/ui/secure-image';
 import { cn, formatFileSize, formatDateTime, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
+import { apiClient } from '@/auth/axios-client';
+import { Download } from 'lucide-react';
 
 export interface FilePreviewInfo {
   name: string;
@@ -8,6 +14,7 @@ export interface FilePreviewInfo {
   lastModified?: string;
   contentType?: string;
   metadata?: Record<string, string>;
+  downloadUrl?: string;
 }
 
 interface FileDetailSheetProps {
@@ -17,6 +24,30 @@ interface FileDetailSheetProps {
 }
 
 export function FileDetailSheet({ open, onClose, file }: FileDetailSheetProps) {
+  const [downloading, setDownloading] = useState(false);
+
+  const isImage = file?.contentType?.startsWith('image/') ?? false;
+
+  const handleDownload = useCallback(async () => {
+    if (!file?.downloadUrl) return;
+    setDownloading(true);
+    try {
+      const res = await apiClient.get(file.downloadUrl, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // download failed
+    } finally {
+      setDownloading(false);
+    }
+  }, [file?.downloadUrl, file?.name]);
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="sm:max-w-md">
@@ -26,10 +57,39 @@ export function FileDetailSheet({ open, onClose, file }: FileDetailSheetProps) {
 
         {file && (
           <div className="mt-6 space-y-5">
-            {/* File name */}
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</p>
-              <p className="mt-1 text-sm font-medium text-foreground break-all">{file.name}</p>
+            {/* Image preview */}
+            {isImage && file.downloadUrl && (
+              <div className="rounded-lg border border-border overflow-hidden bg-slate-50">
+                <SecureImage
+                  secureUrl={file.downloadUrl}
+                  alt={file.name}
+                  className="w-full h-auto max-h-64 object-contain"
+                />
+              </div>
+            )}
+
+            {/* File name + download */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</p>
+                <p className="mt-1 text-sm font-medium text-foreground break-all">{file.name}</p>
+              </div>
+              {file.downloadUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 mt-3"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Spinner size={14} />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  Download
+                </Button>
+              )}
             </div>
 
             {/* Type badge */}

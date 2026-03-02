@@ -427,6 +427,9 @@ export function Component() {
           lastModified: currentFile.lastModified,
           contentType: currentFile.contentType,
           metadata: currentFile.metadata,
+          downloadUrl: context.account && context.container
+            ? `azure/files/item?account=${encodeURIComponent(context.account)}&container=${encodeURIComponent(context.container)}&path=${encodeURIComponent(currentFile.itemPath)}`
+            : undefined,
         } : null}
       />
 

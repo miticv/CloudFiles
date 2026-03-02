@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { cn, formatDateTime, extractError } from '@/lib/utils';
-import { Users, RotateCcw, AlertCircle } from 'lucide-react';
+import { Users, RotateCcw, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import type { UserDto } from '@/api/types';
 
 // ─── Provider badge config ───
@@ -122,6 +122,7 @@ export function Component() {
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Provider</th>
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Created</th>
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Last Login</th>
+                  <th className="text-center font-medium text-muted-foreground px-4 py-3">Confirmed</th>
                   <th className="text-center font-medium text-muted-foreground px-4 py-3">Active</th>
                   <th className="text-center font-medium text-muted-foreground px-4 py-3">Approved</th>
                 </tr>
@@ -181,6 +182,13 @@ function UserRow({ user, onToggle, isUpdating }: UserRowProps) {
       </td>
       <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
         {formatDateTime(user.lastLoginAt)}
+      </td>
+      <td className="px-4 py-3 text-center">
+        {user.emailConfirmed ? (
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 inline-block" aria-label="Email confirmed" />
+        ) : (
+          <XCircle className="w-4 h-4 text-slate-300 inline-block" aria-label="Email not confirmed" />
+        )}
       </td>
       <td className="px-4 py-3 text-center">
         <Switch

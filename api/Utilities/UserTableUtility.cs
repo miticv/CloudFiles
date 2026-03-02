@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Azure.Data.Tables;
 using CloudFiles.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CloudFiles.Utilities
@@ -32,7 +33,7 @@ namespace CloudFiles.Utilities
                 .TrimEnd('=');
         }
 
-        public static async Task<UserEntity> GetOrCreateOAuthUserAsync(string email, string displayName, string provider)
+        public static async Task<(UserEntity User, bool IsNewUser)> GetOrCreateOAuthUserAsync(string email, string displayName, string provider, ILogger? log = null)
         {
             var client = GetTableClient();
             var rowKey = EmailToRowKey(email);
@@ -43,10 +44,11 @@ namespace CloudFiles.Utilities
                 var user = response.Value;
                 user.LastLoginAt = DateTimeOffset.UtcNow;
                 await client.UpdateEntityAsync(user, user.ETag).ConfigureAwait(false);
-                return user;
+                return (user, false);
             }
             catch (Azure.RequestFailedException ex) when (ex.Status == 404)
             {
+                var isAdmin = IsAdmin(email);
                 var user = new UserEntity
                 {
                     PartitionKey = provider,
@@ -56,15 +58,21 @@ namespace CloudFiles.Utilities
                     AuthProvider = provider,
                     CreatedAt = DateTimeOffset.UtcNow,
                     LastLoginAt = DateTimeOffset.UtcNow,
-                    IsApproved = true,
-                    IsActive = true
+                    IsApproved = true,  // Email verified by OAuth provider
+                    IsActive = isAdmin  // Only admins are auto-activated
                 };
                 await client.AddEntityAsync(user).ConfigureAwait(false);
-                return user;
+
+                if (!isAdmin)
+                {
+                    _ = EmailUtility.SendAdminNotificationAsync(user.Email, user.DisplayName, provider, log);
+                }
+
+                return (user, true);
             }
         }
 
-        public static async Task<UserEntity> CreateLocalUserAsync(string email, string displayName, string password)
+        public static async Task<(UserEntity User, bool IsAdmin)> CreateLocalUserAsync(string email, string displayName, string password, ILogger? log = null)
         {
             var client = GetTableClient();
             var rowKey = EmailToRowKey(email);
@@ -79,6 +87,7 @@ namespace CloudFiles.Utilities
                 // User does not exist, proceed with creation
             }
 
+            var isAdmin = IsAdmin(email);
             var user = new UserEntity
             {
                 PartitionKey = "local",
@@ -89,11 +98,24 @@ namespace CloudFiles.Utilities
                 HashedPassword = BCrypt.Net.BCrypt.HashPassword(password),
                 CreatedAt = DateTimeOffset.UtcNow,
                 LastLoginAt = DateTimeOffset.UtcNow,
-                IsApproved = true,
-                IsActive = true
+                IsApproved = isAdmin,   // Non-admins must confirm email
+                IsActive = isAdmin      // Non-admins need admin activation
             };
+
+            if (!isAdmin)
+            {
+                user.EmailConfirmationToken = Guid.NewGuid().ToString("N");
+                user.EmailConfirmationTokenExpiry = DateTimeOffset.UtcNow.AddHours(24);
+            }
+
             await client.AddEntityAsync(user).ConfigureAwait(false);
-            return user;
+
+            if (!isAdmin)
+            {
+                _ = EmailUtility.SendConfirmationEmailAsync(user.Email, user.DisplayName, user.EmailConfirmationToken!, log);
+            }
+
+            return (user, isAdmin);
         }
 
         public static async Task<UserEntity> ValidateLocalUserAsync(string email, string password)
@@ -137,6 +159,7 @@ namespace CloudFiles.Utilities
                     LastLoginAt = entity.LastLoginAt,
                     IsApproved = entity.IsApproved,
                     IsActive = entity.IsActive,
+                    EmailConfirmed = entity.IsApproved,
                     PartitionKey = entity.PartitionKey,
                     RowKey = entity.RowKey
                 });
@@ -153,6 +176,61 @@ namespace CloudFiles.Utilities
             user.IsActive = isActive;
             user.IsApproved = isApproved;
             await client.UpdateEntityAsync(user, user.ETag).ConfigureAwait(false);
+        }
+
+        public static async Task<UserEntity> ConfirmEmailAsync(string token, ILogger? log = null)
+        {
+            var client = GetTableClient();
+
+            // Search across all partitions for the confirmation token
+            await foreach (var entity in client.QueryAsync<UserEntity>(e => e.EmailConfirmationToken == token))
+            {
+                if (entity.EmailConfirmationTokenExpiry.HasValue && entity.EmailConfirmationTokenExpiry.Value < DateTimeOffset.UtcNow)
+                {
+                    throw new InvalidOperationException("Confirmation link has expired.");
+                }
+
+                entity.IsApproved = true;
+                entity.EmailConfirmationToken = null;
+                entity.EmailConfirmationTokenExpiry = null;
+                await client.UpdateEntityAsync(entity, entity.ETag).ConfigureAwait(false);
+
+                _ = EmailUtility.SendAdminNotificationAsync(entity.Email, entity.DisplayName, entity.AuthProvider, log);
+
+                return entity;
+            }
+
+            throw new InvalidOperationException("Invalid confirmation token.");
+        }
+
+        public static async Task<string> RegenerateConfirmationTokenAsync(string email, ILogger? log = null)
+        {
+            var client = GetTableClient();
+            var rowKey = EmailToRowKey(email);
+
+            try
+            {
+                var response = await client.GetEntityAsync<UserEntity>("local", rowKey).ConfigureAwait(false);
+                var user = response.Value;
+
+                if (user.IsApproved)
+                {
+                    throw new InvalidOperationException("Email is already confirmed.");
+                }
+
+                user.EmailConfirmationToken = Guid.NewGuid().ToString("N");
+                user.EmailConfirmationTokenExpiry = DateTimeOffset.UtcNow.AddHours(24);
+                await client.UpdateEntityAsync(user, user.ETag).ConfigureAwait(false);
+
+                _ = EmailUtility.SendConfirmationEmailAsync(user.Email, user.DisplayName, user.EmailConfirmationToken, log);
+
+                return user.EmailConfirmationToken;
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                // Don't leak whether user exists — silently return
+                return string.Empty;
+            }
         }
 
         public static string GenerateJwt(UserEntity user, bool isAdmin)

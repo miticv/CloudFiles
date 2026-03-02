@@ -63,11 +63,19 @@ namespace CloudFiles
                     return new BadRequestObjectResult("Provider must be 'google', 'azure', or 'dropbox'.");
                 }
 
-                var user = await UserTableUtility.GetOrCreateOAuthUserAsync(email, displayName, request.Provider).ConfigureAwait(false);
+                var (user, _) = await UserTableUtility.GetOrCreateOAuthUserAsync(email, displayName, request.Provider, log).ConfigureAwait(false);
 
-                if (!user.IsActive || !user.IsApproved)
+                if (!user.IsApproved)
                 {
-                    return new ObjectResult(new { error = "Account is not active or approved." })
+                    return new ObjectResult(new { error = "Please confirm your email address.", code = "email_not_confirmed" })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                if (!user.IsActive)
+                {
+                    return new ObjectResult(new { error = "Your account is pending admin activation.", code = "pending_approval" })
                     {
                         StatusCode = StatusCodes.Status403Forbidden
                     };
@@ -123,11 +131,19 @@ namespace CloudFiles
                     return new BadRequestObjectResult("Password must be at least 8 characters.");
                 }
 
-                var user = await UserTableUtility.CreateLocalUserAsync(request.Email, request.DisplayName, request.Password).ConfigureAwait(false);
+                var (user, isAdmin) = await UserTableUtility.CreateLocalUserAsync(request.Email, request.DisplayName, request.Password, log).ConfigureAwait(false);
 
                 log.LogInformation($"Local registration successful for {request.Email}");
 
-                var isAdmin = UserTableUtility.IsAdmin(user.Email);
+                if (!isAdmin)
+                {
+                    // Non-admin users must confirm email before logging in
+                    return new ObjectResult(new { message = "Please check your email to confirm your account." })
+                    {
+                        StatusCode = StatusCodes.Status202Accepted
+                    };
+                }
+
                 var token = UserTableUtility.GenerateJwt(user, isAdmin);
 
                 return new ObjectResult(new AuthResponse
@@ -177,9 +193,17 @@ namespace CloudFiles
 
                 var user = await UserTableUtility.ValidateLocalUserAsync(request.Email, request.Password).ConfigureAwait(false);
 
-                if (!user.IsActive || !user.IsApproved)
+                if (!user.IsApproved)
                 {
-                    return new ObjectResult(new { error = "Account is not active or approved." })
+                    return new ObjectResult(new { error = "Please confirm your email address.", code = "email_not_confirmed" })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                if (!user.IsActive)
+                {
+                    return new ObjectResult(new { error = "Your account is pending admin activation.", code = "pending_approval" })
                     {
                         StatusCode = StatusCodes.Status403Forbidden
                     };
@@ -257,6 +281,68 @@ namespace CloudFiles
             {
                 log.LogError(ex, "Error proxying Google OAuth token exchange");
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [Function(Constants.AuthConfirmEmail)]
+        public static async Task<IActionResult> ConfirmEmail(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "auth/confirm-email")] HttpRequest req,
+            FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(ConfirmEmail));
+            var baseUrl = (Environment.GetEnvironmentVariable("APP_BASE_URL") ?? "http://localhost:4200").TrimEnd('/');
+
+            try
+            {
+                var token = req.Query["token"].FirstOrDefault();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new RedirectResult($"{baseUrl}/sessions/login?status=token_expired");
+                }
+
+                await UserTableUtility.ConfirmEmailAsync(token, log).ConfigureAwait(false);
+                log.LogInformation("Email confirmed for token");
+
+                return new RedirectResult($"{baseUrl}/sessions/login?status=email_confirmed");
+            }
+            catch (InvalidOperationException ex)
+            {
+                log.LogWarning(ex, "Email confirmation failed");
+                return new RedirectResult($"{baseUrl}/sessions/login?status=token_expired");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error confirming email");
+                return new RedirectResult($"{baseUrl}/sessions/login?status=token_expired");
+            }
+        }
+
+        [Function(Constants.AuthResendConfirmation)]
+        public static async Task<IActionResult> ResendConfirmation(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "auth/resend-confirmation")] HttpRequest req,
+            FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(ResendConfirmation));
+            try
+            {
+                var body = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
+                var request = JsonConvert.DeserializeObject<ResendConfirmationRequest>(body);
+
+                if (request == null || string.IsNullOrEmpty(request.Email))
+                {
+                    return new BadRequestObjectResult("email is required.");
+                }
+
+                await UserTableUtility.RegenerateConfirmationTokenAsync(request.Email, log).ConfigureAwait(false);
+
+                // Always return 200 — don't leak whether user exists
+                return new OkObjectResult(new { message = "If an account exists with that email, a confirmation link has been sent." });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error resending confirmation email");
+                // Still return 200 to avoid leaking info
+                return new OkObjectResult(new { message = "If an account exists with that email, a confirmation link has been sent." });
             }
         }
 

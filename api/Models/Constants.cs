@@ -202,6 +202,8 @@
         public const string AuthLocalLogin = "authLocalLogin";
         public const string AuthLocalRegister = "authLocalRegister";
         public const string AuthGetCurrentUser = "authGetCurrentUser";
+        public const string AuthConfirmEmail = "authConfirmEmail";
+        public const string AuthResendConfirmation = "authResendConfirmation";
 
         // Admin
         public const string AdminUserList = "adminUserList";

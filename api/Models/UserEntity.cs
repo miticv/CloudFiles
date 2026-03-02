@@ -34,5 +34,11 @@ namespace CloudFiles.Models
 
         [JsonProperty("isActive")]
         public bool IsActive { get; set; } = true;
+
+        [JsonProperty("emailConfirmationToken")]
+        public string? EmailConfirmationToken { get; set; }
+
+        [JsonProperty("emailConfirmationTokenExpiry")]
+        public DateTimeOffset? EmailConfirmationTokenExpiry { get; set; }
     }
 }

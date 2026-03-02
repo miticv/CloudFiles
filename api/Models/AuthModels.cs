@@ -73,10 +73,19 @@ namespace CloudFiles.Models
         [JsonProperty("isActive")]
         public bool IsActive { get; set; }
 
+        [JsonProperty("emailConfirmed")]
+        public bool EmailConfirmed { get; set; }
+
         [JsonProperty("partitionKey")]
         public string PartitionKey { get; set; } = default!;
 
         [JsonProperty("rowKey")]
         public string RowKey { get; set; } = default!;
+    }
+
+    public class ResendConfirmationRequest
+    {
+        [JsonProperty("email")]
+        public string Email { get; set; } = default!;
     }
 }

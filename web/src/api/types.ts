@@ -344,6 +344,7 @@ export interface UserDto {
   lastLoginAt: string;
   isApproved: boolean;
   isActive: boolean;
+  emailConfirmed: boolean;
   partitionKey: string;
   rowKey: string;
 }

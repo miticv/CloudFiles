@@ -6,6 +6,15 @@ const CF_TOKEN_KEY = 'cf_token';
 const CF_USER_KEY = 'cf_user';
 const CF_OAUTH_PENDING_KEY = 'cf_oauth_pending';
 
+export class AuthBlockedError extends Error {
+  code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = 'AuthBlockedError';
+    this.code = code;
+  }
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
@@ -15,6 +24,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, displayName: string, password: string) => Promise<void>;
   oauthLogin: (accessToken: string, provider: string) => Promise<void>;
+  resendConfirmation: (email: string) => Promise<void>;
   logout: () => void;
   setOAuthPending: (provider: string) => void;
   clearOAuthPending: () => void;
@@ -56,7 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      throw new Error(data?.message || `Login failed (${res.status})`);
+      if (res.status === 403 && data?.code) {
+        throw new AuthBlockedError(data.error || 'Access denied', data.code);
+      }
+      throw new Error(data?.error || `Login failed (${res.status})`);
     }
     const data: AuthResponse = await res.json();
     saveSession(data);
@@ -70,7 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      throw new Error(data?.message || `Registration failed (${res.status})`);
+      throw new Error(data?.error || `Registration failed (${res.status})`);
+    }
+    // 202 = email confirmation required (no JWT returned)
+    if (res.status === 202) {
+      throw new AuthBlockedError('Please check your email to confirm your account.', 'email_confirmation_required');
     }
     const data: AuthResponse = await res.json();
     saveSession(data);
@@ -84,11 +101,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      throw new Error(data?.message || `OAuth login failed (${res.status})`);
+      if (res.status === 403 && data?.code) {
+        throw new AuthBlockedError(data.error || 'Access denied', data.code);
+      }
+      throw new Error(data?.error || `OAuth login failed (${res.status})`);
     }
     const data: AuthResponse = await res.json();
     saveSession(data);
   }, [saveSession]);
+
+  const resendConfirmation = useCallback(async (email: string) => {
+    await fetch(`${env.api}auth/resend-confirmation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+  }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(CF_TOKEN_KEY);
@@ -132,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         oauthLogin,
+        resendConfirmation,
         logout,
         setOAuthPending,
         clearOAuthPending,

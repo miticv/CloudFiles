@@ -74,6 +74,9 @@ DROPBOX_KEY=$(get_field "$ITEM_JSON" "DropBoxKey")
 DROPBOX_SECRET=$(get_field "$ITEM_JSON" "DropBoxSecret")
 PCLOUD_CLIENT_ID=$(get_field "$ITEM_JSON" "PCloudClientId")
 PCLOUD_CLIENT_SECRET=$(get_field "$ITEM_JSON" "PCloudClientSecret")
+ACS_CONNECTION_STRING=$(get_field "$ITEM_JSON" "AcsConnectionString")
+ACS_SENDER_ADDRESS=$(get_field "$ITEM_JSON" "AcsSenderAddress")
+APP_BASE_URL=$(get_field "$ITEM_JSON" "AppBaseUrl")
 
 # Validate required fields
 MISSING=()
@@ -85,6 +88,8 @@ MISSING=()
 [ -z "$ADMIN_EMAILS" ] && MISSING+=("AdminEmails")
 [ -z "$DROPBOX_KEY" ] && MISSING+=("DropBoxKey")
 [ -z "$DROPBOX_SECRET" ] && MISSING+=("DropBoxSecret")
+[ -z "$ACS_CONNECTION_STRING" ] && MISSING+=("AcsConnectionString")
+[ -z "$ACS_SENDER_ADDRESS" ] && MISSING+=("AcsSenderAddress")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
     echo "Error: Missing required fields in Bitwarden item '$BW_ITEM_NAME':"
@@ -113,7 +118,10 @@ cat > "$LOCAL_SETTINGS" <<EOF
     "PCloudClientId": "$PCLOUD_CLIENT_ID",
     "PCloudClientSecret": "$PCLOUD_CLIENT_SECRET",
     "DropBoxKey": "$DROPBOX_KEY",
-    "DropBoxSecret": "$DROPBOX_SECRET"
+    "DropBoxSecret": "$DROPBOX_SECRET",
+    "ACS_CONNECTION_STRING": "$ACS_CONNECTION_STRING",
+    "ACS_SENDER_ADDRESS": "$ACS_SENDER_ADDRESS",
+    "APP_BASE_URL": "${APP_BASE_URL:-http://localhost:4200}"
   },
   "Host": {
     "LocalHttpPort": 7071,

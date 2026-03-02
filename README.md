@@ -104,6 +104,9 @@ winget install Microsoft.DotNet.SDK.8
 | `DropBoxSecret` | Backend |
 | `PCloudClientId` | Backend + Frontend |
 | `PCloudClientSecret` | Backend |
+| `AcsConnectionString` | Backend |
+| `AcsSenderAddress` | Backend |
+| `AppBaseUrl` | Backend |
 | `ProductionApiUrl` | CI/CD only |
 
 ### Environment Variables
@@ -121,6 +124,9 @@ winget install Microsoft.DotNet.SDK.8
 | `PCloudClientSecret` | pCloud OAuth Client Secret |
 | `DropBoxKey` | Dropbox OAuth App Key |
 | `DropBoxSecret` | Dropbox OAuth App Secret |
+| `ACS_CONNECTION_STRING` | Azure Communication Services connection string (email confirmation) |
+| `ACS_SENDER_ADDRESS` | ACS verified sender email address |
+| `APP_BASE_URL` | Frontend URL for email links (`http://localhost:4200` local) |
 
 **Frontend** (`web/src/env.ts`):
 | Variable | Description |
@@ -166,6 +172,15 @@ The Axios interceptor (`axios-client.ts`) attaches the correct Bearer token base
 | `/dropbox/*` | Dropbox localStorage token |
 
 **Auth Flow**: Login page → CloudFiles JWT → Connections page → Provider OAuth links → File browsing
+
+### User Registration & Approval
+
+New users go through a two-gate approval process:
+
+1. **Email confirmation** (`IsApproved`) — Local users must click a confirmation link sent via Azure Communication Services. OAuth users (Google/Azure/Dropbox) are auto-confirmed since the provider verifies their email.
+2. **Admin activation** (`IsActive`) — An admin must activate the user via the Admin panel. Admins receive an email notification when a new user confirms.
+
+Admin users (matching `ADMIN_EMAILS` env var) bypass both gates automatically.
 
 ## API Endpoints
 
@@ -231,6 +246,17 @@ The Axios interceptor (`axios-client.ts`) attaches the correct Bearer token base
 | POST | `process/GooglePhotosToAzure/start` | Start Google Photos → Azure migration |
 | GET | `process/instances` | List orchestration instances |
 | DELETE | `process/instances/{id}` | Purge an orchestration instance |
+
+### Auth
+| Method | Route | Description |
+|---|---|---|
+| POST | `auth/oauth/login` | Exchange OAuth token for CloudFiles JWT |
+| POST | `auth/local/register` | Register with email/password |
+| POST | `auth/local/login` | Login with email/password |
+| GET | `auth/me` | Get current user from JWT |
+| GET | `auth/confirm-email?token=` | Confirm email (redirects to login) |
+| POST | `auth/resend-confirmation` | Resend confirmation email |
+| POST | `google/oauth/token` | Proxy Google token exchange (adds client_secret) |
 
 ### Utility
 | Method | Route | Description |
@@ -306,6 +332,7 @@ CloudFiles/
 │   │   ├── CommonUtility.cs    # Shared helpers
 │   │   ├── DropboxUtility.cs   # Dropbox API client
 │   │   ├── GoogleUtility.cs    # Google Storage + Photos + Drive
+│   │   ├── EmailUtility.cs     # Azure Communication Services email
 │   │   ├── PCloudUtility.cs    # pCloud API client
 │   │   └── UserTableUtility.cs # Azure Table Storage user management
 │   ├── CloudFiles.csproj

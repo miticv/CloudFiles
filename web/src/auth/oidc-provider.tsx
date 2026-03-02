@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import type { User } from 'oidc-client-ts';
 import { googleManager, azureManager, azureStorageManager, getManager, type OidcConfigId } from './oidc-config';
-import { useAuth } from './auth-context';
+import { useAuth, AuthBlockedError } from './auth-context';
 import { isPCloudConnected, clearPCloudAuth } from './pcloud-auth';
 import { isDropboxConnected, clearDropboxAuth } from './dropbox-auth';
 import { Spinner } from '@/components/ui/spinner';
@@ -93,7 +93,12 @@ export function OidcProvider({ children }: { children: ReactNode }) {
               console.log('[Auth] OAuth login completed for', pendingProvider);
             }
           } catch (err) {
-            console.error('[Auth] OAuth login exchange failed:', err);
+            if (err instanceof AuthBlockedError) {
+              console.warn('[Auth] OAuth login blocked:', err.code);
+              window.history.replaceState({}, '', `/sessions/login?oauthError=${err.code}`);
+            } else {
+              console.error('[Auth] OAuth login exchange failed:', err);
+            }
           }
           auth.clearOAuthPending();
         }

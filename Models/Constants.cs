@@ -145,12 +145,54 @@
         public const string CopyDropboxToDriveOrchestrator = "copyDropboxToDriveOrchestrator";
         public const string CopyDropboxFileToDriveFile = "copyDropboxFileToDriveFile";
 
+        // automation Google Drive to GCS
+        public const string ProcessGoogleDriveToGcs_Start = "processGoogleDriveToGcs_Start";
+        public const string GoogleDriveToGcsOrchestrator = "googleDriveToGcsOrchestrator";
+        public const string GoogleDriveToGcsPrepareList = "googleDriveToGcsPrepareList";
+        public const string CopyGoogleDriveToGcsOrchestrator = "copyGoogleDriveToGcsOrchestrator";
+        public const string CopyGoogleDriveFileToGcsObject = "copyGoogleDriveFileToGcsObject";
+
+        // automation Google Drive to Dropbox
+        public const string ProcessGoogleDriveToDropbox_Start = "processGoogleDriveToDropbox_Start";
+        public const string GoogleDriveToDropboxOrchestrator = "googleDriveToDropboxOrchestrator";
+        public const string GoogleDriveToDropboxPrepareList = "googleDriveToDropboxPrepareList";
+        public const string CopyGoogleDriveToDropboxOrchestrator = "copyGoogleDriveToDropboxOrchestrator";
+        public const string CopyGoogleDriveFileToDropbox = "copyGoogleDriveFileToDropbox";
+
+        // automation Google Drive to Google Photos
+        public const string ProcessGoogleDriveToGooglePhotos_Start = "processGoogleDriveToGooglePhotos_Start";
+        public const string GoogleDriveToGooglePhotosOrchestrator = "googleDriveToGooglePhotosOrchestrator";
+        public const string GoogleDriveToGooglePhotosPrepareList = "googleDriveToGooglePhotosPrepareList";
+        public const string CopyGoogleDriveToGooglePhotosOrchestrator = "copyGoogleDriveToGooglePhotosOrchestrator";
+        public const string UploadGoogleDriveFileToGooglePhotos = "uploadGoogleDriveFileToGooglePhotos";
+
         // automation Azure to Google Drive
         public const string ProcessAzureToDrive_Start = "processAzureToDrive_Start";
         public const string AzureToDriveOrchestrator = "azureToDriveOrchestrator";
         public const string AzureToDrivePrepareList = "azureToDrivePrepareList";
         public const string CopyAzureToDriveOrchestrator = "copyAzureToDriveOrchestrator";
         public const string CopyAzureBlobToDriveFile = "copyAzureBlobToDriveFile";
+
+        // automation Google Photos to GCS
+        public const string ProcessGooglePhotosToGcs_Start = "processGooglePhotosToGcs_Start";
+        public const string GooglePhotosToGcsOrchestrator = "googlePhotosToGcsOrchestrator";
+        public const string GooglePhotosToGcsPrepareList = "googlePhotosToGcsPrepareList";
+        public const string CopyGooglePhotosToGcsOrchestrator = "copyGooglePhotosToGcsOrchestrator";
+        public const string CopyGooglePhotoToGcsObject = "copyGooglePhotoToGcsObject";
+
+        // automation Google Photos to Dropbox
+        public const string ProcessGooglePhotosToDropbox_Start = "processGooglePhotosToDropbox_Start";
+        public const string GooglePhotosToDropboxOrchestrator = "googlePhotosToDropboxOrchestrator";
+        public const string GooglePhotosToDropboxPrepareList = "googlePhotosToDropboxPrepareList";
+        public const string CopyGooglePhotosToDropboxOrchestrator = "copyGooglePhotosToDropboxOrchestrator";
+        public const string CopyGooglePhotoToDropbox = "copyGooglePhotoToDropbox";
+
+        // automation Google Photos to Google Drive
+        public const string ProcessGooglePhotosToGoogleDrive_Start = "processGooglePhotosToGoogleDrive_Start";
+        public const string GooglePhotosToGoogleDriveOrchestrator = "googlePhotosToGoogleDriveOrchestrator";
+        public const string GooglePhotosToGoogleDrivePrepareList = "googlePhotosToGoogleDrivePrepareList";
+        public const string CopyGooglePhotosToGoogleDriveOrchestrator = "copyGooglePhotosToGoogleDriveOrchestrator";
+        public const string CopyGooglePhotoToDriveFile = "copyGooglePhotoToDriveFile";
 
         // Auth
         public const string AuthOAuthLogin = "authOAuthLogin";

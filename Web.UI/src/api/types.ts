@@ -424,6 +424,64 @@ export interface StartAzureToDriveRequest {
   startedBy: string;
 }
 
+// ─── Azure to Google Photos ───
+export interface StartAzureToGooglePhotosRequest {
+  albumId: string;
+  albumTitle: string;
+  selectedItemsList: MigrationItem[];
+  accountName: string;
+  containerName: string;
+  azureAccessToken: string;
+  startedBy: string;
+}
+
+// ─── Google Drive to GCS ───
+export interface StartGoogleDriveToGcsRequest {
+  driveItems: DriveFileForCopy[];
+  bucketName: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── Google Drive to Dropbox ───
+export interface StartGoogleDriveToDropboxRequest {
+  driveItems: DriveFileForCopy[];
+  dropboxAccessToken: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── Google Drive to Google Photos ───
+export interface StartGoogleDriveToGooglePhotosRequest {
+  driveItems: DriveFileForCopy[];
+  albumId: string;
+  albumTitle: string;
+  startedBy: string;
+}
+
+// ─── Google Photos to GCS ───
+export interface StartGooglePhotosToGcsRequest {
+  photoItems: PhotoCopyItem[];
+  bucketName: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── Google Photos to Dropbox ───
+export interface StartGooglePhotosToDropboxRequest {
+  photoItems: PhotoCopyItem[];
+  dropboxAccessToken: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── Google Photos to Google Drive ───
+export interface StartGooglePhotosToGoogleDriveRequest {
+  photoItems: PhotoCopyItem[];
+  destinationFolderId: string;
+  startedBy: string;
+}
+
 // ─── Navigation ───
 export interface ConnectionStatus {
   configId: string;

@@ -9,8 +9,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import { Image as ImageIcon, CloudOff, X, Upload, HelpCircle } from 'lucide-react';
+import { Image as ImageIcon, CloudOff, X, HelpCircle } from 'lucide-react';
 import type { PickedMediaItem } from '@/api/types';
+import { CopyToBar } from '@/components/copy-to-bar';
+import { type CopyProviderId } from '@/lib/providers';
+import { CopyToAzureDialog } from './copy-to-azure-dialog';
+import { CopyToGcsDialog } from './copy-to-gcs-dialog';
+import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
+import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
 
 // ─── Not-Connected State ───
 function NotConnected({ onConnect }: { onConnect: () => void }) {
@@ -50,6 +56,7 @@ export function Component() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
   const popupCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
 
   const createSession = useCreateSession();
 
@@ -178,8 +185,8 @@ export function Component() {
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="space-y-6 p-6">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -233,21 +240,15 @@ export function Component() {
               </Dialog>
             </div>
             <p className="text-sm text-muted-foreground">
-              Select photos from your Google Photos library to copy to Azure Blob Storage.
+              Select photos from your Google Photos library to copy to other providers.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {pickedItems.length > 0 && (
-              <>
-                <Button variant="outline" size="sm" onClick={handleClear}>
-                  <X className="h-3.5 w-3.5" />
-                  Clear
-                </Button>
-                <Button size="sm">
-                  <Upload className="h-3.5 w-3.5" />
-                  Copy to Azure ({pickedItems.length})
-                </Button>
-              </>
+              <Button variant="outline" size="sm" onClick={handleClear}>
+                <X className="h-3.5 w-3.5" />
+                Clear
+              </Button>
             )}
           </div>
         </div>
@@ -362,6 +363,42 @@ export function Component() {
           </div>
         )}
       </div>
+
+      {/* Copy Dialogs */}
+      <CopyToAzureDialog
+        open={activeDialog === 'azure'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedItems={pickedItems}
+        onSuccess={() => setSavedItems([])}
+      />
+      <CopyToGcsDialog
+        open={activeDialog === 'gcs'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedItems={pickedItems}
+        onSuccess={() => setSavedItems([])}
+      />
+      <CopyToDropboxDialog
+        open={activeDialog === 'dropbox'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedItems={pickedItems}
+        onSuccess={() => setSavedItems([])}
+      />
+      <CopyToGoogleDriveDialog
+        open={activeDialog === 'google-drive'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedItems={pickedItems}
+        onSuccess={() => setSavedItems([])}
+      />
+
+      {/* Bottom Selection Bar */}
+      {pickedItems.length > 0 && (
+        <CopyToBar
+          sourceProvider="google-photos"
+          selectedCount={pickedItems.length}
+          onClearSelection={handleClear}
+          onCopyTo={(dest) => setActiveDialog(dest)}
+        />
+      )}
     </div>
   );
 }

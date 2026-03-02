@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useFileManagerStore } from '@/stores/file-manager.store';
@@ -17,18 +17,16 @@ import {
   ChevronRight,
   CheckSquare,
   RotateCcw,
-  X,
   AlertCircle,
   FolderOpen,
-  Image as ImageIcon,
-  Upload,
-  ArrowRight,
-  Cloudy,
-  Cloud,
 } from 'lucide-react';
 import type { FileItem, StorageContext } from '@/api/types';
+import { CopyToBar } from '@/components/copy-to-bar';
+import { type CopyProviderId } from '@/lib/providers';
 import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
 import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
+import { CopyToGcsDialog } from './copy-to-gcs-dialog';
+import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
 
 // ─── Helpers ───
 
@@ -69,7 +67,6 @@ function buildBreadcrumbs(context: StorageContext, pathSegments: string[]) {
 export function Component() {
   usePageTitle('File Manager');
 
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -99,8 +96,7 @@ export function Component() {
   const [detailPath, setDetailPath] = useState<string | null>(null);
 
   // Copy dialog state
-  const [copyToDropboxOpen, setCopyToDropboxOpen] = useState(false);
-  const [copyToDriveOpen, setCopyToDriveOpen] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
 
   // Read context from session storage on mount
   useEffect(() => {
@@ -436,16 +432,32 @@ export function Component() {
 
       {/* Copy Dialogs */}
       <CopyToDropboxDialog
-        open={copyToDropboxOpen}
-        onOpenChange={setCopyToDropboxOpen}
+        open={activeDialog === 'dropbox'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         accountName={context.account ?? ''}
         containerName={context.container ?? ''}
         onSuccess={handleCopySuccess}
       />
       <CopyToGoogleDriveDialog
-        open={copyToDriveOpen}
-        onOpenChange={setCopyToDriveOpen}
+        open={activeDialog === 'google-drive'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        accountName={context.account ?? ''}
+        containerName={context.container ?? ''}
+        onSuccess={handleCopySuccess}
+      />
+      <CopyToGcsDialog
+        open={activeDialog === 'gcs'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        accountName={context.account ?? ''}
+        containerName={context.container ?? ''}
+        onSuccess={handleCopySuccess}
+      />
+      <CopyToGooglePhotosDialog
+        open={activeDialog === 'google-photos'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         accountName={context.account ?? ''}
         containerName={context.container ?? ''}
@@ -454,62 +466,18 @@ export function Component() {
 
       {/* Bottom Selection Bar */}
       {selectionMode && totalSelected > 0 && (
-        <div className="border-t border-border bg-card px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-foreground">
-                {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
-                {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
-                {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
-                {' '}selected
-              </span>
-              <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
-                <X className="h-3.5 w-3.5" />
-                Clear
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                className="gap-1.5 bg-[#4285F4] text-white hover:bg-[#3367D6]"
-                onClick={() => navigate('/processes')}
-              >
-                <ImageIcon className="h-4 w-4" />
-                Migrate to Google Photos
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-
-              <Button
-                size="sm"
-                className="gap-1.5 bg-teal-600 text-white hover:bg-teal-700"
-                onClick={() => navigate('/processes')}
-              >
-                <Upload className="h-4 w-4" />
-                Copy to Google Cloud Storage
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-
-              <Button
-                size="sm"
-                className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700"
-                onClick={() => setCopyToDropboxOpen(true)}
-              >
-                <Cloudy className="h-4 w-4" />
-                Copy to Dropbox
-              </Button>
-
-              <Button
-                size="sm"
-                className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
-                onClick={() => setCopyToDriveOpen(true)}
-              >
-                <Cloud className="h-4 w-4" />
-                Copy to Google Drive
-              </Button>
-            </div>
-          </div>
-        </div>
+        <CopyToBar
+          sourceProvider="azure"
+          selectedCount={totalSelected}
+          selectedLabel={
+            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
+            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
+            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
+            ' selected'
+          }
+          onClearSelection={clearSelection}
+          onCopyTo={(dest) => setActiveDialog(dest)}
+        />
       )}
     </div>
   );

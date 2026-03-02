@@ -8,6 +8,8 @@ import type {
   StartGcsToDropboxRequest, StartGcsToDriveRequest,
   StartDropboxToGcsRequest, StartDropboxToGooglePhotosRequest, StartDropboxToDriveRequest,
   StartAzureToDriveRequest,
+  StartGoogleDriveToGcsRequest, StartGoogleDriveToDropboxRequest, StartGoogleDriveToGooglePhotosRequest,
+  StartGooglePhotosToGcsRequest, StartGooglePhotosToDropboxRequest, StartGooglePhotosToGoogleDriveRequest,
 } from './types';
 
 export function useProcesses(params?: ProcessListParams, refetchInterval?: number | false) {
@@ -166,5 +168,47 @@ export function useStartAzureToDrive() {
   return useMutation({
     mutationFn: (request: StartAzureToDriveRequest) =>
       apiClient.post<StartJobResponse>('process/AzureToGoogleDrive/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDriveToGcs() {
+  return useMutation({
+    mutationFn: (request: StartGoogleDriveToGcsRequest) =>
+      apiClient.post<StartJobResponse>('process/GoogleDriveToGcs/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDriveToDropbox() {
+  return useMutation({
+    mutationFn: (request: StartGoogleDriveToDropboxRequest) =>
+      apiClient.post<StartJobResponse>('process/GoogleDriveToDropbox/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDriveToGooglePhotos() {
+  return useMutation({
+    mutationFn: (request: StartGoogleDriveToGooglePhotosRequest) =>
+      apiClient.post<StartJobResponse>('process/GoogleDriveToGooglePhotos/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPhotosToGcs() {
+  return useMutation({
+    mutationFn: (request: StartGooglePhotosToGcsRequest) =>
+      apiClient.post<StartJobResponse>('process/GooglePhotosToGcs/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPhotosToDropbox() {
+  return useMutation({
+    mutationFn: (request: StartGooglePhotosToDropboxRequest) =>
+      apiClient.post<StartJobResponse>('process/GooglePhotosToDropbox/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPhotosToGoogleDrive() {
+  return useMutation({
+    mutationFn: (request: StartGooglePhotosToGoogleDriveRequest) =>
+      apiClient.post<StartJobResponse>('process/GooglePhotosToGoogleDrive/start', request).then(r => r.data),
   });
 }

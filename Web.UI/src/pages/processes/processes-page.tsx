@@ -67,6 +67,18 @@ const friendlyNames: Record<string, string> = {
   copydropboxtodriveorchestrator: 'Dropbox \u2192 Google Drive',
   azuretodriveorchestrator: 'Azure Storage \u2192 Google Drive',
   copyazuretodriveorchestrator: 'Azure Storage \u2192 Google Drive',
+  googledrivetogcsorchestrator: 'Google Drive \u2192 Google Cloud Storage',
+  copygoogledrivetogcsorchestrator: 'Google Drive \u2192 Google Cloud Storage',
+  googledrivetodropboxorchestrator: 'Google Drive \u2192 Dropbox',
+  copygoogledrivetodropboxorchestrator: 'Google Drive \u2192 Dropbox',
+  googledrivetogooglephotosochestrator: 'Google Drive \u2192 Google Photos',
+  copygoogledrivetogooglephotosochestrator: 'Google Drive \u2192 Google Photos',
+  googlephotostogcsorchestrator: 'Google Photos \u2192 Google Cloud Storage',
+  copygooglephotostogcsorchestrator: 'Google Photos \u2192 Google Cloud Storage',
+  googlephotostodropboxorchestrator: 'Google Photos \u2192 Dropbox',
+  copygooglephotostodropboxorchestrator: 'Google Photos \u2192 Dropbox',
+  googlephotostogoogledriveorchestrator: 'Google Photos \u2192 Google Drive',
+  copygooglephotostogoogledriveorchestrator: 'Google Photos \u2192 Google Drive',
 };
 
 function getFriendlyName(rawName: string): string {
@@ -88,6 +100,12 @@ const PARENT_ORCHESTRATOR_TYPES = [
   { value: 'dropboxtogooglephotosorchestrator', label: 'Dropbox \u2192 Google Photos' },
   { value: 'dropboxtodriveorchestrator', label: 'Dropbox \u2192 Google Drive' },
   { value: 'azuretodriveorchestrator', label: 'Azure Storage \u2192 Google Drive' },
+  { value: 'googledrivetogcsorchestrator', label: 'Google Drive \u2192 Google Cloud Storage' },
+  { value: 'googledrivetodropboxorchestrator', label: 'Google Drive \u2192 Dropbox' },
+  { value: 'googledrivetogooglephotosochestrator', label: 'Google Drive \u2192 Google Photos' },
+  { value: 'googlephotostogcsorchestrator', label: 'Google Photos \u2192 Google Cloud Storage' },
+  { value: 'googlephotostodropboxorchestrator', label: 'Google Photos \u2192 Dropbox' },
+  { value: 'googlephotostogoogledriveorchestrator', label: 'Google Photos \u2192 Google Drive' },
 ] as const;
 
 // ─── Grouping logic ───

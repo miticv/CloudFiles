@@ -11,10 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, X, CloudOff, CheckSquare, HardDrive, Cloudy } from 'lucide-react';
+import { Cloud, ChevronRight, Folder, FileText, RotateCcw, ArrowLeft, Search, CloudOff, CheckSquare } from 'lucide-react';
 import { CopyGcsToAzureDialog } from './copy-gcs-to-azure-dialog';
 import { CopyGcsToDropboxDialog } from './copy-gcs-to-dropbox-dialog';
 import { CopyGcsToDriveDialog } from './copy-gcs-to-drive-dialog';
+import { CopyGcsToGooglePhotosDialog } from './copy-gcs-to-google-photos-dialog';
+import { CopyToBar } from '@/components/copy-to-bar';
+import { type CopyProviderId } from '@/lib/providers';
 
 type View = 'setup' | 'buckets' | 'browse';
 
@@ -237,9 +240,7 @@ function BrowseView({
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
-  const [copyToAzureOpen, setCopyToAzureOpen] = useState(false);
-  const [copyToDropboxOpen, setCopyToDropboxOpen] = useState(false);
-  const [copyToDriveOpen, setCopyToDriveOpen] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
   const { data: items, isLoading, error, refetch } = useGcsFiles(bucket, currentPath);
 
   const folders = useMemo(() => items?.filter((f) => f.isFolder) ?? [], [items]);
@@ -484,22 +485,29 @@ function BrowseView({
 
         {/* Copy Dialogs */}
         <CopyGcsToAzureDialog
-          open={copyToAzureOpen}
-          onOpenChange={setCopyToAzureOpen}
+          open={activeDialog === 'azure'}
+          onOpenChange={(o) => !o && setActiveDialog(null)}
           selectedFiles={selectedFileObjects}
           bucketName={bucket}
           onSuccess={clearSelection}
         />
         <CopyGcsToDropboxDialog
-          open={copyToDropboxOpen}
-          onOpenChange={setCopyToDropboxOpen}
+          open={activeDialog === 'dropbox'}
+          onOpenChange={(o) => !o && setActiveDialog(null)}
           selectedFiles={selectedFileObjects}
           bucketName={bucket}
           onSuccess={clearSelection}
         />
         <CopyGcsToDriveDialog
-          open={copyToDriveOpen}
-          onOpenChange={setCopyToDriveOpen}
+          open={activeDialog === 'google-drive'}
+          onOpenChange={(o) => !o && setActiveDialog(null)}
+          selectedFiles={selectedFileObjects}
+          bucketName={bucket}
+          onSuccess={clearSelection}
+        />
+        <CopyGcsToGooglePhotosDialog
+          open={activeDialog === 'google-photos'}
+          onOpenChange={(o) => !o && setActiveDialog(null)}
           selectedFiles={selectedFileObjects}
           bucketName={bucket}
           onSuccess={clearSelection}
@@ -515,36 +523,18 @@ function BrowseView({
 
       {/* Bottom Selection Bar */}
       {selectionMode && totalSelected > 0 && (
-        <div className="border-t border-border bg-card px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-foreground">
-                {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
-                {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
-                {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
-                {' '}selected
-              </span>
-              <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
-                <X className="h-3.5 w-3.5" />
-                Clear
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700" onClick={() => setCopyToAzureOpen(true)}>
-                <HardDrive className="h-4 w-4" />
-                Copy to Azure
-              </Button>
-              <Button size="sm" className="gap-1.5 bg-blue-500 text-white hover:bg-blue-600" onClick={() => setCopyToDropboxOpen(true)}>
-                <Cloudy className="h-4 w-4" />
-                Copy to Dropbox
-              </Button>
-              <Button size="sm" className="gap-1.5 bg-green-600 text-white hover:bg-green-700" onClick={() => setCopyToDriveOpen(true)}>
-                <Cloud className="h-4 w-4" />
-                Copy to Google Drive
-              </Button>
-            </div>
-          </div>
-        </div>
+        <CopyToBar
+          sourceProvider="gcs"
+          selectedCount={totalSelected}
+          selectedLabel={
+            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
+            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
+            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
+            ' selected'
+          }
+          onClearSelection={clearSelection}
+          onCopyTo={(dest) => setActiveDialog(dest)}
+        />
       )}
     </div>
   );

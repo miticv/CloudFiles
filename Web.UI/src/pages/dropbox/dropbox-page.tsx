@@ -9,8 +9,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare, X } from 'lucide-react';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare } from 'lucide-react';
 import { isAxiosError } from 'axios';
+import { CopyToBar } from '@/components/copy-to-bar';
+import { type CopyProviderId } from '@/lib/providers';
 import { CopyToAzureDialog } from './copy-to-azure-dialog';
 import { CopyToGcsDialog } from './copy-to-gcs-dialog';
 import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
@@ -58,10 +60,7 @@ export function Component() {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
-  const [azureDialogOpen, setAzureDialogOpen] = useState(false);
-  const [gcsDialogOpen, setGcsDialogOpen] = useState(false);
-  const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
-  const [driveDialogOpen, setDriveDialogOpen] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
 
   const toggleItem = useCallback(<T,>(id: T, set: React.Dispatch<React.SetStateAction<Set<T>>>) => {
     set((prev) => {
@@ -316,31 +315,24 @@ export function Component() {
 
       {/* Bottom Selection Bar */}
       {selectionMode && totalSelected > 0 && (
-        <div className="border-t border-border bg-card px-6 py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-foreground">
-              {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
-              {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
-              {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
-              {' '}selected
-            </span>
-            <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
-              <X className="h-3.5 w-3.5" />
-              Clear
-            </Button>
-            <div className="flex-1" />
-            <Button size="sm" onClick={() => setAzureDialogOpen(true)}>Copy to Azure</Button>
-            <Button size="sm" variant="outline" onClick={() => setGcsDialogOpen(true)}>Copy to GCS</Button>
-            <Button size="sm" variant="outline" onClick={() => setPhotosDialogOpen(true)}>Copy to Google Photos</Button>
-            <Button size="sm" variant="outline" onClick={() => setDriveDialogOpen(true)}>Copy to Google Drive</Button>
-          </div>
-        </div>
+        <CopyToBar
+          sourceProvider="dropbox"
+          selectedCount={totalSelected}
+          selectedLabel={
+            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
+            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
+            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
+            ' selected'
+          }
+          onClearSelection={clearSelection}
+          onCopyTo={(dest) => setActiveDialog(dest)}
+        />
       )}
 
       {/* Copy Dialogs */}
       <CopyToAzureDialog
-        open={azureDialogOpen}
-        onOpenChange={setAzureDialogOpen}
+        open={activeDialog === 'azure'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}
         onSuccess={() => {
@@ -349,8 +341,8 @@ export function Component() {
         }}
       />
       <CopyToGcsDialog
-        open={gcsDialogOpen}
-        onOpenChange={setGcsDialogOpen}
+        open={activeDialog === 'gcs'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}
         onSuccess={() => {
@@ -359,8 +351,8 @@ export function Component() {
         }}
       />
       <CopyToGooglePhotosDialog
-        open={photosDialogOpen}
-        onOpenChange={setPhotosDialogOpen}
+        open={activeDialog === 'google-photos'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}
         onSuccess={() => {
@@ -369,8 +361,8 @@ export function Component() {
         }}
       />
       <CopyToGoogleDriveDialog
-        open={driveDialogOpen}
-        onOpenChange={setDriveDialogOpen}
+        open={activeDialog === 'google-drive'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}
         onSuccess={() => {

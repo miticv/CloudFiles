@@ -9,9 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, X, CheckSquare, HardDrive } from 'lucide-react';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CloudOff, CheckSquare } from 'lucide-react';
 import { isAxiosError } from 'axios';
+import { CopyToBar } from '@/components/copy-to-bar';
+import { type CopyProviderId } from '@/lib/providers';
 import { CopyToAzureDialog } from './copy-to-azure-dialog';
+import { CopyToGcsDialog } from './copy-to-gcs-dialog';
+import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
+import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
 
 // Google Docs MIME types that cannot be downloaded/copied
 const GOOGLE_DOCS_MIMES = new Set([
@@ -70,7 +75,7 @@ export function Component() {
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [accumulatedNextToken, setAccumulatedNextToken] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
-  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
 
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
@@ -431,10 +436,31 @@ export function Component() {
         file={previewFile}
       />
 
-      {/* Copy to Azure Dialog */}
+      {/* Copy Dialogs */}
       <CopyToAzureDialog
-        open={copyDialogOpen}
-        onOpenChange={setCopyDialogOpen}
+        open={activeDialog === 'azure'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={clearSelection}
+      />
+      <CopyToGcsDialog
+        open={activeDialog === 'gcs'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={clearSelection}
+      />
+      <CopyToDropboxDialog
+        open={activeDialog === 'dropbox'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={clearSelection}
+      />
+      <CopyToGooglePhotosDialog
+        open={activeDialog === 'google-photos'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}
         onSuccess={clearSelection}
@@ -442,28 +468,18 @@ export function Component() {
 
       {/* Bottom Selection Bar */}
       {selectionMode && totalSelected > 0 && (
-        <div className="border-t border-border bg-card px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-foreground">
-                {selectedFiles.size > 0 && `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`}
-                {selectedFiles.size > 0 && selectedFolders.size > 0 && ' and '}
-                {selectedFolders.size > 0 && `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}`}
-                {' '}selected
-              </span>
-              <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
-                <X className="h-3.5 w-3.5" />
-                Clear
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700" onClick={() => setCopyDialogOpen(true)}>
-                <HardDrive className="h-4 w-4" />
-                Copy to Azure
-              </Button>
-            </div>
-          </div>
-        </div>
+        <CopyToBar
+          sourceProvider="google-drive"
+          selectedCount={totalSelected}
+          selectedLabel={
+            (selectedFiles.size > 0 ? `${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}` : '') +
+            (selectedFiles.size > 0 && selectedFolders.size > 0 ? ' and ' : '') +
+            (selectedFolders.size > 0 ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? 's' : ''}` : '') +
+            ' selected'
+          }
+          onClearSelection={clearSelection}
+          onCopyTo={(dest) => setActiveDialog(dest)}
+        />
       )}
     </div>
   );

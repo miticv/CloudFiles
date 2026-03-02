@@ -26,7 +26,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: Web.UI/package-lock.json
       - name: Generate environment files
-        working-directory: Web.UI/src/environments
+        working-directory: Web.UI/src
         run: |
           sed -e "s|__PRODUCTION_API_URL__|${{ secrets.PRODUCTION_API_URL }}|g" \
               -e "s|__GOOGLE_CLIENT_ID__|${{ secrets.GOOGLE_CLIENT_ID }}|g" \
@@ -34,8 +34,7 @@ jobs:
               -e "s|__AZURE_TENANT_ID__|${{ secrets.AZURE_TENANT_ID }}|g" \
               -e "s|__AZURE_CLIENT_ID__|${{ secrets.AZURE_CLIENT_ID }}|g" \
               -e "s|__ADMIN_EMAIL__|${{ secrets.ADMIN_EMAIL }}|g" \
-              environment.prod.template.ts > environment.prod.ts
-          cp environment.prod.ts environment.ts
+              env.template.ts > env.ts
       - name: Install dependencies
         working-directory: Web.UI
         run: npm ci
@@ -52,7 +51,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_HILL_0CA4C2B0F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "/Web.UI/dist/CloudFiles/browser"
+          app_location: "/Web.UI/dist"
           api_location: ""
           output_location: ""
           skip_app_build: true

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CloudFiles is a multi-cloud file browser and photo migration tool. Users browse/manage files across Azure Blob Storage and Google Cloud Storage, and migrate photos to/from Google Photos.
 
-**Architecture**: Angular 19 SPA → Azure Functions v4 (.NET 8) BFF → Cloud APIs
+**Architecture**: React SPA (Vite) → Azure Functions v4 (.NET 8) BFF → Cloud APIs
 
 All cloud operations use the logged-in user's own OAuth tokens (no service accounts).
 
@@ -16,10 +16,9 @@ All cloud operations use the logged-in user's own OAuth tokens (no service accou
 ```bash
 cd Web.UI
 npm ci                  # install dependencies
-npm run start           # dev server (ng serve with SSL, proxies /api to localhost:7071)
-npm run build           # production build
-npm run lint            # ESLint + Angular linting
-npm run test            # unit tests (Karma/Jasmine)
+npm run dev             # dev server (Vite, proxies /api to localhost:7071)
+npm run build           # production build (tsc + vite build)
+npm run lint            # ESLint
 ```
 
 ### Backend (root)
@@ -33,14 +32,14 @@ func start              # run Azure Functions locally
 ```bash
 npx azurite --silent --location .azurite   # Terminal 1: storage emulator
 func start                                  # Terminal 2: backend
-cd Web.UI && ng serve                       # Terminal 3: frontend at https://localhost:4200
+cd Web.UI && npm run dev                    # Terminal 3: frontend at http://localhost:4200
 ```
 
 ### Secrets Setup
 ```bash
-bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + environment.ts
+bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + env.ts
 # Or manually: cp local.settings.example.json local.settings.json
-#              cp Web.UI/src/environments/environment.template.ts Web.UI/src/environments/environment.ts
+#              cp Web.UI/src/env.template.ts Web.UI/src/env.ts
 ```
 
 ## Architecture
@@ -57,28 +56,34 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
   - `BFF_Admin.cs` — Admin user management (list, update)
 - **`Utilities/`** — Cloud SDK wrappers: `AzureUtility.cs`, `GoogleUtility.cs`, `CommonUtility.cs`, `UserTableUtility.cs`
 - **`Models/Constants.cs`** — All function and orchestrator name constants
-- **`AzureToGoogle/`**, **`GoogleToGoogle/`** — Durable Functions for photo migrations: parallel upload in batches of 50 with retry (3 attempts, exponential backoff) → `batchCreate` per batch. See orchestrator pattern below
-- **`GooglePhotosToAzure/`** — Durable Functions for photo migration using parallel fan-out/fan-in (Azure Blob has no concurrent write quota)
+- **`AzureToGoogle/`**, **`GoogleToGoogle/`** — Durable Functions for photo migrations: parallel upload in batches of 50 with retry (3 attempts, exponential backoff) → `batchCreate` per batch
+- **`GooglePhotosToAzure/`** — Durable Functions for photo migration using parallel fan-out/fan-in
 - **`Program.cs`** — Host builder; uses Newtonsoft JSON with camelCase serialization
 
-### Frontend (Angular 19 standalone, `Web.UI/src/app/`)
+### Frontend (React + Vite + TypeScript, `Web.UI/src/`)
 
-- **`core/auth/`** — Multi-provider OIDC authentication + app auth:
-  - `multi-auth.service.ts` — Orchestrates three OIDC configs (google, azure, azure-storage)
-  - `auth.interceptor.ts` — Attaches correct Bearer token based on request URL pattern (OIDC for cloud APIs, CloudFiles JWT for `/admin/` and `/auth/me`)
-  - `auth.guard.ts` — Two-tier route protection (CloudFiles JWT + OIDC provider)
-  - `admin.guard.ts` — Admin-only route protection
-- **`core/services/`** — API services for each cloud provider + `auth.service.ts` (login/session) + `admin.service.ts` (user management)
-- **`views/`** — Feature modules (lazy-loaded):
-  - `file-manager/` — Main file browsing with NgRx store (`store/` subfolder has actions, reducer, effects, selectors)
+- **`auth/`** — Multi-provider OIDC authentication + app auth:
+  - `oidc-config.ts` — Three `UserManager` instances (google, azure, azure-storage) from `oidc-client-ts`
+  - `oidc-provider.tsx` — React context for OIDC state, callback processing, auth chain
+  - `auth-context.tsx` — CloudFiles JWT context (login, register, OAuth login, logout)
+  - `axios-client.ts` — Axios interceptor with URL-based token routing
+  - `auth-guard.tsx` — Two-tier route protection (CloudFiles JWT + OIDC provider)
+  - `admin-guard.tsx` — Admin-only route protection
+- **`api/`** — TanStack Query hooks for each cloud provider + `types.ts` (all TypeScript interfaces)
+- **`stores/`** — Zustand store for file-manager state
+- **`pages/`** — Feature pages (lazy-loaded via React Router):
+  - `file-manager/` — Main file browsing with Zustand store, detail drawer, selection
   - `storage-browser/` — Azure subscription/RG/account hierarchy
-  - `google-storage-browser/` — GCS bucket browsing
+  - `google-storage/` — GCS bucket browsing
+  - `google-drive/` — Google Drive folder navigation
   - `google-photos/` — Photos picker and album management
   - `processes/` — Migration job monitoring
-  - `sessions/` — Login, sign-in (connections), error pages
+  - `connections/` — Provider connect/disconnect
+  - `login/` — Multi-auth login/register
   - `admin/` — User management (admin only)
-- **`shared/components/layouts/`** — `AdminLayoutComponent` (authenticated, with sidebar) and `AuthLayoutComponent` (public)
-- **Routes** defined in `app.routing.ts`; default path redirects to `file-manager`
+- **`layouts/`** — `AppLayout` (sidebar + header + footer) and `AuthLayout` (public)
+- **`components/ui/`** — shadcn/ui components (Radix + Tailwind)
+- **Routes** defined in `router.tsx`; default path redirects to `file-manager`
 
 ### Authentication — Two Layers
 
@@ -92,22 +97,23 @@ bash setup-secrets.sh   # pulls from Bitwarden, generates local.settings.json + 
 | `azure` | Azure Resource Manager | `management.azure.com` audience |
 | `azure-storage` | Azure Blob Storage | `storage.azure.com` audience |
 
-Azure requires separate tokens per resource audience. The HTTP interceptor in `auth.interceptor.ts` routes tokens by URL pattern:
-- `/admin/*`, `/auth/me` → CloudFiles JWT (from localStorage)
-- `/auth/local/*`, `/auth/oauth/*` → no auth header (credentials in body)
+Azure requires separate tokens per resource audience. The Axios interceptor in `axios-client.ts` routes tokens by URL pattern:
+- `/manage/*`, `/auth/me` → CloudFiles JWT (from localStorage)
+- `/auth/*` → no auth header
 - `/azure/files/*` → azure-storage token
 - `/azure/*` → azure token
 - `/google/*`, `/process/*` → google token
 
-**Auth Flow**: Login page (`/sessions/login`) → CloudFiles JWT → Connections page (`/sessions/signin`) → OIDC provider links → File browsing
+**Auth Flow**: Login page (`/sessions/login`) → CloudFiles JWT → Connections page (`/connections`) → OIDC provider links → File browsing
 
 ## Code Conventions
 
 ### Frontend
-- **Single quotes**, max line length **180**, kebab-case component selectors (no prefix), camelCase directive selectors
-- Standalone components used throughout (Angular 19 standalone bootstrap)
-- NgRx for complex state (file-manager); simpler views use service-based state
-- Feature modules are lazy-loaded via `loadChildren`/`loadComponent`
+- **Single quotes**, TypeScript strict mode, functional components with hooks
+- TanStack Query for server state, Zustand for client state (file-manager only)
+- Pages are lazy-loaded via `lazy: () => import(...)` in router
+- shadcn/ui components (Radix primitives + Tailwind CSS v4)
+- Lucide React for icons
 
 ### Backend
 - All function names defined in `Models/Constants.cs` — reference these, don't use string literals
@@ -128,7 +134,7 @@ After implementing any changes, always run the relevant checks before considerin
 
 - **`.github/workflows/CloudFiles-WebUI.yml`** — Frontend: lint, build, deploy to Azure Static Web Apps
 - **`.github/workflows/CloudFiles-Api.yml`** — Backend: build, publish, deploy to Azure Functions
-- Environment secrets are substituted into `environment.prod.ts` at build time
+- Environment secrets are substituted into `env.template.ts` at build time
 
 # Design Tokens (Tailwind)
 - Border radius: rounded-lg (cards), rounded-md (buttons/inputs)

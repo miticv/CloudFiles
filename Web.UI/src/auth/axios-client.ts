@@ -2,7 +2,7 @@ import axios from 'axios';
 import { env } from '@/env';
 import { getManager, type OidcConfigId } from './oidc-config';
 import { getPCloudToken, getPCloudHostname, clearPCloudAuth } from './pcloud-auth';
-import { getDropboxToken, clearDropboxAuth } from './dropbox-auth';
+import { getDropboxToken, getDropboxRefreshToken, isDropboxTokenExpired, setDropboxAuth, clearDropboxAuth } from './dropbox-auth';
 
 export const apiClient = axios.create({
   baseURL: env.api,
@@ -58,7 +58,26 @@ apiClient.interceptors.request.use(async (config) => {
   }
 
   if (configId === 'dropbox') {
-    const token = getDropboxToken();
+    let token = getDropboxToken();
+    if (token && isDropboxTokenExpired()) {
+      const refreshToken = getDropboxRefreshToken();
+      if (refreshToken) {
+        try {
+          const res = await axios.post<{ accessToken: string; refreshToken: string; expiresIn: number }>(
+            `${env.api}dropbox/oauth/refresh`,
+            { refreshToken },
+            { headers: { Authorization: `Bearer ${localStorage.getItem('cf_token')}` } },
+          );
+          setDropboxAuth(res.data.accessToken, res.data.refreshToken, res.data.expiresIn);
+          token = res.data.accessToken;
+        } catch {
+          console.warn('[Auth Interceptor] Dropbox token refresh failed — clearing auth');
+          clearDropboxAuth();
+          window.location.href = '/connections';
+          return config;
+        }
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -97,6 +116,22 @@ apiClient.interceptors.response.use(
         clearPCloudAuth();
         window.location.href = '/connections';
       } else if (configId === 'dropbox') {
+        const refreshToken = getDropboxRefreshToken();
+        if (refreshToken && !error.config._dropboxRetried) {
+          try {
+            const res = await axios.post<{ accessToken: string; refreshToken: string; expiresIn: number }>(
+              `${env.api}dropbox/oauth/refresh`,
+              { refreshToken },
+              { headers: { Authorization: `Bearer ${localStorage.getItem('cf_token')}` } },
+            );
+            setDropboxAuth(res.data.accessToken, res.data.refreshToken, res.data.expiresIn);
+            error.config._dropboxRetried = true;
+            error.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+            return apiClient.request(error.config);
+          } catch {
+            // refresh failed — fall through to clear
+          }
+        }
         console.warn('[Auth Interceptor] 401 from Dropbox — token expired:', url);
         clearDropboxAuth();
         window.location.href = '/connections';

@@ -52,6 +52,44 @@ namespace CloudFiles
             }
         }
 
+        [Function(Constants.DropboxOAuthRefresh)]
+        public static async Task<IActionResult> DropboxOAuthRefresh(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "dropbox/oauth/refresh")] HttpRequest req,
+            FunctionContext executionContext)
+        {
+            var log = executionContext.GetLogger(nameof(DropboxOAuthRefresh));
+            try
+            {
+                var cfToken = CommonUtility.GetTokenFromHeaders(req);
+                UserTableUtility.ValidateJwt(cfToken);
+
+                var body = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
+                var request = JsonConvert.DeserializeObject<DropboxRefreshRequest>(body);
+
+                if (request == null || string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return new BadRequestObjectResult("refreshToken is required.");
+                }
+
+                log.LogInformation("Refreshing Dropbox access token");
+
+                var tokenResponse = await DropboxUtility.RefreshAccessTokenAsync(request.RefreshToken)
+                    .ConfigureAwait(false);
+
+                return new OkObjectResult(tokenResponse);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                log.LogError(ex.Message);
+                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Error in {Constants.DropboxOAuthRefresh}");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
         [Function(Constants.DropboxFileList)]
         public static async Task<IActionResult> DropboxFileList(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "dropbox/files/list")] HttpRequest req,

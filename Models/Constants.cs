@@ -89,6 +89,7 @@
 
         // BFF Dropbox
         public const string DropboxOAuthCallback = "dropboxOAuthCallback";
+        public const string DropboxOAuthRefresh = "dropboxOAuthRefresh";
         public const string DropboxFileList = "dropboxFileList";
         public const string DropboxFileListContinue = "dropboxFileListContinue";
         public const string DropboxDownloadFile = "dropboxDownloadFile";

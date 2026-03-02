@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using CloudFiles.Utilities;
 using CloudFiles.Models;
-using System.Net;
 using System.Threading;
 using Microsoft.DurableTask.Client;
 using System.Collections.Generic;
@@ -17,34 +16,14 @@ namespace CloudFiles
 {
     public static class BFF_Common
     {
-        [Function(Constants.bffPing)]
+        [Function(Constants.BffPing)]
         public static IActionResult Ping(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ping")] HttpRequest req,
             FunctionContext executionContext)
         {
             var log = executionContext.GetLogger(nameof(Ping));
-            log.LogInformation($"{Constants.bffPing} call {req.Path}");
+            log.LogInformation($"{Constants.BffPing} call {req.Path}");
             return new OkObjectResult("pong");
-        }
-
-        [Function(Constants.GoogleValidateToken)]
-        public static async Task<IActionResult> GoogleValidateToken(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "google/tokenvalidate")] HttpRequest req,
-            FunctionContext executionContext)
-        {
-            var log = executionContext.GetLogger(nameof(GoogleValidateToken));
-            try
-            {
-                log.LogInformation($"{Constants.GoogleValidateToken} call");
-                await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
-
-                return new OkResult();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
-            }
         }
 
         [Function(Constants.ProcessListInstances)]
@@ -157,7 +136,13 @@ namespace CloudFiles
                     Constants.AzureStorageToGooglePhotosOrchestrator,
                     Constants.GoogleStorageToGooglePhotosOrchestrator,
                     Constants.GooglePhotosToAzureOrchestrator,
+                    Constants.GooglePhotosToGcsOrchestrator,
+                    Constants.GooglePhotosToDropboxOrchestrator,
+                    Constants.GooglePhotosToGoogleDriveOrchestrator,
                     Constants.GoogleDriveToAzureOrchestrator,
+                    Constants.GoogleDriveToGcsOrchestrator,
+                    Constants.GoogleDriveToDropboxOrchestrator,
+                    Constants.GoogleDriveToGooglePhotosOrchestrator,
                     Constants.GcsToAzureOrchestrator,
                     Constants.AzureToGcsOrchestrator,
                     Constants.DropboxToAzureOrchestrator,
@@ -273,7 +258,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, $"Unexpected error in {Constants.ProcessListInstances}");
-                return new ObjectResult(new { error = ex.GetType().FullName, message = ex.Message, inner = ex.InnerException?.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
@@ -291,12 +276,22 @@ namespace CloudFiles
             try
             {
                 var token = CommonUtility.GetTokenFromHeaders(req);
-                UserTableUtility.ValidateJwt(token);
+                var (userEmail, isAdmin) = UserTableUtility.ValidateJwtAndGetClaims(token);
                 var instance = await starter.GetInstanceAsync(instanceId, getInputsAndOutputs: true).ConfigureAwait(false);
                 if (instance == null)
                 {
                     return new NotFoundResult();
                 }
+
+                // IDOR protection: verify user owns this instance or is admin
+                if (!isAdmin && !string.IsNullOrEmpty(instance.SerializedInput) &&
+                    !instance.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new StatusCodeResult(StatusCodes.Status403Forbidden);
+                }
+
+                // Strip access tokens from response to avoid leaking credentials
+                var sanitizedInput = StripTokensFromInput(instance.SerializedInput);
 
                 return new OkObjectResult(new
                 {
@@ -305,7 +300,7 @@ namespace CloudFiles
                     runtimeStatus = (int)instance.RuntimeStatus,
                     createdAt = instance.CreatedAt,
                     lastUpdatedAt = instance.LastUpdatedAt,
-                    serializedInput = instance.SerializedInput,
+                    serializedInput = sanitizedInput,
                     serializedOutput = instance.SerializedOutput,
                     serializedCustomStatus = instance.SerializedCustomStatus
                 });
@@ -333,7 +328,19 @@ namespace CloudFiles
             try
             {
                 var token = CommonUtility.GetTokenFromHeaders(req);
-                UserTableUtility.ValidateJwt(token);
+                var (userEmail, isAdmin) = UserTableUtility.ValidateJwtAndGetClaims(token);
+
+                // IDOR protection: verify user owns this instance or is admin
+                if (!isAdmin)
+                {
+                    var instance = await starter.GetInstanceAsync(instanceId, getInputsAndOutputs: true).ConfigureAwait(false);
+                    if (instance != null && !string.IsNullOrEmpty(instance.SerializedInput) &&
+                        !instance.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new StatusCodeResult(StatusCodes.Status403Forbidden);
+                    }
+                }
+
                 log.LogInformation($"Purging orchestration instance '{instanceId}'.");
                 var result = await starter.PurgeInstanceAsync(instanceId).ConfigureAwait(false);
                 return new OkObjectResult(new { instanceId, purged = result != null });
@@ -417,7 +424,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, $"Error restarting instance {instanceId}");
-                return new ObjectResult(new { error = ex.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
@@ -435,13 +442,21 @@ namespace CloudFiles
             try
             {
                 var token = CommonUtility.GetTokenFromHeaders(req);
-                UserTableUtility.ValidateJwt(token);
+                var (userEmail, isAdmin) = UserTableUtility.ValidateJwtAndGetClaims(token);
                 log.LogInformation($"Terminating orchestration instance '{instanceId}'.");
-                var instance = await starter.GetInstanceAsync(instanceId).ConfigureAwait(false);
+                var instance = await starter.GetInstanceAsync(instanceId, getInputsAndOutputs: true).ConfigureAwait(false);
                 if (instance == null)
                 {
                     return new NotFoundObjectResult(new { error = "Instance not found" });
                 }
+
+                // IDOR protection: verify user owns this instance or is admin
+                if (!isAdmin && !string.IsNullOrEmpty(instance.SerializedInput) &&
+                    !instance.SerializedInput.Contains(userEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new StatusCodeResult(StatusCodes.Status403Forbidden);
+                }
+
                 await starter.TerminateInstanceAsync(instanceId, "Terminated by user").ConfigureAwait(false);
                 return new OkObjectResult(new { instanceId, terminated = true });
             }
@@ -518,6 +533,25 @@ namespace CloudFiles
             catch
             {
                 return false;
+            }
+        }
+        private static string? StripTokensFromInput(string? serializedInput)
+        {
+            if (string.IsNullOrEmpty(serializedInput)) return serializedInput;
+            try
+            {
+                var obj = JObject.Parse(serializedInput);
+                var tokenFields = new[] { "accessToken", "AccessToken", "azureAccessToken", "AzureAccessToken",
+                    "googleAccessToken", "GoogleAccessToken", "dropboxAccessToken", "DropboxAccessToken" };
+                foreach (var field in tokenFields)
+                {
+                    if (obj[field] != null) obj[field] = "***";
+                }
+                return obj.ToString(Newtonsoft.Json.Formatting.None);
+            }
+            catch
+            {
+                return serializedInput;
             }
         }
     }

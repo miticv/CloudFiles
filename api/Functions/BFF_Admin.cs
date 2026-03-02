@@ -45,7 +45,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, "Error listing users");
-                return new ObjectResult(new { error = ex.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
@@ -99,7 +99,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, "Error updating user");
-                return new ObjectResult(new { error = ex.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };

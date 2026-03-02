@@ -61,10 +61,6 @@ export const COPY_PROVIDERS: CopyProviderConfig[] = [
   },
 ];
 
-export function getProvider(id: CopyProviderId): CopyProviderConfig {
-  return COPY_PROVIDERS.find(p => p.id === id)!;
-}
-
 export function getDestinations(source: CopyProviderId): CopyProviderConfig[] {
   return COPY_PROVIDERS.filter(p => p.id !== source);
 }

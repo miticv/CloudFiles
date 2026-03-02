@@ -210,6 +210,14 @@ namespace CloudFiles
                     return new BadRequestObjectResult("url query parameter is required");
                 }
 
+                // SSRF protection: only allow known Google Photos domains
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var parsedUri) ||
+                    parsedUri.Scheme != "https" ||
+                    !(parsedUri.Host.EndsWith(".googleusercontent.com") || parsedUri.Host.EndsWith(".ggpht.com")))
+                {
+                    return new BadRequestObjectResult("url must be a valid Google Photos URL");
+                }
+
                 var (data, contentType) = await GoogleUtility.ProxyPickerImageAsync(url, accessToken).ConfigureAwait(false);
                 return new FileContentResult(data, contentType);
             }

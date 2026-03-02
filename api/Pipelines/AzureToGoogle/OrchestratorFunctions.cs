@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudFiles.Models;
@@ -7,9 +8,9 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 
-namespace CloudFiles.GoogleToGoogle
+namespace CloudFiles.AzureToGoogle
 {
-    /** Orcherstrator functions must be Deterministic
+    /** Orchestrator functions must be Deterministic
      * https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-code-constraints
      * - No Dates/Times, Guids, Random numbers
      * - No I/O input/output bindings
@@ -19,38 +20,39 @@ namespace CloudFiles.GoogleToGoogle
      * - No reading environment variables
      * - No infinite loops
      **/
-    public static class OrcherstratorFunctions
+
+    [SuppressMessage("Readability", "RCS1090", Justification = "Orchestrators must not have .ConfigureAwait(false)")]
+    public static class OrchestratorFunctions
     {
-        [Function(Constants.GoogleStorageToGooglePhotosOrchestrator)]
-        public static async Task<object> GoogleStorageToGooglePhotosOrchestrator(
-            [OrchestrationTrigger] TaskOrchestrationContext context)
+        [Function(Constants.AzureStorageToGooglePhotosOrchestrator)]
+        public static async Task<object> AzureToGoogleOrchestrator(
+               [OrchestrationTrigger] TaskOrchestrationContext context)
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
 
             var request = context.GetInput<FilesCopyRequest>()!;
 
-            log.LogInformation($"{Constants.GoogleStorageToGooglePhotosOrchestrator}: Preparing request...");
-            var preparedRequest = await context.CallActivityAsync<GoogleItemsPrepared>(
-                Constants.GoogleStorageToGooglePhotosPrepareList, request);
+            log.LogInformation($"{Constants.AzureStorageToGooglePhotosOrchestrator}: Preparing request...");
+            var preparedRequest = await context.CallActivityAsync<ItemsPrepared>(
+                Constants.AzureStorageToGooglePhotosPrepareList, request);
 
-            log.LogInformation($"{Constants.GoogleStorageToGooglePhotosOrchestrator}: FanOut request to {Constants.CopyGoogleStorageToGooglePhotosOrchestrator} ...");
+            log.LogInformation($"{Constants.AzureStorageToGooglePhotosOrchestrator}: FanOut request to {Constants.CopyAzureBlobsToGooglePhotosOrchestrator} ...");
             var results = await context.CallSubOrchestratorAsync<NewMediaItemResultRoot>(
-               Constants.CopyGoogleStorageToGooglePhotosOrchestrator, preparedRequest);
+               Constants.CopyAzureBlobsToGooglePhotosOrchestrator, preparedRequest);
 
-            return new
-            {
+            return new {
                 request,
                 preparedRequest.ListItemsPrepared,
                 results.NewMediaItemResults
             };
         }
 
-        [Function(Constants.CopyGoogleStorageToGooglePhotosOrchestrator)]
-        public static async Task<NewMediaItemResultRoot> CopyGoogleStorageToGooglePhotosOrchestrator(
+        [Function(Constants.CopyAzureBlobsToGooglePhotosOrchestrator)]
+        public static async Task<NewMediaItemResultRoot> CopyBlobsToGoogleOrchestrator(
             [OrchestrationTrigger] TaskOrchestrationContext context)
         {
             ILogger log = context.CreateReplaySafeLogger<object>();
-            var filesCopyItemsPrepared = context.GetInput<GoogleItemsPrepared>()!;
+            var filesCopyItemsPrepared = context.GetInput<ItemsPrepared>()!;
             var items = filesCopyItemsPrepared.ListItemsPrepared;
             int total = items.Count;
 
@@ -75,7 +77,7 @@ namespace CloudFiles.GoogleToGoogle
                 // --- Upload chunk in parallel with retry ---
                 log.LogInformation($"Uploading batch {batchNum}: {chunk.Count} files");
                 var uploadTasks = chunk.Select(item =>
-                    SafeUploadGoogle(context, item, retryOptions)).ToList();
+                    SafeUploadAzure(context, item, retryOptions)).ToList();
                 var results = await Task.WhenAll(uploadTasks);
 
                 var uploaded = results.Where(r => string.IsNullOrEmpty(r.StatusMessage)).ToList();
@@ -143,13 +145,13 @@ namespace CloudFiles.GoogleToGoogle
             return response;
         }
 
-        private static async Task<GoogleItemPrepared> SafeUploadGoogle(
-            TaskOrchestrationContext context, GoogleItemPrepared item, TaskOptions options)
+        private static async Task<ItemPrepared> SafeUploadAzure(
+            TaskOrchestrationContext context, ItemPrepared item, TaskOptions options)
         {
             try
             {
-                return await context.CallActivityAsync<GoogleItemPrepared>(
-                    Constants.UploadGoogleStorageToGooglePhotos, item, options);
+                return await context.CallActivityAsync<ItemPrepared>(
+                    Constants.UploadAzureBlobToGooglePhotos, item, options);
             }
             catch (TaskFailedException)
             {

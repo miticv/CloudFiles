@@ -28,13 +28,6 @@ export function usePickedItems(sessionId: string | null, enabled = false) {
   });
 }
 
-export function useDeleteSession() {
-  return useMutation({
-    mutationFn: (sessionId: string) =>
-      apiClient.delete(`google/photos/sessions/${encodeURIComponent(sessionId)}`),
-  });
-}
-
 export function getImageProxyPath(baseUrl: string, width: number, height: number): string {
   const sizedUrl = `${baseUrl}=w${width}-h${height}-c`;
   return `google/photos/image?url=${encodeURIComponent(sizedUrl)}`;

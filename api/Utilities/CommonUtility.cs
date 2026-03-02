@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace CloudFiles.Utilities
@@ -15,16 +14,6 @@ namespace CloudFiles.Utilities
         public static string GetItemTypeFromPath(this string value)
         {
             return value.EndsWith("/") ? "FOLDER" : value.Trim('/').Split('/').Last().Split('.').Last().ToUpper();
-        }
-
-        public static Stream GenerateStreamFromString(string s)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream);
-            writer.Write(s);
-            writer.Flush();
-            stream.Position = 0;
-            return stream;
         }
 
         public static UiErrorFormat FormatErrorMessage(string message)
@@ -48,7 +37,10 @@ namespace CloudFiles.Utilities
             {
                 throw new UnauthorizedAccessException("Please include Authorization header with bearer token");
             }
-            return values.FirstOrDefault()!.Replace("Bearer ", "").Replace("bearer ", "");
+            var value = values.FirstOrDefault()!;
+            if (value.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return value.Substring(7);
+            return value;
         }
 
         public static string ToFileSize(this double value)

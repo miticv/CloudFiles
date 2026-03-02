@@ -44,6 +44,8 @@ namespace CloudFiles
                 }
                 else if (request.Provider == "azure")
                 {
+                    // Validate Azure JWT signature before trusting claims
+                    await AzureUtility.ValidateAzureManagementTokenAsync(request.AccessToken).ConfigureAwait(false);
                     var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                     var jwt = handler.ReadJwtToken(request.AccessToken);
                     email = jwt.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
@@ -103,7 +105,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, "Error in OAuth login");
-                return new ObjectResult(new { error = ex.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
@@ -168,7 +170,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, "Error in local registration");
-                return new ObjectResult(new { error = ex.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
@@ -231,7 +233,7 @@ namespace CloudFiles
             catch (Exception ex)
             {
                 log.LogError(ex, "Error in local login");
-                return new ObjectResult(new { error = ex.Message })
+                return new ObjectResult(new { error = "An unexpected error occurred." })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };

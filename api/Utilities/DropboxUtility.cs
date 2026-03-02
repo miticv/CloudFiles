@@ -25,9 +25,11 @@ namespace CloudFiles.Utilities
             return new DropboxUtility { AccessToken = accessToken };
         }
 
-        public static string VerifyDropboxHeaderTokenIsValid(HttpRequest req)
+        public static async Task<string> VerifyDropboxHeaderTokenIsValid(HttpRequest req)
         {
             var accessToken = CommonUtility.GetTokenFromHeaders(req);
+            // Validate token by calling Dropbox API
+            await GetAccountInfoAsync(accessToken).ConfigureAwait(false);
             return accessToken;
         }
 

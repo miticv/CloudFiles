@@ -23,7 +23,7 @@ namespace CloudFiles.DropboxToGoogleDrive
             var log = executionContext.GetLogger(nameof(DropboxToDriveStart));
             try
             {
-                var dropboxToken = DropboxUtility.VerifyDropboxHeaderTokenIsValid(req);
+                var dropboxToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
                 var request = JsonConvert.DeserializeObject<DropboxToDriveRequest>(requestBody)!;
 

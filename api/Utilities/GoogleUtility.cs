@@ -36,7 +36,6 @@ namespace CloudFiles.Utilities
             blobDataStream.Position = 0;
 
             using HttpClient client = new HttpClient();
-            byte[] imageData = blobDataStream.ToArray();
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             client.DefaultRequestHeaders.Add("x-goog-upload-content-type", contentType);
@@ -54,40 +53,6 @@ namespace CloudFiles.Utilities
             else
             {
                 throw new InvalidOperationException($"CopyBytesToGooglePhotosAsync error: {uploadToken}");
-            }
-        }
-
-        public static async Task<NewMediaItemResultRoot> SaveMediaItemsToGooglePhotosAsync(ItemPrepared item)
-        {
-            using HttpClient client = new HttpClient();
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", item.AccessToken);
-
-            NewMediaItemRoot body = new NewMediaItemRoot()
-            {
-                AlbumId = item.AlbumId,
-                NewMediaItems = new List<NewMediaItem>()
-            };
-            SimpleMediaItem simpleItem = new SimpleMediaItem()
-            {
-                FileName = item.ItemFilename,
-                UploadToken = item.UploadToken
-            };
-            body.NewMediaItems.Add(new NewMediaItem() { SimpleMediaItem = simpleItem, Description = "" });
-
-            string serializedBody = JsonConvert.SerializeObject(body);
-
-            HttpResponseMessage response = await client.PostAsync("https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate",
-                new StringContent(serializedBody, Encoding.UTF8, "application/json")).ConfigureAwait(false);
-            string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return JsonConvert.DeserializeObject<NewMediaItemResultRoot>(result)!;
-            }
-            else
-            {
-                throw new InvalidOperationException($"SaveMediaItemsToGooglePhotosAsync error: {result}");
             }
         }
 
@@ -371,7 +336,6 @@ namespace CloudFiles.Utilities
         // https://storage.googleapis.com/storage/v1/b/vlad-test123/o?prefix=2000
         private async Task<GoogleStorageFileRoot> GoogleStorageListItemsAsync(string prefix, string pageToken)
         {
-            // var accessToken = await GetServiceAccessTokenFromJSONKeyAsync("service_account.secret.json").ConfigureAwait(false);
             var queryPrefix = $"?prefix={prefix}";
             var queryPageToken = String.IsNullOrEmpty(pageToken) ? "" : $"&pageToken={pageToken}";
 

@@ -71,7 +71,7 @@ namespace CloudFiles.AzureToGcs
                 var azureUtility = new AzureUtility(item.AccountName, item.ContainerName, item.AzureAccessToken);
                 var blobData = await azureUtility.GetBlobItemAsync(item.BlobPath).ConfigureAwait(false);
 
-                var memoryStream = new MemoryStream();
+                using var memoryStream = new MemoryStream();
                 await blobData.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
                 var data = memoryStream.ToArray();
                 var contentType = blobData.ContentType ?? "application/octet-stream";

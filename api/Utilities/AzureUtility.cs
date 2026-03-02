@@ -63,6 +63,11 @@ namespace CloudFiles.Utilities
             return accessToken;
         }
 
+        public static async Task ValidateAzureManagementTokenAsync(string accessToken)
+        {
+            await ValidateJwtToken(accessToken, "https://management.azure.com").ConfigureAwait(false);
+        }
+
         private static async Task ValidateJwtToken(string accessToken, string audience)
         {
             try
@@ -345,10 +350,6 @@ namespace CloudFiles.Utilities
          */
         public async Task<List<Item>> ItemsHierarchicalDeepListingAsync(string folderPath, int? pageSize)
         {
-            // const tokenCredential = new Azure.TokenCredential(accessToken)
-            //BlobServiceClient blobServiceClient = new(ConnectionString);
-            //var ContainerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
-
             var result = new List<Item>();
             // Call the listing operation and return pages of the specified size.
             var resultSegment = ContainerClient.GetBlobsByHierarchyAsync(prefix: folderPath, delimiter: "/")
@@ -443,7 +444,7 @@ namespace CloudFiles.Utilities
         public async Task<IActionResult> GetHttpItemJsonAsync(string filePath)
         {
             var blobdata = await GetBlobItemAsync(filePath).ConfigureAwait(false);
-            MemoryStream memoryStream = new MemoryStream();
+            using var memoryStream = new MemoryStream();
             await blobdata.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
             memoryStream.Position = 0;
             var imageContent = memoryStream.ToArray();

@@ -53,21 +53,6 @@ export function useAssignRole() {
   });
 }
 
-export function useCheckRole(
-  subscriptionId: string | null, resourceGroup: string | null, accountName: string | null,
-  role?: 'reader' | 'contributor', enabled = false
-) {
-  const roleParam = role ? `?role=${role}` : '';
-  return useQuery({
-    queryKey: ['azure', 'checkRole', subscriptionId, resourceGroup, accountName, role],
-    queryFn: () =>
-      apiClient.get<{ hasRole: boolean }>(
-        `azure/subscription/${subscriptionId}/ResourceGroup/${resourceGroup}/accountName/${accountName}/checkRole${roleParam}`
-      ).then(r => r.data),
-    enabled: enabled && !!subscriptionId && !!resourceGroup && !!accountName,
-  });
-}
-
 export function useProbeAccess(accountName: string | null, containerName: string | null, enabled = false) {
   return useQuery({
     queryKey: ['azure', 'probe', accountName, containerName],

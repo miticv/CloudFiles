@@ -33,6 +33,13 @@ namespace CloudFiles
                     return new BadRequestObjectResult("code and redirectUri are required.");
                 }
 
+                // Validate redirect_uri against known app URL to prevent token theft
+                var appBaseUrl = (Environment.GetEnvironmentVariable("APP_BASE_URL") ?? "http://localhost:4200").TrimEnd('/');
+                if (!request.RedirectUri.StartsWith(appBaseUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new BadRequestObjectResult("Invalid redirect URI.");
+                }
+
                 log.LogInformation("Exchanging Dropbox OAuth code for token");
 
                 var tokenResponse = await DropboxUtility.ExchangeCodeForTokenAsync(request.Code, request.RedirectUri)
@@ -98,7 +105,7 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(DropboxFileList));
             try
             {
-                var accessToken = DropboxUtility.VerifyDropboxHeaderTokenIsValid(req);
+                var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
                 string path = req.Query["path"];
                 if (path == null) path = "";
@@ -134,7 +141,7 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(DropboxFileListContinue));
             try
             {
-                var accessToken = DropboxUtility.VerifyDropboxHeaderTokenIsValid(req);
+                var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
                 string cursor = req.Query["cursor"];
                 if (string.IsNullOrEmpty(cursor))
@@ -173,7 +180,7 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(DropboxDownloadFile));
             try
             {
-                var accessToken = DropboxUtility.VerifyDropboxHeaderTokenIsValid(req);
+                var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
                 string path = req.Query["path"];
                 if (string.IsNullOrEmpty(path))
@@ -215,7 +222,7 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(DropboxUploadFile));
             try
             {
-                var accessToken = DropboxUtility.VerifyDropboxHeaderTokenIsValid(req);
+                var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
                 string path = req.Query["path"];
                 if (string.IsNullOrEmpty(path))

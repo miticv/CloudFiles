@@ -425,17 +425,6 @@ export interface StartAzureToDriveRequest {
   startedBy: string;
 }
 
-// ─── Azure to Google Photos ───
-export interface StartAzureToGooglePhotosRequest {
-  albumId: string;
-  albumTitle: string;
-  selectedItemsList: MigrationItem[];
-  accountName: string;
-  containerName: string;
-  azureAccessToken: string;
-  startedBy: string;
-}
-
 // ─── Google Drive to GCS ───
 export interface StartGoogleDriveToGcsRequest {
   driveItems: DriveFileForCopy[];

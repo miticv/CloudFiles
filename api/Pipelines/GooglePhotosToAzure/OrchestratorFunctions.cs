@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CloudFiles.GooglePhotosToAzure
 {
-    public static class OrcherstratorFunctions
+    public static class OrchestratorFunctions
     {
         [Function(Constants.GooglePhotosToAzureOrchestrator)]
         public static async Task<object> GooglePhotosToAzureOrchestrator(

@@ -1,19 +1,17 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage_DEV": "UseDevelopmentStorage=true",
     "AzureWebJobsStorage": "<azure-storage-connection-string>",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "GooglePhotoClientId": "<google-oauth-client-id>",
     "AzureTenantId": "<azure-ad-tenant-id>",
-    "IS_RUNNING_LOCALLY": "true",
-    "FEATURE_FLAG_TEST_FAIL_FILENAME_CONTAINS": "",
     "JWT_SECRET": "<random-256-bit-secret-for-signing-tokens>",
     "ADMIN_EMAILS": "<comma-separated-admin-emails>",
     "PCloudClientId": "<pcloud-client-id>",
     "PCloudClientSecret": "<pcloud-client-secret>",
     "DropBoxKey": "<drop-box-key>",
     "DropBoxSecret": "<drop-box-secret>",
+    "GoogleClientSecret": "<google-oauth-client-secret>",
     "ACS_CONNECTION_STRING": "<azure-communication-services-connection-string>",
     "ACS_SENDER_ADDRESS": "<acs-sender-email-address>",
     "APP_BASE_URL": "http://localhost:4200"

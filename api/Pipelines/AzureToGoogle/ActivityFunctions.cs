@@ -70,7 +70,7 @@ namespace CloudFiles.AzureToGoogle
                     return item;
                 }
 
-                MemoryStream memoryStream = new MemoryStream();
+                using var memoryStream = new MemoryStream();
                 await blobData.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
                 memoryStream.Position = 0;
 

@@ -2,7 +2,7 @@
 {
     public static class Constants
     {
-        public const string bffPing = "ping";
+        public const string BffPing = "ping";
         // BFF
         public const string AzureFileList = "azureFileList";
         public const string AzureFileGetItem = "azureFileGetItem";
@@ -14,8 +14,6 @@
         public const string AzureAssignStorageRole = "azureAssignStorageRole";
         public const string AzureCheckStorageRole = "azureCheckStorageRole";
         public const string AzureProbeContainerAccess = "azureProbeContainerAccess";
-        public const string GoogleToken = "googleToken";
-        public const string GoogleValidateToken = "googleValidateToken";
 
         public const string GoogleAlbumList = "googleAlbumList";
         public const string GoogleAlbumAdd = "googleAlbumAdd";
@@ -44,14 +42,12 @@
         public const string AzureStorageToGooglePhotosPrepareList =  "azureStorageToGooglePhotosPrepareList";
         public const string CopyAzureBlobsToGooglePhotosOrchestrator = "copyAzureBlobsToGooglePhotosOrchestrator";
         public const string UploadAzureBlobToGooglePhotos = "uploadAzureBlobToGooglePhotos";
-        public const string CopyAzureBlobToGooglePhotos = "copyAzureBlobToGooglePhotos";
 
         // automation google storage
         public const string GoogleStorageToGooglePhotosOrchestrator = "googleStorageToGooglePhotosOrchestrator";
         public const string GoogleStorageToGooglePhotosPrepareList = "googleStorageToGooglePhotosPrepareList";
         public const string CopyGoogleStorageToGooglePhotosOrchestrator = "copyGoogleStorageToGooglePhotosOrchestrator";
         public const string UploadGoogleStorageToGooglePhotos = "uploadGoogleStorageToGooglePhotos";
-        public const string CopyPhotoUrlToGooglePhotos = "copyPhotoUrlToGooglePhotos";
 
         // shared batch create for Google Photos
         public const string BatchCreateGoogleMediaItems = "batchCreateGoogleMediaItems";

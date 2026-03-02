@@ -23,7 +23,7 @@ namespace CloudFiles.DropboxToAzure
             var log = executionContext.GetLogger(nameof(DropboxToAzureStorage));
             try
             {
-                var dropboxToken = DropboxUtility.VerifyDropboxHeaderTokenIsValid(req);
+                var dropboxToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
                 var request = JsonConvert.DeserializeObject<DropboxToAzureRequest>(requestBody)!;
 

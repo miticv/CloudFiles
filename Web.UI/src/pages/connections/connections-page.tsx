@@ -5,6 +5,7 @@ import { startPCloudLogin, setPCloudAuth, clearPCloudAuth, isPCloudConnected } f
 import { startDropboxLogin, setDropboxAuth, clearDropboxAuth, isDropboxConnected } from '@/auth/dropbox-auth';
 import { useExchangePCloudCode } from '@/api/pcloud.api';
 import { useExchangeDropboxCode } from '@/api/dropbox.api';
+import { env } from '@/env';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -205,7 +206,7 @@ export function Component() {
 
   const allProviders = [
     ...OIDC_PROVIDERS.map((p) => ({ ...p, type: 'oidc' as const })),
-    { ...PCLOUD_PROVIDER, type: 'pcloud' as const },
+    ...(env.featurePCloud ? [{ ...PCLOUD_PROVIDER, type: 'pcloud' as const }] : []),
     { ...DROPBOX_PROVIDER, type: 'dropbox' as const },
   ];
 

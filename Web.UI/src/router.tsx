@@ -3,6 +3,7 @@ import { AppLayout } from '@/layouts/app-layout';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { AuthGuard } from '@/auth/auth-guard';
 import { AdminGuard } from '@/auth/admin-guard';
+import { env } from '@/env';
 
 export const router = createBrowserRouter([
   {
@@ -63,18 +64,18 @@ export const router = createBrowserRouter([
         path: 'google-photos',
         lazy: () => import('@/pages/google-photos/google-photos-page'),
       },
-      {
+      ...(env.featurePCloud ? [{
         path: 'pcloud',
         lazy: () => import('@/pages/pcloud/pcloud-page'),
-      },
+      }] : []),
       {
         path: 'dropbox',
         lazy: () => import('@/pages/dropbox/dropbox-page'),
       },
-      {
+      ...(env.featureAppleDrive ? [{
         path: 'apple-drive',
         lazy: () => import('@/pages/apple-drive/apple-drive-page'),
-      },
+      }] : []),
       {
         path: 'processes',
         lazy: () => import('@/pages/processes/processes-page'),

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/auth/auth-context';
 import { useOidc } from '@/auth/oidc-provider';
+import { env } from '@/env';
 import type { MenuItem, ConnectionStatus } from '@/api/types';
 
 export function useNavigation(): MenuItem[] {
@@ -9,7 +10,10 @@ export function useNavigation(): MenuItem[] {
 
   return useMemo(() => {
     const connectionStatuses: ConnectionStatus[] = providers
-      .filter(s => s.configId === 'google' || s.configId === 'azure' || s.configId === 'pcloud' || s.configId === 'dropbox')
+      .filter(s => {
+        if (s.configId === 'pcloud' && !env.featurePCloud) return false;
+        return s.configId === 'google' || s.configId === 'azure' || s.configId === 'pcloud' || s.configId === 'dropbox';
+      })
       .map(s => ({
         configId: s.configId,
         label: s.configId === 'google' ? 'Google' : s.configId === 'azure' ? 'Azure' : s.configId === 'pcloud' ? 'pCloud' : 'Dropbox',
@@ -21,9 +25,9 @@ export function useNavigation(): MenuItem[] {
       { name: 'Google Storage', type: 'link', icon: 'Cloud', path: '/google-storage' },
       { name: 'Google Drive', type: 'link', icon: 'FolderOpen', path: '/google-drive' },
       { name: 'Google Photos', type: 'link', icon: 'Image', path: '/google-photos' },
-      { name: 'pCloud', type: 'link', icon: 'CloudCog', path: '/pcloud' },
+      ...(env.featurePCloud ? [{ name: 'pCloud', type: 'link' as const, icon: 'CloudCog', path: '/pcloud' }] : []),
       { name: 'Dropbox', type: 'link', icon: 'Droplets', path: '/dropbox' },
-      { name: 'Apple iCloud Drive', type: 'link', icon: 'CloudOff', path: '/apple-drive' },
+      ...(env.featureAppleDrive ? [{ name: 'Apple iCloud Drive', type: 'link' as const, icon: 'CloudOff', path: '/apple-drive' }] : []),
       { name: 'Processes', type: 'link', icon: 'RefreshCw', path: '/processes' },
     ];
 

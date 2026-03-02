@@ -4,6 +4,29 @@ import { AuthLayout } from '@/layouts/auth-layout';
 import { AuthGuard } from '@/auth/auth-guard';
 import { AdminGuard } from '@/auth/admin-guard';
 import { env } from '@/env';
+import { AlertTriangle } from 'lucide-react';
+
+function RouteError() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-slate-100 px-4">
+      <div className="text-center max-w-md">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 mb-6">
+          <AlertTriangle className="w-8 h-8 text-red-500" />
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight mb-2">Something went wrong</h1>
+        <p className="text-slate-500 mb-8">
+          A new version may be available. Reload the page to continue.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+        >
+          Reload Page
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export const router = createBrowserRouter([
   {
@@ -13,6 +36,7 @@ export const router = createBrowserRouter([
   {
     // Public routes
     element: <AuthLayout />,
+    errorElement: <RouteError />,
     children: [
       {
         path: 'sessions/login',
@@ -43,6 +67,7 @@ export const router = createBrowserRouter([
         <AppLayout />
       </AuthGuard>
     ),
+    errorElement: <RouteError />,
     children: [
       {
         path: 'file-manager',

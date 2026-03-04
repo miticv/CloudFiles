@@ -280,6 +280,7 @@ export interface StartAzureToGcsRequest {
   containerName: string;
   bucketName: string;
   destinationFolder: string;
+  azureAccessToken: string;
   startedBy: string;
 }
 
@@ -370,6 +371,7 @@ export interface StartAzureToDropboxRequest {
   accountName: string;
   containerName: string;
   destinationFolder: string;
+  azureAccessToken: string;
   startedBy: string;
 }
 
@@ -422,6 +424,7 @@ export interface StartAzureToDriveRequest {
   accountName: string;
   containerName: string;
   destinationFolderId: string;
+  azureAccessToken: string;
   startedBy: string;
 }
 

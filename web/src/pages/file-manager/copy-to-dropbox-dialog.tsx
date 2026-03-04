@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/auth/auth-context';
+import { useOidc } from '@/auth/oidc-provider';
 import { getDropboxToken } from '@/auth/dropbox-auth';
 import { useStartAzureToDropbox } from '@/api/process.api';
 import {
@@ -30,6 +31,7 @@ export function CopyToDropboxDialog({
 }: CopyToDropboxDialogProps) {
   const navigate = useNavigate();
   const auth = useAuth();
+  const { getAccessToken } = useOidc();
   const startCopy = useStartAzureToDropbox();
 
   const [destinationFolder, setDestinationFolder] = useState('');
@@ -51,6 +53,13 @@ export function CopyToDropboxDialog({
         return;
       }
 
+      const azureToken = await getAccessToken('azure-storage');
+      if (!azureToken) {
+        setErrorMsg('Azure Storage token not available. Please connect Azure on the Connections page.');
+        setPreparing(false);
+        return;
+      }
+
       await startCopy.mutateAsync({
         selectedItems: selectedFiles.map((f) => ({
           itemPath: f.itemPath,
@@ -59,6 +68,7 @@ export function CopyToDropboxDialog({
         accountName,
         containerName,
         destinationFolder: destinationFolder.trim(),
+        azureAccessToken: azureToken,
         startedBy: auth.user?.email ?? 'unknown',
       });
 
@@ -73,7 +83,7 @@ export function CopyToDropboxDialog({
     }
   }, [
     canStart, selectedFiles, accountName, containerName, destinationFolder,
-    startCopy, auth.user, onOpenChange, onSuccess, navigate,
+    getAccessToken, startCopy, auth.user, onOpenChange, onSuccess, navigate,
   ]);
 
   return (

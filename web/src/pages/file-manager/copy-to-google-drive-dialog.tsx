@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/auth/auth-context';
+import { useOidc } from '@/auth/oidc-provider';
 import { useStartAzureToDrive } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -29,6 +30,7 @@ export function CopyToGoogleDriveDialog({
 }: CopyToGoogleDriveDialogProps) {
   const navigate = useNavigate();
   const auth = useAuth();
+  const { getAccessToken } = useOidc();
   const startCopy = useStartAzureToDrive();
 
   const [destinationFolderId, setDestinationFolderId] = useState('');
@@ -43,6 +45,13 @@ export function CopyToGoogleDriveDialog({
     setPreparing(true);
 
     try {
+      const azureToken = await getAccessToken('azure-storage');
+      if (!azureToken) {
+        setErrorMsg('Azure Storage token not available. Please connect Azure on the Connections page.');
+        setPreparing(false);
+        return;
+      }
+
       await startCopy.mutateAsync({
         selectedItems: selectedFiles.map((f) => ({
           itemPath: f.itemPath,
@@ -51,6 +60,7 @@ export function CopyToGoogleDriveDialog({
         accountName,
         containerName,
         destinationFolderId: destinationFolderId.trim(),
+        azureAccessToken: azureToken,
         startedBy: auth.user?.email ?? 'unknown',
       });
 
@@ -65,7 +75,7 @@ export function CopyToGoogleDriveDialog({
     }
   }, [
     canStart, selectedFiles, accountName, containerName, destinationFolderId,
-    startCopy, auth.user, onOpenChange, onSuccess, navigate,
+    getAccessToken, startCopy, auth.user, onOpenChange, onSuccess, navigate,
   ]);
 
   return (

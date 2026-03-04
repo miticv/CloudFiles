@@ -472,6 +472,87 @@ export interface StartGooglePhotosToGoogleDriveRequest {
   startedBy: string;
 }
 
+// ─── pCloud Migrations ───
+export interface PCloudFileForCopy {
+  fileId: number;
+  name: string;
+  size: number;
+}
+
+export interface StartPCloudToAzureRequest {
+  items: PCloudFileForCopy[];
+  accountName: string;
+  containerName: string;
+  destinationFolder: string;
+  azureAccessToken: string;
+  startedBy: string;
+}
+
+export interface StartPCloudToGcsRequest {
+  items: PCloudFileForCopy[];
+  googleAccessToken: string;
+  bucketName: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+export interface StartPCloudToGooglePhotosRequest {
+  items: PCloudFileForCopy[];
+  googleAccessToken: string;
+  albumId: string;
+  albumTitle: string;
+  startedBy: string;
+}
+
+export interface StartPCloudToDriveRequest {
+  items: PCloudFileForCopy[];
+  googleAccessToken: string;
+  destinationFolderId: string;
+  startedBy: string;
+}
+
+export interface StartPCloudToDropboxRequest {
+  items: PCloudFileForCopy[];
+  dropboxAccessToken: string;
+  destinationFolder: string;
+  startedBy: string;
+}
+
+// ─── X to pCloud Migrations ───
+export interface StartAzureToPCloudRequest {
+  selectedItems: AzureSelectedItem[];
+  accountName: string;
+  containerName: string;
+  destinationFolderId: number;
+  startedBy: string;
+}
+
+export interface StartGcsToPCloudRequest {
+  selectedItems: GcsSelectedItem[];
+  bucketName: string;
+  destinationFolderId: number;
+  startedBy: string;
+}
+
+export interface StartDropboxToPCloudRequest {
+  items: DropboxFileForCopy[];
+  dropboxAccessToken: string;
+  destinationFolderId: number;
+  startedBy: string;
+}
+
+export interface StartGoogleDriveToPCloudRequest {
+  driveItems: DriveFileForCopy[];
+  destinationFolderId: number;
+  startedBy: string;
+}
+
+export interface StartGooglePhotosToPCloudRequest {
+  photoItems: PhotoCopyItem[];
+  destinationFolderId: number;
+  startedBy: string;
+}
+
 // ─── Navigation ───
 export interface ConnectionStatus {
   configId: string;

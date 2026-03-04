@@ -89,10 +89,10 @@ export const router = createBrowserRouter([
         path: 'google-photos',
         lazy: () => import('@/pages/google-photos/google-photos-page'),
       },
-      ...(env.featurePCloud ? [{
+      {
         path: 'pcloud',
         lazy: () => import('@/pages/pcloud/pcloud-page'),
-      }] : []),
+      },
       {
         path: 'dropbox',
         lazy: () => import('@/pages/dropbox/dropbox-page'),

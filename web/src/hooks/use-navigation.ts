@@ -11,7 +11,6 @@ export function useNavigation(): MenuItem[] {
   return useMemo(() => {
     const connectionStatuses: ConnectionStatus[] = providers
       .filter(s => {
-        if (s.configId === 'pcloud' && !env.featurePCloud) return false;
         return s.configId === 'google' || s.configId === 'azure' || s.configId === 'pcloud' || s.configId === 'dropbox';
       })
       .map(s => ({
@@ -30,7 +29,7 @@ export function useNavigation(): MenuItem[] {
           { name: 'Photos', type: 'link', icon: 'Image', path: '/google-photos' },
         ],
       },
-      ...(env.featurePCloud ? [{ name: 'pCloud', type: 'link' as const, icon: 'CloudCog', path: '/pcloud' }] : []),
+      { name: 'pCloud', type: 'link', icon: 'CloudCog', path: '/pcloud' },
       { name: 'Dropbox', type: 'link', icon: 'Droplets', path: '/dropbox' },
       ...(env.featureAppleDrive ? [{ name: 'Apple iCloud Drive', type: 'link' as const, icon: 'CloudOff', path: '/apple-drive' }] : []),
       { name: 'Processes', type: 'link', icon: 'RefreshCw', path: '/processes' },

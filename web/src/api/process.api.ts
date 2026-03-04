@@ -10,6 +10,10 @@ import type {
   StartAzureToDriveRequest,
   StartGoogleDriveToGcsRequest, StartGoogleDriveToDropboxRequest, StartGoogleDriveToGooglePhotosRequest,
   StartGooglePhotosToGcsRequest, StartGooglePhotosToDropboxRequest, StartGooglePhotosToGoogleDriveRequest,
+  StartPCloudToAzureRequest, StartPCloudToGcsRequest, StartPCloudToGooglePhotosRequest,
+  StartPCloudToDriveRequest, StartPCloudToDropboxRequest,
+  StartAzureToPCloudRequest, StartGcsToPCloudRequest, StartDropboxToPCloudRequest,
+  StartGoogleDriveToPCloudRequest, StartGooglePhotosToPCloudRequest,
 } from './types';
 
 export function useProcesses(params?: ProcessListParams, refetchInterval?: number | false) {
@@ -210,5 +214,77 @@ export function useStartPhotosToGoogleDrive() {
   return useMutation({
     mutationFn: (request: StartGooglePhotosToGoogleDriveRequest) =>
       apiClient.post<StartJobResponse>('process/GooglePhotosToGoogleDrive/start', request).then(r => r.data),
+  });
+}
+
+// ─── pCloud as source ───
+export function useStartPCloudToAzure() {
+  return useMutation({
+    mutationFn: (request: StartPCloudToAzureRequest) =>
+      apiClient.post<StartJobResponse>('process/PCloudToAzure/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPCloudToGcs() {
+  return useMutation({
+    mutationFn: (request: StartPCloudToGcsRequest) =>
+      apiClient.post<StartJobResponse>('process/PCloudToGcs/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPCloudToGooglePhotos() {
+  return useMutation({
+    mutationFn: (request: StartPCloudToGooglePhotosRequest) =>
+      apiClient.post<StartJobResponse>('process/PCloudToGooglePhotos/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPCloudToDrive() {
+  return useMutation({
+    mutationFn: (request: StartPCloudToDriveRequest) =>
+      apiClient.post<StartJobResponse>('process/PCloudToGoogleDrive/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPCloudToDropbox() {
+  return useMutation({
+    mutationFn: (request: StartPCloudToDropboxRequest) =>
+      apiClient.post<StartJobResponse>('process/PCloudToDropbox/start', request).then(r => r.data),
+  });
+}
+
+// ─── pCloud as destination ───
+export function useStartAzureToPCloud() {
+  return useMutation({
+    mutationFn: (request: StartAzureToPCloudRequest) =>
+      apiClient.post<StartJobResponse>('process/AzureToPCloud/start', request).then(r => r.data),
+  });
+}
+
+export function useStartGcsToPCloud() {
+  return useMutation({
+    mutationFn: (request: StartGcsToPCloudRequest) =>
+      apiClient.post<StartJobResponse>('process/GcsToPCloud/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDropboxToPCloud() {
+  return useMutation({
+    mutationFn: (request: StartDropboxToPCloudRequest) =>
+      apiClient.post<StartJobResponse>('process/DropboxToPCloud/start', request).then(r => r.data),
+  });
+}
+
+export function useStartDriveToPCloud() {
+  return useMutation({
+    mutationFn: (request: StartGoogleDriveToPCloudRequest) =>
+      apiClient.post<StartJobResponse>('process/GoogleDriveToPCloud/start', request).then(r => r.data),
+  });
+}
+
+export function useStartPhotosToPCloud() {
+  return useMutation({
+    mutationFn: (request: StartGooglePhotosToPCloudRequest) =>
+      apiClient.post<StartJobResponse>('process/GooglePhotosToPCloud/start', request).then(r => r.data),
   });
 }

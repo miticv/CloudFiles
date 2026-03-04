@@ -83,6 +83,78 @@
         // BFF pCloud
         public const string PCloudOAuthCallback = "pcloudOAuthCallback";
         public const string PCloudFileList = "pcloudFileList";
+        public const string PCloudDownloadFile = "pcloudDownloadFile";
+        public const string PCloudUploadFile = "pcloudUploadFile";
+
+        // automation PCloud to Azure
+        public const string ProcessPCloudToAzure_Start = "processPCloudToAzure_Start";
+        public const string PCloudToAzureOrchestrator = "pcloudToAzureOrchestrator";
+        public const string PCloudToAzurePrepareList = "pcloudToAzurePrepareList";
+        public const string CopyPCloudToAzureOrchestrator = "copyPCloudToAzureOrchestrator";
+        public const string CopyPCloudFileToAzureBlob = "copyPCloudFileToAzureBlob";
+
+        // automation Azure to PCloud
+        public const string ProcessAzureToPCloud_Start = "processAzureToPCloud_Start";
+        public const string AzureToPCloudOrchestrator = "azureToPCloudOrchestrator";
+        public const string AzureToPCloudPrepareList = "azureToPCloudPrepareList";
+        public const string CopyAzureToPCloudOrchestrator = "copyAzureToPCloudOrchestrator";
+        public const string CopyAzureBlobToPCloudFile = "copyAzureBlobToPCloudFile";
+
+        // automation PCloud to GCS
+        public const string ProcessPCloudToGcs_Start = "processPCloudToGcs_Start";
+        public const string PCloudToGcsOrchestrator = "pcloudToGcsOrchestrator";
+        public const string PCloudToGcsPrepareList = "pcloudToGcsPrepareList";
+        public const string CopyPCloudToGcsOrchestrator = "copyPCloudToGcsOrchestrator";
+        public const string CopyPCloudFileToGcsObject = "copyPCloudFileToGcsObject";
+
+        // automation GCS to PCloud
+        public const string ProcessGcsToPCloud_Start = "processGcsToPCloud_Start";
+        public const string GcsToPCloudOrchestrator = "gcsToPCloudOrchestrator";
+        public const string GcsToPCloudPrepareList = "gcsToPCloudPrepareList";
+        public const string CopyGcsToPCloudOrchestrator = "copyGcsToPCloudOrchestrator";
+        public const string CopyGcsObjectToPCloudFile = "copyGcsObjectToPCloudFile";
+
+        // automation PCloud to Google Photos
+        public const string ProcessPCloudToGooglePhotos_Start = "processPCloudToGooglePhotos_Start";
+        public const string PCloudToGooglePhotosOrchestrator = "pcloudToGooglePhotosOrchestrator";
+        public const string PCloudToGooglePhotosPrepareList = "pcloudToGooglePhotosPrepareList";
+        public const string CopyPCloudToGooglePhotosOrchestrator = "copyPCloudToGooglePhotosOrchestrator";
+        public const string UploadPCloudFileToGooglePhotos = "uploadPCloudFileToGooglePhotos";
+
+        // automation PCloud to Google Drive
+        public const string ProcessPCloudToDrive_Start = "processPCloudToDrive_Start";
+        public const string PCloudToDriveOrchestrator = "pcloudToDriveOrchestrator";
+        public const string PCloudToDrivePrepareList = "pcloudToDrivePrepareList";
+        public const string CopyPCloudToDriveOrchestrator = "copyPCloudToDriveOrchestrator";
+        public const string CopyPCloudFileToDriveFile = "copyPCloudFileToDriveFile";
+
+        // automation Google Drive to PCloud
+        public const string ProcessGoogleDriveToPCloud_Start = "processGoogleDriveToPCloud_Start";
+        public const string GoogleDriveToPCloudOrchestrator = "googleDriveToPCloudOrchestrator";
+        public const string GoogleDriveToPCloudPrepareList = "googleDriveToPCloudPrepareList";
+        public const string CopyGoogleDriveToPCloudOrchestrator = "copyGoogleDriveToPCloudOrchestrator";
+        public const string CopyGoogleDriveFileToPCloudFile = "copyGoogleDriveFileToPCloudFile";
+
+        // automation PCloud to Dropbox
+        public const string ProcessPCloudToDropbox_Start = "processPCloudToDropbox_Start";
+        public const string PCloudToDropboxOrchestrator = "pcloudToDropboxOrchestrator";
+        public const string PCloudToDropboxPrepareList = "pcloudToDropboxPrepareList";
+        public const string CopyPCloudToDropboxOrchestrator = "copyPCloudToDropboxOrchestrator";
+        public const string CopyPCloudFileToDropbox = "copyPCloudFileToDropbox";
+
+        // automation Dropbox to PCloud
+        public const string ProcessDropboxToPCloud_Start = "processDropboxToPCloud_Start";
+        public const string DropboxToPCloudOrchestrator = "dropboxToPCloudOrchestrator";
+        public const string DropboxToPCloudPrepareList = "dropboxToPCloudPrepareList";
+        public const string CopyDropboxToPCloudOrchestrator = "copyDropboxToPCloudOrchestrator";
+        public const string CopyDropboxFileToPCloudFile = "copyDropboxFileToPCloudFile";
+
+        // automation Google Photos to PCloud
+        public const string ProcessGooglePhotosToPCloud_Start = "processGooglePhotosToPCloud_Start";
+        public const string GooglePhotosToPCloudOrchestrator = "googlePhotosToPCloudOrchestrator";
+        public const string GooglePhotosToPCloudPrepareList = "googlePhotosToPCloudPrepareList";
+        public const string CopyGooglePhotosToPCloudOrchestrator = "copyGooglePhotosToPCloudOrchestrator";
+        public const string CopyGooglePhotoToPCloudFile = "copyGooglePhotoToPCloudFile";
 
         // BFF Dropbox
         public const string DropboxOAuthCallback = "dropboxOAuthCallback";

@@ -1,7 +1,7 @@
-import { HardDrive, Cloud, Cloudy, ImageIcon } from 'lucide-react';
+import { HardDrive, Cloud, Cloudy, ImageIcon, CloudCog } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type CopyProviderId = 'azure' | 'gcs' | 'google-drive' | 'google-photos' | 'dropbox';
+export type CopyProviderId = 'azure' | 'gcs' | 'google-drive' | 'google-photos' | 'dropbox' | 'pcloud';
 
 export interface CopyProviderConfig {
   id: CopyProviderId;
@@ -58,6 +58,15 @@ export const COPY_PROVIDERS: CopyProviderConfig[] = [
     disabledClass: 'bg-muted text-muted-foreground',
     requiredConfigId: 'dropbox',
     connectLabel: 'Connect Dropbox',
+  },
+  {
+    id: 'pcloud',
+    label: 'pCloud',
+    icon: CloudCog,
+    buttonClass: 'bg-teal-600 text-white hover:bg-teal-700',
+    disabledClass: 'bg-muted text-muted-foreground',
+    requiredConfigId: 'pcloud',
+    connectLabel: 'Connect pCloud',
   },
 ];
 

@@ -146,7 +146,6 @@ export const env = {
   adminEmail: '$ADMIN_EMAILS',
   pCloudClientId: '$PCLOUD_CLIENT_ID',
   dropboxClientId: '$DROPBOX_KEY',
-  featurePCloud: false,
   featureAppleDrive: false,
 };
 EOF

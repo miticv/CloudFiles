@@ -119,6 +119,80 @@ namespace CloudFiles.Utilities
         }
     }
 
+        // ─── Download ───
+
+        public async Task<(byte[] Data, string ContentType, string Filename)> DownloadFileAsync(long fileId, string filename)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
+
+            // Step 1: Get a temporary download link from pCloud
+            var linkUrl = $"https://{ApiHostname}/getfilelink?fileid={fileId}";
+            var linkResponse = await client.GetAsync(linkUrl).ConfigureAwait(false);
+            var linkContent = await linkResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!linkResponse.IsSuccessStatusCode)
+                throw new InvalidOperationException($"pCloud getfilelink failed: {linkContent}");
+
+            var linkResult = JsonConvert.DeserializeObject<PCloudGetFileLinkResponse>(linkContent);
+            if (linkResult == null || linkResult.Result != 0 || linkResult.Hosts == null || linkResult.Hosts.Count == 0)
+                throw new InvalidOperationException($"pCloud getfilelink error: {linkContent}");
+
+            var downloadUrl = $"https://{linkResult.Hosts[0]}{linkResult.Path}";
+
+            // Step 2: Download the actual file content
+            var data = await client.GetByteArrayAsync(downloadUrl).ConfigureAwait(false);
+            var contentType = linkResult.ContentType ?? "application/octet-stream";
+
+            return (data, contentType, filename);
+        }
+
+        // ─── Upload (simple) ───
+
+        public async Task UploadFileAsync(byte[] data, long parentFolderId, string filename)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
+
+            var url = $"https://{ApiHostname}/uploadfile?folderid={parentFolderId}&filename={Uri.EscapeDataString(filename)}&nopartial=1";
+            var content = new ByteArrayContent(data);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+
+            var response = await client.PutAsync(url, content).ConfigureAwait(false);
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"pCloud upload failed: {responseContent}");
+
+            var result = JsonConvert.DeserializeObject<PCloudApiResponse>(responseContent);
+            if (result == null || result.Result != 0)
+                throw new InvalidOperationException($"pCloud upload error: result={result?.Result}, {responseContent}");
+        }
+
+        // ─── Deep Listing (for migrations) ───
+
+        public async Task<List<PCloudItem>> DeepListFilesAsync(long folderId)
+        {
+            var allFiles = new List<PCloudItem>();
+            var response = await ListFolderAsync(folderId).ConfigureAwait(false);
+
+            foreach (var item in response.Items)
+            {
+                if (item.IsFolder)
+                {
+                    var subFiles = await DeepListFilesAsync(item.FolderId).ConfigureAwait(false);
+                    allFiles.AddRange(subFiles);
+                }
+                else
+                {
+                    allFiles.Add(item);
+                }
+            }
+
+            return allFiles;
+        }
+    }
+
     // ─── pCloud API response models ───
 
     public class PCloudApiResponse
@@ -235,5 +309,20 @@ namespace CloudFiles.Utilities
 
         [JsonProperty("hostname")]
         public string Hostname { get; set; } = default!;
+    }
+
+    public class PCloudGetFileLinkResponse
+    {
+        [JsonProperty("result")]
+        public int Result { get; set; }
+
+        [JsonProperty("hosts")]
+        public List<string> Hosts { get; set; } = default!;
+
+        [JsonProperty("path")]
+        public string Path { get; set; } = default!;
+
+        [JsonProperty("contenttype")]
+        public string ContentType { get; set; } = default!;
     }
 }

@@ -217,6 +217,7 @@ export function Component() {
                               size: file.size,
                               lastModified: file.modified,
                               contentType: file.contentType,
+                              downloadUrl: `pcloud/files/download?fileId=${file.fileId}&filename=${encodeURIComponent(file.name)}`,
                             });
                           }
                         }}

@@ -192,6 +192,34 @@ function parseFileResults(serializedOutput: string | null | undefined): FileResu
   }
 }
 
+function parseFailureMessage(serializedOutput: string | null | undefined): string | null {
+  if (!serializedOutput) return null;
+  try {
+    const parsed = JSON.parse(serializedOutput);
+    if (!parsed || typeof parsed !== 'object') {
+      return typeof parsed === 'string' ? parsed : null;
+    }
+    // Durable Functions wraps task failures like: { exceptionMessage, exceptionType, ... }
+    // or nested: { innerFailure: { exceptionMessage, ... } }
+    const msg =
+      parsed.exceptionMessage ??
+      parsed.ExceptionMessage ??
+      parsed.innerFailure?.exceptionMessage ??
+      parsed.innerFailure?.ExceptionMessage ??
+      parsed.message ??
+      parsed.Message ??
+      parsed.error ??
+      parsed.Error ??
+      null;
+    return typeof msg === 'string' && msg.length > 0 ? msg : null;
+  } catch {
+    // Plain string output
+    return typeof serializedOutput === 'string' && serializedOutput.length < 2000
+      ? serializedOutput
+      : null;
+  }
+}
+
 function parseStartedBy(serializedInput: string | null | undefined): string | null {
   if (!serializedInput) return null;
   try {
@@ -720,6 +748,14 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
     [fileResults]
   );
 
+  const failureMessage = useMemo(
+    () =>
+      detail && parent.runtimeStatus === OrchestrationRuntimeStatus.Failed && !fileResults?.length
+        ? parseFailureMessage(detail.serializedOutput)
+        : null,
+    [detail, parent.runtimeStatus, fileResults]
+  );
+
   const canRetry =
     parent.runtimeStatus === OrchestrationRuntimeStatus.Completed && parent.hasFailedFiles ||
     parent.runtimeStatus === OrchestrationRuntimeStatus.Failed ||
@@ -844,6 +880,14 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
               <div className="rounded-md bg-muted/50 px-3 py-2">
                 <p className="text-xs font-medium text-muted-foreground mb-0.5">Progress</p>
                 <p className="text-sm text-foreground">{customStatus}</p>
+              </div>
+            )}
+
+            {/* Failure error message */}
+            {failureMessage && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2">
+                <p className="text-xs font-medium text-red-600 mb-0.5">Error</p>
+                <p className="text-sm text-red-700 break-words">{failureMessage}</p>
               </div>
             )}
 

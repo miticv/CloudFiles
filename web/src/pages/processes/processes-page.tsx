@@ -555,8 +555,10 @@ export function Component() {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" disabled={purge.isPending}>
-                      <Trash2 className="w-4 h-4 mr-1.5" />
-                      Delete ({selectedIds.size})
+                      {purge.isPending
+                        ? <Spinner size={16} className="mr-1.5" />
+                        : <Trash2 className="w-4 h-4 mr-1.5" />}
+                      {purge.isPending ? 'Deleting...' : `Delete (${selectedIds.size})`}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -767,7 +769,7 @@ export function Component() {
               isExpanded={expandedGroups.has(group.parent.instanceId)}
               onToggle={() => toggleGroup(group.parent.instanceId)}
               onDelete={handleDelete}
-              isPurging={purge.isPending}
+              purgingId={purge.isPending ? (purge.variables ?? null) : null}
               selectionMode={selectionMode}
               isSelected={selectedIds.has(group.parent.instanceId)}
               onToggleSelect={toggleSelection}
@@ -813,13 +815,13 @@ interface ProcessGroupCardProps {
   isExpanded: boolean;
   onToggle: () => void;
   onDelete: (instanceId: string) => void;
-  isPurging: boolean;
+  purgingId: string | null;
   selectionMode: boolean;
   isSelected: boolean;
   onToggleSelect: (instanceId: string) => void;
 }
 
-function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging, selectionMode, isSelected, onToggleSelect }: ProcessGroupCardProps) {
+function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, selectionMode, isSelected, onToggleSelect }: ProcessGroupCardProps) {
   const { parent, children } = group;
   const oidc = useOidc();
   const restart = useRestartProcess();
@@ -1095,9 +1097,11 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging, se
               )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" disabled={isPurging}>
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                    Delete
+                  <Button variant="destructive" size="sm" disabled={purgingId !== null}>
+                    {purgingId === parent.instanceId
+                      ? <Spinner size={14} className="mr-1.5" />
+                      : <Trash2 className="w-3.5 h-3.5 mr-1.5" />}
+                    {purgingId === parent.instanceId ? 'Deleting...' : 'Delete'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

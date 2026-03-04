@@ -153,6 +153,16 @@ namespace CloudFiles
                     Constants.DropboxToGooglePhotosOrchestrator,
                     Constants.DropboxToDriveOrchestrator,
                     Constants.AzureToDriveOrchestrator,
+                    Constants.AzureToPCloudOrchestrator,
+                    Constants.PCloudToAzureOrchestrator,
+                    Constants.GcsToPCloudOrchestrator,
+                    Constants.PCloudToGcsOrchestrator,
+                    Constants.PCloudToGooglePhotosOrchestrator,
+                    Constants.PCloudToDriveOrchestrator,
+                    Constants.GoogleDriveToPCloudOrchestrator,
+                    Constants.PCloudToDropboxOrchestrator,
+                    Constants.DropboxToPCloudOrchestrator,
+                    Constants.GooglePhotosToPCloudOrchestrator,
                 };
 
                 // Collect parent orchestration metadata only (small page size avoids gRPC 4MB limit).

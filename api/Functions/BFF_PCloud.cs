@@ -97,7 +97,6 @@ namespace CloudFiles
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }
-    }
 
         [Function(Constants.PCloudDownloadFile)]
         public static async Task<IActionResult> PCloudDownloadFile(

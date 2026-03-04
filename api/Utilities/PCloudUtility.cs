@@ -117,7 +117,6 @@ namespace CloudFiles.Utilities
                 Hostname = hostname
             };
         }
-    }
 
         // ─── Download ───
 

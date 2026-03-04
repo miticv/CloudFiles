@@ -415,6 +415,8 @@ export function Component() {
   const [sortBy, setSortBy] = useState<'createdAt' | 'lastUpdatedAt'>('lastUpdatedAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [onlyFailures, setOnlyFailures] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Build query params
   const params = useMemo<ProcessListParams>(() => {
@@ -496,6 +498,23 @@ export function Component() {
     [purge]
   );
 
+  const toggleSelection = useCallback((instanceId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(instanceId)) next.delete(instanceId);
+      else next.add(instanceId);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    for (const id of selectedIds) {
+      purge.mutate(id);
+    }
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  }, [purge, selectedIds]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -530,6 +549,52 @@ export function Component() {
             {sortDir === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
 
+          {selectionMode ? (
+            <>
+              {selectedIds.size > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" disabled={purge.isPending}>
+                      <Trash2 className="w-4 h-4 mr-1.5" />
+                      Delete ({selectedIds.size})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedIds.size} Process{selectedIds.size !== 1 ? 'es' : ''}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete {selectedIds.size} selected process{selectedIds.size !== 1 ? 'es' : ''}. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-red-600"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setSelectionMode(false); setSelectedIds(new Set()); }}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setSelectionMode(true); setSelectedIds(new Set()); }}
+            >
+              Select
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -703,6 +768,9 @@ export function Component() {
               onToggle={() => toggleGroup(group.parent.instanceId)}
               onDelete={handleDelete}
               isPurging={purge.isPending}
+              selectionMode={selectionMode}
+              isSelected={selectedIds.has(group.parent.instanceId)}
+              onToggleSelect={toggleSelection}
             />
           ))}
 
@@ -746,9 +814,12 @@ interface ProcessGroupCardProps {
   onToggle: () => void;
   onDelete: (instanceId: string) => void;
   isPurging: boolean;
+  selectionMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: (instanceId: string) => void;
 }
 
-function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: ProcessGroupCardProps) {
+function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging, selectionMode, isSelected, onToggleSelect }: ProcessGroupCardProps) {
   const { parent, children } = group;
   const oidc = useOidc();
   const restart = useRestartProcess();
@@ -822,6 +893,17 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, isPurging }: 
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent/50 transition-colors cursor-pointer"
       >
+        {/* Selection checkbox */}
+        {selectionMode && (
+          <span
+            className="shrink-0"
+            onClick={(e) => { e.stopPropagation(); onToggleSelect(parent.instanceId); }}
+            onKeyDown={(e) => { if (e.key === ' ') { e.stopPropagation(); onToggleSelect(parent.instanceId); } }}
+          >
+            <Checkbox checked={isSelected} tabIndex={-1} />
+          </span>
+        )}
+
         {/* Expand/collapse icon */}
         <span className="text-muted-foreground shrink-0">
           {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

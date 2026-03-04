@@ -27,6 +27,7 @@ import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
 import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
 import { CopyToGcsDialog } from './copy-to-gcs-dialog';
 import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
+import { CopyToPcloudDialog } from './copy-to-pcloud-dialog';
 
 // ─── Helpers ───
 
@@ -460,6 +461,14 @@ export function Component() {
       />
       <CopyToGooglePhotosDialog
         open={activeDialog === 'google-photos'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        accountName={context.account ?? ''}
+        containerName={context.container ?? ''}
+        onSuccess={handleCopySuccess}
+      />
+      <CopyToPcloudDialog
+        open={activeDialog === 'pcloud'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         accountName={context.account ?? ''}

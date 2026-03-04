@@ -27,6 +27,7 @@ function getConfigIdForUrl(url: string): TokenConfigId | null {
   if (url.includes('process/DropboxToAzure/') || url.includes('process/AzureToDropbox/')
     || url.includes('process/DropboxToGcs/') || url.includes('process/DropboxToGooglePhotos/')
     || url.includes('process/DropboxToGoogleDrive/')) return 'dropbox';
+  if (url.includes('ToPCloud/') || url.includes('PCloudTo')) return 'pcloud';
   if (url.includes('google/') || url.includes('process/')) return 'google';
   return null;
 }

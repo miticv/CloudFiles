@@ -527,6 +527,7 @@ export interface StartAzureToPCloudRequest {
   accountName: string;
   containerName: string;
   destinationFolderId: number;
+  azureAccessToken: string;
   startedBy: string;
 }
 

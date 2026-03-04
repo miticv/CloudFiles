@@ -79,6 +79,26 @@ const friendlyNames: Record<string, string> = {
   copygooglephotostodropboxorchestrator: 'Google Photos \u2192 Dropbox',
   googlephotostogoogledriveorchestrator: 'Google Photos \u2192 Google Drive',
   copygooglephotostogoogledriveorchestrator: 'Google Photos \u2192 Google Drive',
+  azuretopcloudorchestrator: 'Azure Storage \u2192 pCloud',
+  copyazuretopcloudorchestrator: 'Azure Storage \u2192 pCloud',
+  pcloudtoazureorchestrator: 'pCloud \u2192 Azure Storage',
+  copypcloudtoazureorchestrator: 'pCloud \u2192 Azure Storage',
+  gcstopcloudorchestrator: 'Google Cloud Storage \u2192 pCloud',
+  copygcstopcloudorchestrator: 'Google Cloud Storage \u2192 pCloud',
+  pcloudtogcsorchestrator: 'pCloud \u2192 Google Cloud Storage',
+  copypcloudtogcsorchestrator: 'pCloud \u2192 Google Cloud Storage',
+  pcloudtogooglephotosorchestrator: 'pCloud \u2192 Google Photos',
+  copypcloudtogooglephotosorchestrator: 'pCloud \u2192 Google Photos',
+  googlephotostopcloudorchestrator: 'Google Photos \u2192 pCloud',
+  copygooglephotostopcloudorchestrator: 'Google Photos \u2192 pCloud',
+  pcloudtodriveorchestrator: 'pCloud \u2192 Google Drive',
+  copypcloudtodriveorchestrator: 'pCloud \u2192 Google Drive',
+  googledrivetopcloudorchestrator: 'Google Drive \u2192 pCloud',
+  copygoogledrivetopcloudorchestrator: 'Google Drive \u2192 pCloud',
+  pcloudtodropboxorchestrator: 'pCloud \u2192 Dropbox',
+  copypcloudtodropboxorchestrator: 'pCloud \u2192 Dropbox',
+  dropboxtopcloudorchestrator: 'Dropbox \u2192 pCloud',
+  copydropboxtopcloudorchestrator: 'Dropbox \u2192 pCloud',
 };
 
 function getFriendlyName(rawName: string): string {
@@ -106,6 +126,16 @@ const PARENT_ORCHESTRATOR_TYPES = [
   { value: 'googlephotostogcsorchestrator', label: 'Google Photos \u2192 Google Cloud Storage' },
   { value: 'googlephotostodropboxorchestrator', label: 'Google Photos \u2192 Dropbox' },
   { value: 'googlephotostogoogledriveorchestrator', label: 'Google Photos \u2192 Google Drive' },
+  { value: 'azuretopcloudorchestrator', label: 'Azure Storage \u2192 pCloud' },
+  { value: 'pcloudtoazureorchestrator', label: 'pCloud \u2192 Azure Storage' },
+  { value: 'gcstopcloudorchestrator', label: 'Google Cloud Storage \u2192 pCloud' },
+  { value: 'pcloudtogcsorchestrator', label: 'pCloud \u2192 Google Cloud Storage' },
+  { value: 'pcloudtogooglephotosorchestrator', label: 'pCloud \u2192 Google Photos' },
+  { value: 'googlephotostopcloudorchestrator', label: 'Google Photos \u2192 pCloud' },
+  { value: 'pcloudtodriveorchestrator', label: 'pCloud \u2192 Google Drive' },
+  { value: 'googledrivetopcloudorchestrator', label: 'Google Drive \u2192 pCloud' },
+  { value: 'pcloudtodropboxorchestrator', label: 'pCloud \u2192 Dropbox' },
+  { value: 'dropboxtopcloudorchestrator', label: 'Dropbox \u2192 pCloud' },
 ] as const;
 
 // ─── Grouping logic ───
@@ -289,6 +319,7 @@ const nameToProvider: Record<string, string> = {
   'google photos': 'google',
   'google drive': 'google',
   'dropbox': 'dropbox',
+  'pcloud': 'pcloud',
 };
 
 function deriveProviders(friendlyName: string): string[] {
@@ -328,6 +359,7 @@ const providerBadgeColors: Record<string, string> = {
   google: 'bg-red-50 text-red-700 border-red-200',
   azure: 'bg-blue-50 text-blue-700 border-blue-200',
   dropbox: 'bg-sky-50 text-sky-700 border-sky-200',
+  pcloud: 'bg-teal-50 text-teal-700 border-teal-200',
 };
 
 // ─── File folder grouping ───

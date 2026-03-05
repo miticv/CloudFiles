@@ -6,9 +6,9 @@ import { useStartPhotosToDropbox } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { DropboxFolderPicker } from '@/components/dropbox-folder-picker';
 import type { PickedMediaItem } from '@/api/types';
 
 interface CopyToDropboxDialogProps {
@@ -32,13 +32,7 @@ export function CopyToDropboxDialog({
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const folderError = destinationFolder.startsWith('/')
-    ? "Don't include a leading slash — use 'backups/photos', not '/backups/photos'"
-    : destinationFolder.includes('//')
-    ? "Folder path cannot contain consecutive slashes"
-    : null;
-
-  const canStart = selectedItems.length > 0 && !folderError;
+  const canStart = selectedItems.length > 0;
 
   const handleStart = useCallback(async () => {
     if (!canStart) return;
@@ -90,22 +84,7 @@ export function CopyToDropboxDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Destination Folder (optional)</label>
-            <Input
-              value={destinationFolder}
-              onChange={(e) => setDestinationFolder(e.target.value)}
-              placeholder="e.g. backups/photos"
-              className={folderError ? 'border-red-400 focus-visible:ring-red-400' : ''}
-            />
-            {folderError ? (
-              <p className="text-xs text-red-600">{folderError}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Files will be copied to this folder path in Dropbox. Leave empty to copy to root.
-              </p>
-            )}
-          </div>
+          <DropboxFolderPicker enabled={open} onChange={setDestinationFolder} />
 
           {errorMsg && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

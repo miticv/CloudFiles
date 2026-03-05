@@ -507,10 +507,9 @@ export function Component() {
     });
   }, []);
 
-  const handleBulkDelete = useCallback(() => {
-    for (const id of selectedIds) {
-      purge.mutate(id);
-    }
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await Promise.allSettled(ids.map(id => purge.mutateAsync(id)));
     setSelectedIds(new Set());
     setSelectionMode(false);
   }, [purge, selectedIds]);

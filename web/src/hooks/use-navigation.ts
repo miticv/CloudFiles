@@ -20,6 +20,7 @@ export function useNavigation(): MenuItem[] {
       }));
 
     const items: MenuItem[] = [
+      { type: 'separator', name: 'Storage' },
       { name: 'Azure Storage', type: 'link', icon: 'HardDrive', path: '/storage-browser' },
       {
         name: 'Google', type: 'group', icon: 'Chrome',
@@ -32,6 +33,7 @@ export function useNavigation(): MenuItem[] {
       { name: 'pCloud', type: 'link', icon: 'CloudCog', path: '/pcloud' },
       { name: 'Dropbox', type: 'link', icon: 'Droplets', path: '/dropbox' },
       ...(env.featureAppleDrive ? [{ name: 'Apple iCloud Drive', type: 'link' as const, icon: 'CloudOff', path: '/apple-drive' }] : []),
+      { type: 'separator', name: 'Activity' },
       { name: 'Processes', type: 'link', icon: 'RefreshCw', path: '/processes' },
     ];
 

@@ -37,11 +37,12 @@ export function useProcesses(params?: ProcessListParams, refetchInterval?: numbe
   });
 }
 
-export function useProcessInstance(instanceId: string | null, enabled = false) {
+export function useProcessInstance(instanceId: string | null, enabled = false, refetchInterval?: number | false) {
   return useQuery({
     queryKey: ['process', instanceId],
     queryFn: () => apiClient.get<OrchestrationInstance>(`process/instances/${instanceId}`).then(r => r.data),
     enabled: enabled && !!instanceId,
+    refetchInterval,
   });
 }
 

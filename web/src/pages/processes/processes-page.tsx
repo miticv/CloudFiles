@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useAuth } from '@/auth/auth-context';
 import { useProcesses, useProcessInstance, usePurgeProcess, useRestartProcess, useTerminateProcess } from '@/api/process.api';
@@ -832,7 +832,19 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
   const duration = formatDuration(parent.createdAt, parent.lastUpdatedAt);
 
   // Fetch full detail when expanded (includes serializedOutput)
-  const { data: detail } = useProcessInstance(parent.instanceId, isExpanded);
+  // Poll while the process is active; also poll if the list says completed but we haven't fetched the final detail yet
+  const isActive = parent.runtimeStatus === OrchestrationRuntimeStatus.Running || parent.runtimeStatus === OrchestrationRuntimeStatus.Pending;
+  const detailQuery = useProcessInstance(parent.instanceId, isExpanded, isExpanded && isActive ? 5000 : false);
+  const detail = detailQuery.data;
+
+  // When the list shows the process just completed/failed, refetch detail once to get the final output
+  const prevStatus = useRef(parent.runtimeStatus);
+  useEffect(() => {
+    if (prevStatus.current !== parent.runtimeStatus && isExpanded) {
+      detailQuery.refetch();
+    }
+    prevStatus.current = parent.runtimeStatus;
+  }, [parent.runtimeStatus, isExpanded, detailQuery]);
 
   const customStatus = parseCustomStatus(
     detail?.serializedCustomStatus ?? parent.serializedCustomStatus

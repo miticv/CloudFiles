@@ -377,15 +377,18 @@ namespace CloudFiles
             var log = executionContext.GetLogger(nameof(RestartInstance));
             try
             {
-                var googleAccessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
+                var cfToken = CommonUtility.GetTokenFromHeaders(req);
+                UserTableUtility.ValidateJwtAndGetClaims(cfToken);
 
-                // Read optional azure storage token from request body
+                // Read optional tokens from request body
                 string? azureAccessToken = null;
+                string? googleAccessToken = null;
                 string body = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(body))
                 {
                     var bodyObj = JObject.Parse(body);
                     azureAccessToken = bodyObj.Value<string>("azureAccessToken");
+                    googleAccessToken = bodyObj.Value<string>("googleAccessToken");
                 }
 
                 // Get original instance
@@ -414,7 +417,10 @@ namespace CloudFiles
 
                 // Parse original input, replace tokens with fresh ones
                 var input = JObject.Parse(instance.SerializedInput);
-                input["accessToken"] = googleAccessToken;
+                if (!string.IsNullOrEmpty(googleAccessToken))
+                {
+                    input["accessToken"] = googleAccessToken;
+                }
                 if (!string.IsNullOrEmpty(azureAccessToken))
                 {
                     input["azureAccessToken"] = azureAccessToken;

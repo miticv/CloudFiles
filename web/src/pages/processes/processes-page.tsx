@@ -876,16 +876,19 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
   const handleRestart = useCallback(async () => {
     setRestartError(null);
     const azureAccessToken = await oidc.getAccessToken('azure-storage');
+    const isGooglePipeline = /google|gcs/i.test(parent.name);
+    const googleAccessToken = isGooglePipeline ? (await oidc.getAccessToken('google')) ?? undefined : undefined;
     restart.mutate(
       {
         instanceId: parent.instanceId,
         azureAccessToken: azureAccessToken ?? undefined,
+        googleAccessToken,
       },
       {
         onError: (err) => setRestartError(extractError(err)),
       },
     );
-  }, [oidc, restart, parent.instanceId]);
+  }, [oidc, restart, parent.instanceId, parent.name]);
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">

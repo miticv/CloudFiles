@@ -13,7 +13,7 @@ export const googleManager = new UserManager({
     'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
     'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
     'https://www.googleapis.com/auth/devstorage.read_write',
-    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.file',
   ].join(' '),
   automaticSilentRenew: true,
   userStore: new WebStorageStateStore({ store: localStorage }),

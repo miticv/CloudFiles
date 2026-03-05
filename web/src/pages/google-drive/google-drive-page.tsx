@@ -19,6 +19,7 @@ import { CopyToAzureDialog } from './copy-to-azure-dialog';
 import { CopyToGcsDialog } from './copy-to-gcs-dialog';
 import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
 import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
+import { CopyToPCloudDialog } from './copy-to-pcloud-dialog';
 
 // Google Docs MIME types that cannot be downloaded/copied
 const GOOGLE_DOCS_MIMES = new Set([
@@ -422,6 +423,13 @@ export function Component() {
       />
       <CopyToGooglePhotosDialog
         open={activeDialog === 'google-photos'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={clearSelection}
+      />
+      <CopyToPCloudDialog
+        open={activeDialog === 'pcloud'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}

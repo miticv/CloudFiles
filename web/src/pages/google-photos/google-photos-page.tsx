@@ -19,6 +19,7 @@ import { CopyToAzureDialog } from './copy-to-azure-dialog';
 import { CopyToGcsDialog } from './copy-to-gcs-dialog';
 import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
 import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
+import { CopyToPCloudDialog } from './copy-to-pcloud-dialog';
 
 
 // ─── Main Component ───
@@ -364,6 +365,12 @@ export function Component() {
       />
       <CopyToGoogleDriveDialog
         open={activeDialog === 'google-drive'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedItems={pickedItems}
+        onSuccess={() => clearAll()}
+      />
+      <CopyToPCloudDialog
+        open={activeDialog === 'pcloud'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedItems={pickedItems}
         onSuccess={() => clearAll()}

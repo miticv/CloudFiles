@@ -19,6 +19,7 @@ import { CopyToAzureDialog } from './copy-to-azure-dialog';
 import { CopyToGcsDialog } from './copy-to-gcs-dialog';
 import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
 import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
+import { CopyToPCloudDialog } from './copy-to-pcloud-dialog';
 
 interface BreadcrumbEntry {
   path: string;
@@ -318,6 +319,16 @@ export function Component() {
       />
       <CopyToGoogleDriveDialog
         open={activeDialog === 'google-drive'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToPCloudDialog
+        open={activeDialog === 'pcloud'}
         onOpenChange={(o) => !o && setActiveDialog(null)}
         selectedFiles={selectedFileObjects}
         selectedFolders={selectedFolderObjects}

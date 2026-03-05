@@ -19,6 +19,7 @@ import { CopyGcsToAzureDialog } from './copy-gcs-to-azure-dialog';
 import { CopyGcsToDropboxDialog } from './copy-gcs-to-dropbox-dialog';
 import { CopyGcsToDriveDialog } from './copy-gcs-to-drive-dialog';
 import { CopyGcsToGooglePhotosDialog } from './copy-gcs-to-google-photos-dialog';
+import { CopyGcsToPCloudDialog } from './copy-gcs-to-pcloud-dialog';
 import { CopyToBar } from '@/components/copy-to-bar';
 import { type CopyProviderId } from '@/lib/providers';
 
@@ -485,6 +486,13 @@ function BrowseView({
         />
         <CopyGcsToGooglePhotosDialog
           open={activeDialog === 'google-photos'}
+          onOpenChange={(o) => !o && setActiveDialog(null)}
+          selectedFiles={selectedFileObjects}
+          bucketName={bucket}
+          onSuccess={clearSelection}
+        />
+        <CopyGcsToPCloudDialog
+          open={activeDialog === 'pcloud'}
           onOpenChange={(o) => !o && setActiveDialog(null)}
           selectedFiles={selectedFileObjects}
           bucketName={bucket}

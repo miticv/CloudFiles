@@ -3,6 +3,7 @@ import { useBuckets } from '@/api/google-storage.api';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 
+const LS_BUCKET_KEY = 'gcs_bucket_name';
 const LS_PROJECT_KEY = 'gcs_project_id';
 
 interface GcsBucketInputProps {
@@ -15,6 +16,13 @@ export function GcsBucketInput({ value, onChange, enabled }: GcsBucketInputProps
   const [projectId] = useState(() => localStorage.getItem(LS_PROJECT_KEY) || '');
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Pre-fill from localStorage when dialog opens
+  useEffect(() => {
+    if (!enabled || value) return;
+    const saved = localStorage.getItem(LS_BUCKET_KEY);
+    if (saved) onChange(saved);
+  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: buckets, isLoading } = useBuckets(enabled && projectId ? projectId : null);
 

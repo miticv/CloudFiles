@@ -16,6 +16,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatDateTime, formatRelative, formatFileSize, extractError } from '@/lib/utils';
 import {
   RefreshCw, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Trash2, RotateCcw, CheckCircle2, XCircle,
@@ -883,9 +887,17 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
 
   const [terminateConfirmOpen, setTerminateConfirmOpen] = useState(false);
   const [restartError, setRestartError] = useState<string | null>(null);
+  const [restartMode, setRestartMode] = useState<'all' | 'failed' | null>(null);
 
-  const handleRestart = useCallback(async () => {
+  const isGooglePhotosExpired = useMemo(
+    () => /googlePhotos/i.test(parent.name) &&
+      new Date(parent.createdAt).getTime() < new Date().getTime() - 50 * 60 * 1000,
+    [parent.name, parent.createdAt]
+  );
+
+  const handleRestart = useCallback(async (retryFailedOnly: boolean) => {
     setRestartError(null);
+    setRestartMode(null);
     const azureAccessToken = await oidc.getAccessToken('azure-storage');
     const isGooglePipeline = /google|gcs/i.test(parent.name);
     const googleAccessToken = isGooglePipeline ? (await oidc.getAccessToken('google')) ?? undefined : undefined;
@@ -894,12 +906,13 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
         instanceId: parent.instanceId,
         azureAccessToken: azureAccessToken ?? undefined,
         googleAccessToken,
+        retryFailedOnly,
       },
       {
         onError: (err) => setRestartError(extractError(err)),
       },
     );
-  }, [oidc, restart, parent.instanceId, parent.name]);
+  }, [oidc, restart, parent.instanceId, parent.name, setRestartMode]);
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
@@ -943,9 +956,14 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
               </Badge>
             )}
             {parent.hasFailedFiles && (
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                Has failures
-              </Badge>
+              <>
+                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                  Has failures
+                </Badge>
+                <span className="text-[10px] text-muted-foreground italic">
+                  — you can re-run failed files
+                </span>
+              </>
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground flex-wrap">
@@ -1100,15 +1118,64 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
                 </AlertDialogContent>
               </AlertDialog>
               {canRetry && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRestart}
-                  disabled={restart.isPending}
-                >
-                  <RotateCcw className={cn('w-3.5 h-3.5 mr-1.5', restart.isPending && 'animate-spin')} />
-                  {restart.isPending ? 'Restarting...' : 'Retry'}
-                </Button>
+                isGooglePhotosExpired ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0}>
+                          <Button variant="outline" size="sm" disabled>
+                            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                            Re-run
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[260px]">
+                        Photo download URLs have expired. Please start a new job from the Google Photos page.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={restart.isPending}>
+                          <RotateCcw className={cn('w-3.5 h-3.5 mr-1.5', restart.isPending && 'animate-spin')} />
+                          {restart.isPending ? 'Restarting...' : 'Re-run'}
+                          <ChevronDown className="w-3 h-3 ml-1.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setRestartMode('all')}>
+                          Re-run all files
+                        </DropdownMenuItem>
+                        {parent.hasFailedFiles && (
+                          <DropdownMenuItem onClick={() => setRestartMode('failed')}>
+                            Re-run only failed files
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <AlertDialog open={restartMode !== null} onOpenChange={(open) => { if (!open) setRestartMode(null); }}>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirm Re-run</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {restartMode === 'all'
+                              ? 'This will create a new job that re-processes all files from the original job, including ones that already succeeded.'
+                              : 'This will create a new job that only re-processes the files that failed. Successfully copied files will be skipped.'}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRestart(restartMode === 'failed')}>
+                            {restartMode === 'all' ? 'Re-run all files' : 'Re-run failed files'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )
               )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>

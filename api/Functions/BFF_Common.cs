@@ -380,15 +380,17 @@ namespace CloudFiles
                 var cfToken = CommonUtility.GetTokenFromHeaders(req);
                 UserTableUtility.ValidateJwtAndGetClaims(cfToken);
 
-                // Read optional tokens from request body
+                // Read optional tokens and flags from request body
                 string? azureAccessToken = null;
                 string? googleAccessToken = null;
+                bool retryFailedOnly = false;
                 string body = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(body))
                 {
                     var bodyObj = JObject.Parse(body);
                     azureAccessToken = bodyObj.Value<string>("azureAccessToken");
                     googleAccessToken = bodyObj.Value<string>("googleAccessToken");
+                    retryFailedOnly = bodyObj.Value<bool?>("retryFailedOnly") ?? false;
                 }
 
                 // Get original instance
@@ -404,10 +406,9 @@ namespace CloudFiles
                 }
 
                 // Google Photos Picker baseUrls expire after ~60 minutes.
-                // Reject restart for GooglePhotosToAzure jobs older than 50 minutes.
-                var isGooglePhotosToAzure = instance.Name.Contains("GooglePhotosToAzure", StringComparison.OrdinalIgnoreCase)
-                    || instance.Name.Contains("googlePhotosToAzure", StringComparison.Ordinal);
-                if (isGooglePhotosToAzure && instance.CreatedAt < DateTimeOffset.UtcNow.AddMinutes(-50))
+                // Reject restart for any GooglePhotos* source jobs older than 50 minutes.
+                var isGooglePhotosSource = instance.Name.Contains("GooglePhotos", StringComparison.OrdinalIgnoreCase);
+                if (isGooglePhotosSource && instance.CreatedAt < DateTimeOffset.UtcNow.AddMinutes(-50))
                 {
                     return new BadRequestObjectResult(new
                     {
@@ -424,6 +425,11 @@ namespace CloudFiles
                 if (!string.IsNullOrEmpty(azureAccessToken))
                 {
                     input["azureAccessToken"] = azureAccessToken;
+                }
+
+                if (retryFailedOnly && !string.IsNullOrEmpty(instance.SerializedOutput))
+                {
+                    FilterToFailedOnly(input, instance.SerializedOutput);
                 }
 
                 string newInstanceId = await starter.ScheduleNewOrchestrationInstanceAsync(
@@ -551,6 +557,95 @@ namespace CloudFiles
                 return false;
             }
         }
+        /// <summary>
+        /// Filters the input items array to only include items that failed in the output.
+        /// Mutates the input JObject in-place.
+        /// </summary>
+        private static void FilterToFailedOnly(JObject input, string serializedOutput)
+        {
+            var output = JObject.Parse(serializedOutput);
+            var failedFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // Format 1: results[] with success flag (Azure/GCS/pCloud/Drive/Dropbox destinations)
+            var results = (output["results"] ?? output["Results"]) as JArray;
+            if (results != null)
+            {
+                foreach (var r in results)
+                {
+                    bool success = r["success"]?.Value<bool>() ?? r["Success"]?.Value<bool>() ?? true;
+                    if (!success)
+                    {
+                        var fn = r["filename"]?.Value<string>() ?? r["Filename"]?.Value<string>();
+                        if (!string.IsNullOrEmpty(fn)) failedFilenames.Add(fn);
+                    }
+                }
+            }
+
+            // Format 2: newMediaItemResults[] (Google Photos destination) — failure = missing mediaItem.id
+            var mediaResults = (output["newMediaItemResults"] ?? output["NewMediaItemResults"]) as JArray;
+            if (mediaResults != null)
+            {
+                foreach (var r in mediaResults)
+                {
+                    if (string.IsNullOrEmpty(r["mediaItem"]?["id"]?.Value<string>()))
+                    {
+                        var fn = r["mediaItem"]?["filename"]?.Value<string>()
+                              ?? r["mediaItem"]?["Filename"]?.Value<string>();
+                        if (!string.IsNullOrEmpty(fn)) failedFilenames.Add(fn);
+                    }
+                }
+            }
+
+            if (failedFilenames.Count == 0) return;
+
+            // Filter known input item arrays to only keep items whose filename matches a failed file
+            var arrayFields = new[] {
+                "selectedItemsList", "SelectedItemsList",
+                "photoItems", "PhotoItems",
+                "driveItems", "DriveItems",
+                "items", "Items",
+                "selectedItems", "SelectedItems"
+            };
+
+            foreach (var field in arrayFields)
+            {
+                if (input[field] is JArray arr)
+                {
+                    var filtered = new JArray(arr.Where(item => {
+                        var filename = ExtractFilenameFromItem(item);
+                        return !string.IsNullOrEmpty(filename) && failedFilenames.Contains(filename);
+                    }));
+                    input[field] = filtered;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts a filename from an input item by checking known field patterns.
+        /// </summary>
+        private static string? ExtractFilenameFromItem(JToken item)
+        {
+            // Direct filename field
+            var filename = item["filename"]?.Value<string>() ?? item["Filename"]?.Value<string>();
+            if (!string.IsNullOrEmpty(filename)) return filename;
+
+            // Name field (Drive, Dropbox items)
+            var name = item["name"]?.Value<string>() ?? item["Name"]?.Value<string>();
+            if (!string.IsNullOrEmpty(name)) return name;
+
+            // ItemPath — extract last segment as filename (Azure items)
+            var itemPath = item["itemPath"]?.Value<string>() ?? item["ItemPath"]?.Value<string>();
+            if (!string.IsNullOrEmpty(itemPath))
+                return itemPath.Split('/').LastOrDefault(s => !string.IsNullOrEmpty(s));
+
+            // Path field (Dropbox/pCloud items) — extract last segment
+            var path = item["path"]?.Value<string>() ?? item["Path"]?.Value<string>();
+            if (!string.IsNullOrEmpty(path))
+                return path.Split('/').LastOrDefault(s => !string.IsNullOrEmpty(s));
+
+            return null;
+        }
+
         private static string? StripTokensFromInput(string? serializedInput)
         {
             if (string.IsNullOrEmpty(serializedInput)) return serializedInput;

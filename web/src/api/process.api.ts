@@ -58,10 +58,12 @@ export function usePurgeProcess() {
 export function useRestartProcess() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ instanceId, azureAccessToken, googleAccessToken }: { instanceId: string; azureAccessToken?: string; googleAccessToken?: string }) =>
+    mutationFn: ({ instanceId, azureAccessToken, googleAccessToken, retryFailedOnly }: {
+      instanceId: string; azureAccessToken?: string; googleAccessToken?: string; retryFailedOnly?: boolean;
+    }) =>
       apiClient.post<{ instanceId: string; restartedFrom: string }>(
         `process/instances/${instanceId}/restart`,
-        (azureAccessToken || googleAccessToken) ? { azureAccessToken, googleAccessToken } : undefined,
+        { azureAccessToken, googleAccessToken, retryFailedOnly },
       ).then(r => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['processes'] }),
   });

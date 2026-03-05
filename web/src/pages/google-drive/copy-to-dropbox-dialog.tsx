@@ -80,7 +80,13 @@ export function CopyToDropboxDialog({
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const canStart = selectedFiles.length > 0 || selectedFolders.length > 0;
+  const folderError = destinationFolder.startsWith('/')
+    ? "Don't include a leading slash — use 'backups/drive', not '/backups/drive'"
+    : destinationFolder.includes('//')
+    ? "Folder path cannot contain consecutive slashes"
+    : null;
+
+  const canStart = (selectedFiles.length > 0 || selectedFolders.length > 0) && !folderError;
 
   const handleStart = useCallback(async () => {
     if (!canStart) return;
@@ -153,11 +159,16 @@ export function CopyToDropboxDialog({
             <Input
               value={destinationFolder}
               onChange={(e) => setDestinationFolder(e.target.value)}
-              placeholder="e.g. /backups/drive"
+              placeholder="e.g. backups/drive"
+              className={folderError ? 'border-red-400 focus-visible:ring-red-400' : ''}
             />
-            <p className="text-xs text-muted-foreground">
-              Files will be copied to this folder path in Dropbox. Leave empty to copy to root.
-            </p>
+            {folderError ? (
+              <p className="text-xs text-red-600">{folderError}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Files will be copied to this folder path in Dropbox. Leave empty to copy to root.
+              </p>
+            )}
           </div>
 
           {errorMsg && (

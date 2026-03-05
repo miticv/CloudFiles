@@ -972,11 +972,12 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
             role="button"
             tabIndex={0}
             title="Terminate"
-            className="shrink-0 ml-1 p-1.5 rounded-md text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+            className="shrink-0 ml-1 px-2 py-1 rounded-md text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-medium"
             onClick={(e) => { e.stopPropagation(); setTerminateConfirmOpen(true); }}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setTerminateConfirmOpen(true); } }}
           >
-            <StopCircle className="w-4 h-4" />
+            <StopCircle className="w-3.5 h-3.5" />
+            Terminate
           </span>
         )}
       </button>

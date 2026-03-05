@@ -5,9 +5,9 @@ import { useStartPhotosToGoogleDrive } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { GoogleDriveFolderPicker } from '@/components/google-drive-folder-picker';
 import type { PickedMediaItem } from '@/api/types';
 
 interface CopyToGoogleDriveDialogProps {
@@ -75,17 +75,7 @@ export function CopyToGoogleDriveDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Destination Folder ID (optional)</label>
-            <Input
-              value={destinationFolderId}
-              onChange={(e) => setDestinationFolderId(e.target.value)}
-              placeholder="e.g. 1AbC_dEfGhIjKlMnOp"
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter the Google Drive folder ID where files will be copied. Leave empty to copy to the root of My Drive.
-            </p>
-          </div>
+          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} />
 
           {errorMsg && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

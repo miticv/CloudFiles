@@ -5,9 +5,9 @@ import { useStartGcsToDrive } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { GoogleDriveFolderPicker } from '@/components/google-drive-folder-picker';
 import type { FileItem } from '@/api/types';
 
 interface CopyGcsToDriveDialogProps {
@@ -76,18 +76,7 @@ export function CopyGcsToDriveDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Destination Folder ID */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Destination Folder ID (optional)</label>
-            <Input
-              value={destinationFolderId}
-              onChange={(e) => setDestinationFolderId(e.target.value)}
-              placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2wtTs"
-            />
-            <p className="text-xs text-muted-foreground">
-              The Google Drive folder ID to copy files into. Leave empty to copy to My Drive root.
-            </p>
-          </div>
+          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} />
 
           {/* Error */}
           {errorMsg && (

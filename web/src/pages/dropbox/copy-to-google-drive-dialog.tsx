@@ -7,9 +7,9 @@ import { useStartDropboxToDrive } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { GoogleDriveFolderPicker } from '@/components/google-drive-folder-picker';
 import type { DropboxItem, DropboxFolderResponse, DropboxFileForCopy } from '@/api/types';
 
 interface CopyToGoogleDriveDialogProps {
@@ -81,7 +81,7 @@ export function CopyToGoogleDriveDialog({
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const canStart = destinationFolderId.trim() && (selectedFiles.length > 0 || selectedFolders.length > 0);
+  const canStart = selectedFiles.length > 0 || selectedFolders.length > 0;
 
   const handleStart = useCallback(async () => {
     if (!canStart) return;
@@ -150,18 +150,7 @@ export function CopyToGoogleDriveDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Destination Folder ID */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Destination Folder ID</label>
-            <Input
-              value={destinationFolderId}
-              onChange={(e) => setDestinationFolderId(e.target.value)}
-              placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2wtIs"
-            />
-            <p className="text-xs text-muted-foreground">
-              The Google Drive folder ID where files will be copied. You can find this in the folder URL.
-            </p>
-          </div>
+          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} />
 
           {/* Error */}
           {errorMsg && (

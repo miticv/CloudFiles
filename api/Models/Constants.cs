@@ -85,6 +85,7 @@
         public const string PCloudFileList = "pcloudFileList";
         public const string PCloudDownloadFile = "pcloudDownloadFile";
         public const string PCloudUploadFile = "pcloudUploadFile";
+        public const string CreatePCloudFolderTree = "createPCloudFolderTree";
 
         // automation PCloud to Azure
         public const string ProcessPCloudToAzure_Start = "processPCloudToAzure_Start";

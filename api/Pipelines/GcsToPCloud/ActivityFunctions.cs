@@ -35,8 +35,6 @@ namespace CloudFiles.GcsToPCloud
             {
                 if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
 
-                var filename = item.ItemPath.Split('/').Last();
-
                 preparedList.Add(new GcsToPCloudItemPrepared
                 {
                     PCloudAccessToken = request.PCloudAccessToken,
@@ -45,7 +43,7 @@ namespace CloudFiles.GcsToPCloud
                     BucketName = request.BucketName,
                     ObjectName = item.ItemPath,
                     DestinationFolderId = request.DestinationFolderId,
-                    Filename = filename
+                    Filename = item.ItemPath
                 });
             }
 

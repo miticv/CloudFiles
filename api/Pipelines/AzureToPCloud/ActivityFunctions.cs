@@ -31,7 +31,6 @@ namespace CloudFiles.AzureToPCloud
             foreach (var item in expandedItemsList)
             {
                 if (item.ItemPath.EndsWith("/")) continue;
-                var filename = item.ItemPath.Split('/').Last();
 
                 preparedList.Add(new AzureToPCloudItemPrepared
                 {
@@ -42,7 +41,7 @@ namespace CloudFiles.AzureToPCloud
                     ContainerName = request.ContainerName,
                     BlobPath = item.ItemPath,
                     DestinationFolderId = request.DestinationFolderId,
-                    Filename = filename
+                    Filename = item.ItemPath
                 });
             }
             return new AzureToPCloudItemsPrepared { ListItemsPrepared = preparedList };

@@ -168,6 +168,67 @@ namespace CloudFiles.Utilities
                 throw new InvalidOperationException($"pCloud upload error: result={result?.Result}, {responseContent}");
         }
 
+        // ─── Folder Creation ───
+
+        public async Task<long> CreateFolderAsync(long parentFolderId, string folderName)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
+
+            var url = $"https://{ApiHostname}/createfolderifnotexists?folderid={parentFolderId}&name={Uri.EscapeDataString(folderName)}";
+            var response = await client.GetAsync(url).ConfigureAwait(false);
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"pCloud createfolderifnotexists failed: {content}");
+
+            var result = JsonConvert.DeserializeObject<PCloudApiResponse>(content);
+            if (result == null || result.Result != 0)
+                throw new InvalidOperationException($"pCloud createfolderifnotexists error: result={result?.Result}, {content}");
+
+            return result.Metadata.FolderId;
+        }
+
+        /// <summary>
+        /// Creates the full folder tree under rootFolderId for the given relative folder paths.
+        /// Returns a mapping of relative folder path → pCloud folder ID.
+        /// </summary>
+        public async Task<Dictionary<string, long>> CreateFolderTreeAsync(long rootFolderId, List<string> folderPaths)
+        {
+            var folderMap = new Dictionary<string, long>();
+
+            // Sort by depth so parents are created before children
+            var sorted = folderPaths
+                .Distinct()
+                .OrderBy(p => p.Count(c => c == '/'))
+                .ThenBy(p => p)
+                .ToList();
+
+            foreach (var folderPath in sorted)
+            {
+                var parts = folderPath.Split('/');
+                var currentParentId = rootFolderId;
+                var currentPath = "";
+
+                foreach (var part in parts)
+                {
+                    currentPath = string.IsNullOrEmpty(currentPath) ? part : $"{currentPath}/{part}";
+
+                    if (folderMap.TryGetValue(currentPath, out var existingId))
+                    {
+                        currentParentId = existingId;
+                        continue;
+                    }
+
+                    var folderId = await CreateFolderAsync(currentParentId, part).ConfigureAwait(false);
+                    folderMap[currentPath] = folderId;
+                    currentParentId = folderId;
+                }
+            }
+
+            return folderMap;
+        }
+
         // ─── Deep Listing (for migrations) ───
 
         public async Task<List<PCloudItem>> DeepListFilesAsync(long folderId)

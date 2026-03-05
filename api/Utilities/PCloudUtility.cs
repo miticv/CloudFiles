@@ -163,7 +163,7 @@ namespace CloudFiles.Utilities
             if (!response.IsSuccessStatusCode)
                 throw new InvalidOperationException($"pCloud upload failed: {responseContent}");
 
-            var result = JsonConvert.DeserializeObject<PCloudApiResponse>(responseContent);
+            var result = JsonConvert.DeserializeObject<PCloudUploadApiResponse>(responseContent);
             if (result == null || result.Result != 0)
                 throw new InvalidOperationException($"pCloud upload error: result={result?.Result}, {responseContent}");
         }
@@ -237,6 +237,16 @@ namespace CloudFiles.Utilities
 
         [JsonProperty("contents")]
         public List<PCloudMetadata> Contents { get; set; } = default!;
+    }
+
+    // Upload response has metadata as an array (one entry per uploaded file)
+    public class PCloudUploadApiResponse
+    {
+        [JsonProperty("result")]
+        public int Result { get; set; }
+
+        [JsonProperty("metadata")]
+        public List<PCloudMetadata> Metadata { get; set; } = default!;
     }
 
     public class PCloudOAuthTokenResult

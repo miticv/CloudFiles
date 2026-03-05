@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { GcsBucketInput } from '@/components/gcs-bucket-input';
 import { Spinner } from '@/components/ui/spinner';
 import type { DropboxItem, DropboxFolderResponse, DropboxFileForCopy } from '@/api/types';
 
@@ -155,11 +156,7 @@ export function CopyToGcsDialog({
           {/* Bucket Name */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Bucket Name</label>
-            <Input
-              value={bucketName}
-              onChange={(e) => setBucketName(e.target.value)}
-              placeholder="e.g. my-gcs-bucket"
-            />
+            <GcsBucketInput value={bucketName} onChange={setBucketName} enabled={open} />
           </div>
 
           {/* Destination Folder */}

@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { GcsBucketInput } from '@/components/gcs-bucket-input';
 import { Spinner } from '@/components/ui/spinner';
 import type { GoogleDriveFile, GoogleDriveFileListResponse, DriveFileForCopy } from '@/api/types';
 
@@ -143,11 +144,7 @@ export function CopyToGcsDialog({
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Bucket Name</label>
-            <Input
-              value={bucketName}
-              onChange={(e) => setBucketName(e.target.value)}
-              placeholder="e.g. my-gcs-bucket"
-            />
+            <GcsBucketInput value={bucketName} onChange={setBucketName} enabled={open} />
           </div>
 
           <div className="space-y-1.5">

@@ -11,7 +11,14 @@ import { FileDetailSheet } from '@/components/file-detail-sheet';
 import type { FilePreviewInfo } from '@/components/file-detail-sheet';
 import { cn, formatFileSize, formatSelectionCount, getFileExtension, getFileTypeBadgeColor } from '@/lib/utils';
 import { NotConnectedState } from '@/components/not-connected-state';
-import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CheckSquare, X } from 'lucide-react';
+import { CopyToBar } from '@/components/copy-to-bar';
+import { type CopyProviderId } from '@/lib/providers';
+import { CopyToAzureDialog } from './copy-to-azure-dialog';
+import { CopyToGcsDialog } from './copy-to-gcs-dialog';
+import { CopyToGoogleDriveDialog } from './copy-to-google-drive-dialog';
+import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
+import { CopyToDropboxDialog } from './copy-to-dropbox-dialog';
+import { FolderOpen, FileText, ChevronRight, RotateCcw, ArrowLeft, CheckSquare } from 'lucide-react';
 import { isAxiosError } from 'axios';
 
 interface BreadcrumbEntry {
@@ -32,6 +39,7 @@ export function Component() {
     toggleItem, totalSelected, toggleSelectionMode, clearSelection,
   } = useFileSelection<number>();
   const [previewFile, setPreviewFile] = useState<FilePreviewInfo | null>(null);
+  const [activeDialog, setActiveDialog] = useState<CopyProviderId | null>(null);
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
   const { data, isLoading, error, refetch } = usePCloudFolder(currentFolder.folderId, pcloudConnected);
@@ -51,6 +59,9 @@ export function Component() {
   const items = data?.items ?? [];
   const folders = items.filter((i) => i.isFolder);
   const files = items.filter((i) => !i.isFolder);
+
+  const selectedFileObjects = files.filter((f) => selectedFiles.has(f.fileId));
+  const selectedFolderObjects = folders.filter((f) => selectedFolders.has(f.folderId));
 
   return (
     <div className="h-full flex flex-col">
@@ -262,18 +273,66 @@ export function Component() {
 
       {/* Bottom Selection Bar */}
       {selectionMode && totalSelected > 0 && (
-        <div className="border-t border-border bg-card px-6 py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-foreground">
-              {formatSelectionCount(selectedFiles.size, selectedFolders.size)}
-            </span>
-            <Button variant="ghost" size="sm" onClick={clearSelection} className="gap-1 text-muted-foreground">
-              <X className="h-3.5 w-3.5" />
-              Clear
-            </Button>
-          </div>
-        </div>
+        <CopyToBar
+          sourceProvider="pcloud"
+          selectedCount={totalSelected}
+          selectedLabel={formatSelectionCount(selectedFiles.size, selectedFolders.size)}
+          onClearSelection={clearSelection}
+          onCopyTo={(dest) => setActiveDialog(dest)}
+        />
       )}
+
+      {/* Copy Dialogs */}
+      <CopyToAzureDialog
+        open={activeDialog === 'azure'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToGcsDialog
+        open={activeDialog === 'gcs'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToGooglePhotosDialog
+        open={activeDialog === 'google-photos'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToGoogleDriveDialog
+        open={activeDialog === 'google-drive'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
+      <CopyToDropboxDialog
+        open={activeDialog === 'dropbox'}
+        onOpenChange={(o) => !o && setActiveDialog(null)}
+        selectedFiles={selectedFileObjects}
+        selectedFolders={selectedFolderObjects}
+        onSuccess={() => {
+          setSelectedFiles(new Set());
+          setSelectedFolders(new Set());
+        }}
+      />
     </div>
   );
 }

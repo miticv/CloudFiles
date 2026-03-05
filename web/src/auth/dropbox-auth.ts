@@ -3,6 +3,35 @@ import { env } from '@/env';
 const DROPBOX_TOKEN_KEY = 'dropbox_token';
 const DROPBOX_REFRESH_KEY = 'dropbox_refresh_token';
 const DROPBOX_EXPIRES_KEY = 'dropbox_expires_at';
+const DROPBOX_PKCE_VERIFIER_KEY = 'dropbox_pkce_verifier';
+
+// ─── PKCE helpers ───
+
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+export function getDropboxPkceVerifier(): string | null {
+  return sessionStorage.getItem(DROPBOX_PKCE_VERIFIER_KEY);
+}
+
+export function clearDropboxPkceVerifier(): void {
+  sessionStorage.removeItem(DROPBOX_PKCE_VERIFIER_KEY);
+}
 
 export function getDropboxToken(): string | null {
   return localStorage.getItem(DROPBOX_TOKEN_KEY);
@@ -40,13 +69,19 @@ export function isDropboxTokenExpired(): boolean {
   return Date.now() > parseInt(expiresAt, 10) - 5 * 60 * 1000;
 }
 
-export function startDropboxLogin(): void {
+export async function startDropboxLogin(): Promise<void> {
+  const verifier = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
+  sessionStorage.setItem(DROPBOX_PKCE_VERIFIER_KEY, verifier);
+
   const redirectUri = `${window.location.origin}/connections`;
   const params = new URLSearchParams({
     client_id: env.dropboxClientId,
     response_type: 'code',
     redirect_uri: redirectUri,
     token_access_type: 'offline',
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
   });
   window.location.href = `https://www.dropbox.com/oauth2/authorize?${params.toString()}`;
 }

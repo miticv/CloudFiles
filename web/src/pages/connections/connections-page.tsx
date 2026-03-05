@@ -2,7 +2,7 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useOidc } from '@/auth/oidc-provider';
 import { useAuth } from '@/auth/auth-context';
 import { startPCloudLogin, setPCloudAuth, clearPCloudAuth } from '@/auth/pcloud-auth';
-import { startDropboxLogin, setDropboxAuth, clearDropboxAuth } from '@/auth/dropbox-auth';
+import { startDropboxLogin, setDropboxAuth, clearDropboxAuth, getDropboxPkceVerifier, clearDropboxPkceVerifier } from '@/auth/dropbox-auth';
 import { useExchangePCloudCode } from '@/api/pcloud.api';
 import { useExchangeDropboxCode } from '@/api/dropbox.api';
 import { usePageTitle } from '@/hooks/use-page-title';
@@ -142,8 +142,11 @@ export function Component() {
     // Clean URL immediately
     window.history.replaceState({}, '', window.location.pathname);
 
+    const codeVerifier = getDropboxPkceVerifier() ?? '';
+    clearDropboxPkceVerifier();
+
     const redirectUri = `${window.location.origin}/connections`;
-    exchangeDropboxCode.mutateAsync({ code, redirectUri })
+    exchangeDropboxCode.mutateAsync({ code, redirectUri, codeVerifier })
       .then((response) => {
         setDropboxAuth(response.accessToken, response.refreshToken, response.expiresIn);
         console.log('[Connections] Dropbox connected successfully');
@@ -169,7 +172,7 @@ export function Component() {
       return;
     }
     if (providerId === 'dropbox') {
-      startDropboxLogin();
+      startDropboxLogin().catch(console.error);
       return;
     }
     oidc.login(providerId as 'google' | 'azure');

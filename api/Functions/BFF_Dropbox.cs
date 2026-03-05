@@ -42,7 +42,7 @@ namespace CloudFiles
 
                 log.LogInformation("Exchanging Dropbox OAuth code for token");
 
-                var tokenResponse = await DropboxUtility.ExchangeCodeForTokenAsync(request.Code, request.RedirectUri)
+                var tokenResponse = await DropboxUtility.ExchangeCodeForTokenAsync(request.Code, request.RedirectUri, request.CodeVerifier ?? string.Empty)
                     .ConfigureAwait(false);
 
                 return new OkObjectResult(tokenResponse);

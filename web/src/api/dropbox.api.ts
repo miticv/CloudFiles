@@ -15,7 +15,7 @@ export function useDropboxFolder(path: string, enabled = true) {
 
 export function useExchangeDropboxCode() {
   return useMutation({
-    mutationFn: (params: { code: string; redirectUri: string }) =>
+    mutationFn: (params: { code: string; redirectUri: string; codeVerifier: string }) =>
       apiClient
         .post<DropboxTokenResponse>('dropbox/oauth/callback', params)
         .then((r) => r.data),

@@ -35,7 +35,7 @@ namespace CloudFiles.Utilities
 
         // ─── Token Exchange ───
 
-        public static async Task<DropboxTokenResponse> ExchangeCodeForTokenAsync(string code, string redirectUri)
+        public static async Task<DropboxTokenResponse> ExchangeCodeForTokenAsync(string code, string redirectUri, string codeVerifier)
         {
             var clientId = Environment.GetEnvironmentVariable("DropBoxKey");
             var clientSecret = Environment.GetEnvironmentVariable("DropBoxSecret");
@@ -45,15 +45,22 @@ namespace CloudFiles.Utilities
                 throw new InvalidOperationException("DropBoxKey and DropBoxSecret must be configured.");
             }
 
-            using var client = new HttpClient();
-            var content = new FormUrlEncodedContent(new[]
+            var formFields = new List<KeyValuePair<string, string>>
             {
-                new KeyValuePair<string, string>("code", code),
-                new KeyValuePair<string, string>("grant_type", "authorization_code"),
-                new KeyValuePair<string, string>("client_id", clientId),
-                new KeyValuePair<string, string>("client_secret", clientSecret),
-                new KeyValuePair<string, string>("redirect_uri", redirectUri)
-            });
+                new("code", code),
+                new("grant_type", "authorization_code"),
+                new("client_id", clientId),
+                new("client_secret", clientSecret),
+                new("redirect_uri", redirectUri),
+            };
+
+            if (!string.IsNullOrEmpty(codeVerifier))
+            {
+                formFields.Add(new("code_verifier", codeVerifier));
+            }
+
+            using var client = new HttpClient();
+            var content = new FormUrlEncodedContent(formFields);
 
             var response = await client.PostAsync("https://api.dropboxapi.com/oauth2/token", content).ConfigureAwait(false);
             var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -469,6 +476,9 @@ namespace CloudFiles.Utilities
 
         [JsonProperty("redirectUri")]
         public string RedirectUri { get; set; } = default!;
+
+        [JsonProperty("codeVerifier")]
+        public string CodeVerifier { get; set; } = default!;
     }
 
     // ─── Dropbox refresh request ───

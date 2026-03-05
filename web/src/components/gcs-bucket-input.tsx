@@ -50,7 +50,7 @@ export function GcsBucketInput({ value, onChange, enabled }: GcsBucketInputProps
       />
 
       {showDropdown && projectId && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
           {isLoading ? (
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
               <Spinner size={12} /> Loading buckets…

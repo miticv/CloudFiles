@@ -70,7 +70,7 @@ export function CopyToDropboxDialog({
       await startCopy.mutateAsync({
         items: allFiles,
         dropboxAccessToken,
-        destinationFolder: destinationFolder.trim(),
+        destinationFolder: destinationFolder.trim().replace(/^\/+/, ''),
         startedBy: auth.user?.email ?? 'unknown',
       });
 
@@ -107,7 +107,7 @@ export function CopyToDropboxDialog({
             <Input
               value={destinationFolder}
               onChange={(e) => setDestinationFolder(e.target.value)}
-              placeholder="e.g. /backups/pcloud"
+              placeholder="e.g. backups/pcloud"
             />
             <p className="text-xs text-muted-foreground">
               Files will be copied to this folder in Dropbox. Leave empty to copy to root.

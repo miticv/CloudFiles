@@ -73,7 +73,7 @@ export function CopyToDropboxDialog({
         })),
         accountName,
         containerName,
-        destinationFolder: destinationFolder.trim(),
+        destinationFolder: destinationFolder.trim().replace(/^\/+/, ''),
         azureAccessToken: azureToken,
         startedBy: auth.user?.email ?? 'unknown',
       });

@@ -122,7 +122,7 @@ export function CopyToDropboxDialog({
       await startCopy.mutateAsync({
         driveItems: allFiles,
         dropboxAccessToken: dropboxToken,
-        destinationFolder: destinationFolder.trim(),
+        destinationFolder: destinationFolder.trim().replace(/^\/+/, ''),
         startedBy: auth.user?.email ?? 'unknown',
       });
 

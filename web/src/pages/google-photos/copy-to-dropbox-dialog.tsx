@@ -61,7 +61,7 @@ export function CopyToDropboxDialog({
           filename: item.mediaFile.filename,
         })),
         dropboxAccessToken: dropboxToken,
-        destinationFolder: destinationFolder.trim(),
+        destinationFolder: destinationFolder.trim().replace(/^\/+/, ''),
         startedBy: auth.user?.email ?? 'unknown',
       });
 

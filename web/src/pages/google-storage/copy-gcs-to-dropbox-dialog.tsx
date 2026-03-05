@@ -62,7 +62,7 @@ export function CopyGcsToDropboxDialog({
         })),
         bucketName,
         dropboxAccessToken,
-        destinationFolder: destinationFolder.trim(),
+        destinationFolder: destinationFolder.trim().replace(/^\/+/, ''),
         startedBy: auth.user?.email ?? 'unknown',
       });
 

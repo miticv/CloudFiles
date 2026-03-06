@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router';
+import { useSearchParams, Link } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useFileManagerStore } from '@/stores/file-manager.store';
@@ -19,6 +19,7 @@ import {
   RotateCcw,
   AlertCircle,
   FolderOpen,
+  Link as LinkIcon,
 } from 'lucide-react';
 import type { FileItem, StorageContext } from '@/api/types';
 import { CopyToBar } from '@/components/copy-to-bar';
@@ -116,6 +117,10 @@ export function Component() {
     error: queryError,
     refetch,
   } = useFolder(pathParam, context, !!context.provider);
+
+  // Detect 401 (provider disconnected)
+  const isDisconnected = isError && queryError && 'response' in queryError &&
+    (queryError as { response?: { status?: number } }).response?.status === 401;
 
   const {
     data: fileDetailData,
@@ -268,8 +273,26 @@ export function Component() {
           </div>
         )}
 
-        {/* Error */}
-        {!isLoading && error && (
+        {/* Disconnected (401) */}
+        {!isLoading && isDisconnected && (
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
+              <LinkIcon className="h-7 w-7 text-indigo-500" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-foreground">
+                {context.provider === 'azure' ? 'Azure Storage' : 'Provider'} not connected
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Connect your account to browse files</p>
+            </div>
+            <Button asChild size="sm" className="gap-1.5">
+              <Link to="/connections">Connect</Link>
+            </Button>
+          </div>
+        )}
+
+        {/* Error (non-401) */}
+        {!isLoading && error && !isDisconnected && (
           <div className="flex flex-col items-center justify-center gap-4 py-24">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
               <AlertCircle className="h-7 w-7 text-destructive" />

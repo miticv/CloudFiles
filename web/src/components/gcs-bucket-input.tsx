@@ -41,7 +41,7 @@ export function GcsBucketInput({ value, onChange, enabled }: GcsBucketInputProps
   }, []);
 
   return (
-    <div ref={wrapperRef} className="relative z-10">
+    <div ref={wrapperRef} className="relative" style={{ zIndex: showDropdown ? 50 : 'auto' }}>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -50,7 +50,7 @@ export function GcsBucketInput({ value, onChange, enabled }: GcsBucketInputProps
       />
 
       {showDropdown && projectId && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+        <div className="absolute left-0 top-full mt-1 w-full rounded-md border border-border bg-white shadow-lg" style={{ zIndex: 9999 }}>
           {isLoading ? (
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
               <Spinner size={12} /> Loading buckets…

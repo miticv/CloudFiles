@@ -152,7 +152,7 @@ export function CopyToGcsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 overflow-visible py-2">
           {/* Bucket Name */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Bucket Name</label>

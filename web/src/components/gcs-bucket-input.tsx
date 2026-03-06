@@ -41,7 +41,7 @@ export function GcsBucketInput({ value, onChange, enabled }: GcsBucketInputProps
   }, []);
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative z-10">
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}

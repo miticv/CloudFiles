@@ -28,6 +28,7 @@ export function CopyToGoogleDriveDialog({
   const startCopy = useStartPhotosToGoogleDrive();
 
   const [destinationFolderId, setDestinationFolderId] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -47,6 +48,7 @@ export function CopyToGoogleDriveDialog({
           filename: item.mediaFile.filename,
         })),
         destinationFolderId: destinationFolderId.trim(),
+        newFolderName: newFolderName.trim() || undefined,
         startedBy: auth.user?.email ?? 'unknown',
       });
 
@@ -60,7 +62,7 @@ export function CopyToGoogleDriveDialog({
       setPreparing(false);
     }
   }, [
-    canStart, selectedItems, destinationFolderId,
+    canStart, selectedItems, destinationFolderId, newFolderName,
     startCopy, auth.user, onOpenChange, onSuccess, navigate,
   ]);
 
@@ -75,7 +77,7 @@ export function CopyToGoogleDriveDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} />
+          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} onNewFolderName={setNewFolderName} />
 
           {errorMsg && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

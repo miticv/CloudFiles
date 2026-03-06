@@ -78,6 +78,7 @@ export function CopyToGoogleDriveDialog({
   const startCopy = useStartDropboxToDrive();
 
   const [destinationFolderId, setDestinationFolderId] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -119,6 +120,7 @@ export function CopyToGoogleDriveDialog({
         items: allFiles,
         googleAccessToken: googleToken,
         destinationFolderId: destinationFolderId.trim(),
+        newFolderName: newFolderName.trim() || undefined,
         startedBy: auth.user?.email ?? 'unknown',
       });
 
@@ -132,7 +134,7 @@ export function CopyToGoogleDriveDialog({
       setPreparing(false);
     }
   }, [
-    canStart, selectedFiles, selectedFolders, destinationFolderId,
+    canStart, selectedFiles, selectedFolders, destinationFolderId, newFolderName,
     getAccessToken, startCopy, auth.user, onOpenChange, onSuccess, navigate,
   ]);
 
@@ -150,7 +152,7 @@ export function CopyToGoogleDriveDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} />
+          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} onNewFolderName={setNewFolderName} />
 
           {/* Error */}
           {errorMsg && (

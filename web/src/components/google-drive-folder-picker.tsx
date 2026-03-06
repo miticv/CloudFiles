@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/auth/axios-client';
 import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { FolderOpen, ChevronRight, ArrowLeft, Home } from 'lucide-react';
+import { validateFolderName } from '@/lib/folder-validation';
+import { FolderOpen, FolderPlus, ChevronRight, ArrowLeft, Home, X } from 'lucide-react';
 import type { GoogleDriveFileListResponse } from '@/api/types';
 
 interface BreadcrumbEntry {
@@ -14,10 +17,14 @@ interface BreadcrumbEntry {
 interface GoogleDriveFolderPickerProps {
   enabled: boolean;
   onChange: (folderId: string) => void;
+  onNewFolderName?: (name: string) => void;
 }
 
-export function GoogleDriveFolderPicker({ enabled, onChange }: GoogleDriveFolderPickerProps) {
+export function GoogleDriveFolderPicker({ enabled, onChange, onNewFolderName }: GoogleDriveFolderPickerProps) {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ id: 'root', name: 'My Drive' }]);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [appliedFolderName, setAppliedFolderName] = useState('');
   const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
   const { data, isLoading } = useQuery({
@@ -31,16 +38,41 @@ export function GoogleDriveFolderPicker({ enabled, onChange }: GoogleDriveFolder
 
   const folders = (data?.files ?? []).filter((f) => f.isFolder);
 
+  const validation = newFolderName ? validateFolderName(newFolderName) : null;
+
   function navigateToFolder(id: string, name: string) {
     setBreadcrumbs((prev) => [...prev, { id, name }]);
+    setAppliedFolderName('');
     onChange(id);
+    onNewFolderName?.('');
   }
 
   function navigateToBreadcrumb(index: number) {
     setBreadcrumbs((prev) => prev.slice(0, index + 1));
     const target = breadcrumbs[index];
+    setAppliedFolderName('');
     onChange(target.id === 'root' ? '' : target.id);
+    onNewFolderName?.('');
   }
+
+  function handleUseFolder() {
+    const trimmed = newFolderName.trim();
+    if (!validateFolderName(trimmed).valid) return;
+    setAppliedFolderName(trimmed);
+    setShowCreateFolder(false);
+    setNewFolderName('');
+    onChange(currentFolder.id === 'root' ? '' : currentFolder.id);
+    onNewFolderName?.(trimmed);
+  }
+
+  function handleCancelCreate() {
+    setShowCreateFolder(false);
+    setNewFolderName('');
+  }
+
+  const pathDisplay = appliedFolderName
+    ? [...breadcrumbs.map((b) => b.name), appliedFolderName].join(' / ')
+    : breadcrumbs.map((b) => b.name).join(' / ');
 
   return (
     <div>
@@ -101,8 +133,41 @@ export function GoogleDriveFolderPicker({ enabled, onChange }: GoogleDriveFolder
         ))}
       </div>
 
+      {/* Create Folder */}
+      {!showCreateFolder ? (
+        <button
+          onClick={() => { setShowCreateFolder(true); setAppliedFolderName(''); onNewFolderName?.(''); }}
+          className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <FolderPlus className="h-3.5 w-3.5" />
+          Create Folder
+        </button>
+      ) : (
+        <div className="mt-2 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Input
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="New folder name"
+              className="h-8 text-sm flex-1"
+              onKeyDown={(e) => { if (e.key === 'Enter' && validation?.valid) handleUseFolder(); }}
+              autoFocus
+            />
+            <Button size="sm" onClick={handleUseFolder} disabled={!validation?.valid} className="h-8">
+              Use
+            </Button>
+            <button onClick={handleCancelCreate} className="text-muted-foreground hover:text-foreground transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {validation && !validation.valid && (
+            <p className="text-xs text-destructive">{validation.error}</p>
+          )}
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground mt-1.5">
-        Files will be copied into: <span className="font-medium">{breadcrumbs.map((b) => b.name).join(' / ')}</span>
+        Files will be copied into: <span className="font-medium">{pathDisplay}</span>
       </p>
     </div>
   );

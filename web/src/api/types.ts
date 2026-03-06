@@ -415,6 +415,7 @@ export interface StartDropboxToDriveRequest {
   items: DropboxFileForCopy[];
   googleAccessToken: string;
   destinationFolderId: string;
+  newFolderName?: string;
   startedBy: string;
 }
 
@@ -424,6 +425,7 @@ export interface StartAzureToDriveRequest {
   accountName: string;
   containerName: string;
   destinationFolderId: string;
+  newFolderName?: string;
   azureAccessToken: string;
   startedBy: string;
 }
@@ -472,6 +474,7 @@ export interface StartGooglePhotosToDropboxRequest {
 export interface StartGooglePhotosToGoogleDriveRequest {
   photoItems: PhotoCopyItem[];
   destinationFolderId: string;
+  newFolderName?: string;
   startedBy: string;
 }
 
@@ -511,6 +514,7 @@ export interface StartPCloudToDriveRequest {
   items: PCloudFileForCopy[];
   googleAccessToken: string;
   destinationFolderId: string;
+  newFolderName?: string;
   startedBy: string;
 }
 

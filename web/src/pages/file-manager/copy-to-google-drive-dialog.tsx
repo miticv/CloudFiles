@@ -34,6 +34,7 @@ export function CopyToGoogleDriveDialog({
   const startCopy = useStartAzureToDrive();
 
   const [destinationFolderId, setDestinationFolderId] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -60,6 +61,7 @@ export function CopyToGoogleDriveDialog({
         accountName,
         containerName,
         destinationFolderId: destinationFolderId.trim(),
+        newFolderName: newFolderName.trim() || undefined,
         azureAccessToken: azureToken,
         startedBy: auth.user?.email ?? 'unknown',
       });
@@ -74,7 +76,7 @@ export function CopyToGoogleDriveDialog({
       setPreparing(false);
     }
   }, [
-    canStart, selectedFiles, accountName, containerName, destinationFolderId,
+    canStart, selectedFiles, accountName, containerName, destinationFolderId, newFolderName,
     getAccessToken, startCopy, auth.user, onOpenChange, onSuccess, navigate,
   ]);
 
@@ -89,7 +91,7 @@ export function CopyToGoogleDriveDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} />
+          <GoogleDriveFolderPicker enabled={open} onChange={setDestinationFolderId} onNewFolderName={setNewFolderName} />
 
           {/* Error */}
           {errorMsg && (

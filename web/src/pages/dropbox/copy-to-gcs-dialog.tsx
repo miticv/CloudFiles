@@ -7,9 +7,9 @@ import { useStartDropboxToGcs } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { GcsBucketInput } from '@/components/gcs-bucket-input';
+import { GcsFolderPicker } from '@/components/gcs-folder-picker';
 import { Spinner } from '@/components/ui/spinner';
 import type { DropboxItem, DropboxFolderResponse, DropboxFileForCopy } from '@/api/types';
 
@@ -160,17 +160,7 @@ export function CopyToGcsDialog({
           </div>
 
           {/* Destination Folder */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Destination Folder (optional)</label>
-            <Input
-              value={destinationFolder}
-              onChange={(e) => setDestinationFolder(e.target.value)}
-              placeholder="e.g. backups/dropbox"
-            />
-            <p className="text-xs text-muted-foreground">
-              Files will be copied to this folder path in the bucket. Leave empty to copy to root.
-            </p>
-          </div>
+          <GcsFolderPicker bucket={bucketName} enabled={open} onChange={setDestinationFolder} />
 
           {/* Error */}
           {errorMsg && (

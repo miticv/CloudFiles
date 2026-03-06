@@ -6,9 +6,9 @@ import { useStartAzureToGcs } from '@/api/process.api';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { GcsBucketInput } from '@/components/gcs-bucket-input';
+import { GcsFolderPicker } from '@/components/gcs-folder-picker';
 import { Spinner } from '@/components/ui/spinner';
 import type { FileItem } from '@/api/types';
 
@@ -97,17 +97,7 @@ export function CopyToGcsDialog({
             <GcsBucketInput value={bucketName} onChange={setBucketName} enabled={open} />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Destination Folder (optional)</label>
-            <Input
-              value={destinationFolder}
-              onChange={(e) => setDestinationFolder(e.target.value)}
-              placeholder="e.g. backups/azure"
-            />
-            <p className="text-xs text-muted-foreground">
-              Files will be copied to this path in the bucket. Leave empty to copy to root.
-            </p>
-          </div>
+          <GcsFolderPicker bucket={bucketName} enabled={open} onChange={setDestinationFolder} />
 
           {errorMsg && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

@@ -136,7 +136,7 @@ export function CopyToPcloudDialog({
         <DialogHeader>
           <DialogTitle>Copy to pCloud</DialogTitle>
           <DialogDescription>
-            {selectedFiles.length} item{selectedFiles.length !== 1 ? 's' : ''} selected from {accountName}/{containerName}
+            {(() => { const fc = selectedFiles.filter(f => !f.isFolder).length; const dc = selectedFiles.filter(f => f.isFolder).length; return <>{fc > 0 && `${fc} file${fc !== 1 ? 's' : ''}`}{fc > 0 && dc > 0 && ' and '}{dc > 0 && `${dc} folder${dc !== 1 ? 's' : ''}`}</>; })()} selected from {accountName}/{containerName}
           </DialogDescription>
         </DialogHeader>
 

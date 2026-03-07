@@ -6,6 +6,7 @@ import { AdminGuard } from '@/auth/admin-guard';
 import { env } from '@/env';
 import { AlertTriangle } from 'lucide-react';
 
+// eslint-disable-next-line react-refresh/only-export-components
 function RouteError() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-slate-100 px-4">

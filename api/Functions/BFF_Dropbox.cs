@@ -52,6 +52,11 @@ namespace CloudFiles
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
             }
+            catch (InvalidOperationException ex)
+            {
+                log.LogError(ex, $"Configuration error in {Constants.DropboxOAuthCallback}");
+                return new BadRequestObjectResult(ex.Message);
+            }
             catch (Exception ex)
             {
                 log.LogError(ex, $"Error in {Constants.DropboxOAuthCallback}");
@@ -89,6 +94,11 @@ namespace CloudFiles
             {
                 log.LogError(ex.Message);
                 return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                log.LogError(ex, $"Configuration error in {Constants.DropboxOAuthRefresh}");
+                return new BadRequestObjectResult(ex.Message);
             }
             catch (Exception ex)
             {

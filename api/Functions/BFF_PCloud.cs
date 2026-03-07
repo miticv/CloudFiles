@@ -68,7 +68,7 @@ namespace CloudFiles
             {
                 var (accessToken, apiHostname) = PCloudUtility.VerifyPCloudHeaderTokenIsValid(req);
 
-                string folderIdStr = req.Query["folderId"];
+                string? folderIdStr = req.Query["folderId"];
                 long folderId = 0;
                 if (!string.IsNullOrEmpty(folderIdStr) && long.TryParse(folderIdStr, out var parsed))
                 {
@@ -108,8 +108,8 @@ namespace CloudFiles
             {
                 var (accessToken, apiHostname) = PCloudUtility.VerifyPCloudHeaderTokenIsValid(req);
 
-                string fileIdStr = req.Query["fileId"];
-                string filename = req.Query["filename"];
+                string? fileIdStr = req.Query["fileId"];
+                string? filename = req.Query["filename"];
                 if (string.IsNullOrEmpty(fileIdStr) || string.IsNullOrEmpty(filename))
                 {
                     return new BadRequestObjectResult("fileId and filename query parameters are required.");
@@ -156,8 +156,8 @@ namespace CloudFiles
             {
                 var (accessToken, apiHostname) = PCloudUtility.VerifyPCloudHeaderTokenIsValid(req);
 
-                string folderIdStr = req.Query["folderId"];
-                string filename = req.Query["filename"];
+                string? folderIdStr = req.Query["folderId"];
+                string? filename = req.Query["filename"];
                 if (string.IsNullOrEmpty(folderIdStr) || string.IsNullOrEmpty(filename))
                 {
                     return new BadRequestObjectResult("folderId and filename query parameters are required.");

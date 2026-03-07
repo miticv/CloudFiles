@@ -21,8 +21,8 @@ namespace CloudFiles
             {
                 var accessToken = await GoogleUtility.VerifyGoogleHeaderTokenIsValid(req).ConfigureAwait(false);
 
-                string folderId = req.Query["folderId"];
-                string pageToken = req.Query["pageToken"];
+                string? folderId = req.Query["folderId"];
+                string? pageToken = req.Query["pageToken"];
 
                 if (string.IsNullOrEmpty(folderId)) folderId = "root";
 

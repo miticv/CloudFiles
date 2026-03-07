@@ -149,7 +149,7 @@ namespace CloudFiles.Utilities
         // --- Google Drive API ---
 
         public async Task<Models.Google.GoogleDriveFileListResponse> ListDriveFilesAsync(
-            string folderId = "root", string pageToken = null)
+            string folderId = "root", string? pageToken = null)
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization =

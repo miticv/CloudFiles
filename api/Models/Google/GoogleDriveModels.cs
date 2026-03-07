@@ -6,7 +6,7 @@ namespace CloudFiles.Models.Google
     public class GoogleDriveFileListResponse
     {
         [JsonProperty("nextPageToken")]
-        public string NextPageToken { get; set; }
+        public string? NextPageToken { get; set; }
 
         [JsonProperty("files")]
         public List<GoogleDriveFile> Files { get; set; } = new();
@@ -27,10 +27,10 @@ namespace CloudFiles.Models.Google
         public long? Size { get; set; }
 
         [JsonProperty("modifiedTime")]
-        public string ModifiedTime { get; set; }
+        public string? ModifiedTime { get; set; }
 
         [JsonProperty("iconLink")]
-        public string IconLink { get; set; }
+        public string? IconLink { get; set; }
 
         public bool IsFolder => MimeType == "application/vnd.google-apps.folder";
     }

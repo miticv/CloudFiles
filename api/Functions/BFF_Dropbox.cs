@@ -117,7 +117,7 @@ namespace CloudFiles
             {
                 var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
-                string path = req.Query["path"];
+                string? path = req.Query["path"];
                 if (path == null) path = "";
 
                 var utility = DropboxUtility.Create(accessToken);
@@ -153,7 +153,7 @@ namespace CloudFiles
             {
                 var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
-                string cursor = req.Query["cursor"];
+                string? cursor = req.Query["cursor"];
                 if (string.IsNullOrEmpty(cursor))
                 {
                     return new BadRequestObjectResult("cursor query parameter is required.");
@@ -192,7 +192,7 @@ namespace CloudFiles
             {
                 var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
-                string path = req.Query["path"];
+                string? path = req.Query["path"];
                 if (string.IsNullOrEmpty(path))
                 {
                     return new BadRequestObjectResult("path query parameter is required.");
@@ -234,7 +234,7 @@ namespace CloudFiles
             {
                 var accessToken = await DropboxUtility.VerifyDropboxHeaderTokenIsValid(req).ConfigureAwait(false);
 
-                string path = req.Query["path"];
+                string? path = req.Query["path"];
                 if (string.IsNullOrEmpty(path))
                 {
                     return new BadRequestObjectResult("path query parameter is required.");

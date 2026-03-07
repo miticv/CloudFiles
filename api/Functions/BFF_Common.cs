@@ -66,7 +66,7 @@ namespace CloudFiles
                     throw new InvalidOperationException("sortDir must be 'asc' or 'desc'.");
 
                 // Name filter (comma-separated orchestrator names)
-                HashSet<string> nameFilter = null;
+                HashSet<string>? nameFilter = null;
                 if (!string.IsNullOrEmpty(req.Query["names"]))
                 {
                     nameFilter = new HashSet<string>(

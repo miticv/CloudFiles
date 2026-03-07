@@ -531,6 +531,7 @@ export interface StartAzureToPCloudRequest {
   accountName: string;
   containerName: string;
   destinationFolderId: number;
+  newFolderName?: string;
   azureAccessToken: string;
   startedBy: string;
 }
@@ -540,6 +541,7 @@ export interface StartGcsToPCloudRequest {
   bucketName: string;
   googleAccessToken: string;
   destinationFolderId: number;
+  newFolderName?: string;
   startedBy: string;
 }
 
@@ -547,6 +549,7 @@ export interface StartDropboxToPCloudRequest {
   items: DropboxFileForCopy[];
   dropboxAccessToken: string;
   destinationFolderId: number;
+  newFolderName?: string;
   startedBy: string;
 }
 
@@ -554,6 +557,7 @@ export interface StartGoogleDriveToPCloudRequest {
   driveItems: DriveFileForCopy[];
   googleAccessToken: string;
   destinationFolderId: number;
+  newFolderName?: string;
   startedBy: string;
 }
 
@@ -561,6 +565,7 @@ export interface StartGooglePhotosToPCloudRequest {
   photoItems: PhotoCopyItem[];
   googleAccessToken: string;
   destinationFolderId: number;
+  newFolderName?: string;
   startedBy: string;
 }
 

@@ -11,7 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import { FolderOpen, ChevronRight, ArrowLeft, Home } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { validateFolderName } from '@/lib/folder-validation';
+import { FolderOpen, FolderPlus, ChevronRight, ArrowLeft, Home, X } from 'lucide-react';
 import type { FileItem } from '@/api/types';
 
 interface BreadcrumbEntry {
@@ -42,6 +44,9 @@ export function CopyToPcloudDialog({
   const startCopy = useStartAzureToPCloud();
 
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([{ folderId: 0, name: 'Root' }]);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderInput, setNewFolderInput] = useState('');
+  const [appliedFolderName, setAppliedFolderName] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -50,13 +55,29 @@ export function CopyToPcloudDialog({
   const { data, isLoading } = usePCloudFolder(currentFolder.folderId, open);
 
   const folders = (data?.items ?? []).filter((i) => i.isFolder);
+  const folderValidation = newFolderInput ? validateFolderName(newFolderInput) : null;
 
   function navigateToFolder(folderId: number, folderName: string) {
     setBreadcrumbs((prev) => [...prev, { folderId, name: folderName }]);
+    setAppliedFolderName('');
   }
 
   function navigateToBreadcrumb(index: number) {
     setBreadcrumbs((prev) => prev.slice(0, index + 1));
+    setAppliedFolderName('');
+  }
+
+  function handleUseFolder() {
+    const trimmed = newFolderInput.trim();
+    if (!validateFolderName(trimmed).valid) return;
+    setAppliedFolderName(trimmed);
+    setShowCreateFolder(false);
+    setNewFolderInput('');
+  }
+
+  function handleCancelCreate() {
+    setShowCreateFolder(false);
+    setNewFolderInput('');
   }
 
   const handleStart = useCallback(async () => {
@@ -88,6 +109,7 @@ export function CopyToPcloudDialog({
         accountName,
         containerName,
         destinationFolderId: currentFolder.folderId,
+        newFolderName: appliedFolderName || undefined,
         azureAccessToken: azureToken,
         startedBy: auth.user?.email ?? 'unknown',
       });
@@ -103,7 +125,7 @@ export function CopyToPcloudDialog({
       setPreparing(false);
     }
   }, [
-    selectedFiles, accountName, containerName, currentFolder.folderId,
+    selectedFiles, accountName, containerName, currentFolder.folderId, appliedFolderName,
     getAccessToken, startCopy, auth.user, onOpenChange, onSuccess, navigate,
   ]);
 
@@ -181,8 +203,45 @@ export function CopyToPcloudDialog({
               ))}
             </div>
 
+            {/* Create Folder */}
+            {!showCreateFolder ? (
+              <button
+                onClick={() => { setShowCreateFolder(true); setAppliedFolderName(''); }}
+                className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <FolderPlus className="h-3.5 w-3.5" />
+                Create Folder
+              </button>
+            ) : (
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newFolderInput}
+                    onChange={(e) => setNewFolderInput(e.target.value)}
+                    placeholder="New folder name"
+                    className="h-8 text-sm flex-1"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && folderValidation?.valid) handleUseFolder(); }}
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={handleUseFolder} disabled={!folderValidation?.valid} className="h-8">
+                    Use
+                  </Button>
+                  <button onClick={handleCancelCreate} className="text-muted-foreground hover:text-foreground transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {folderValidation && !folderValidation.valid && (
+                  <p className="text-xs text-destructive">{folderValidation.error}</p>
+                )}
+              </div>
+            )}
+
             <p className="text-xs text-muted-foreground mt-1.5">
-              Files will be copied into: <span className="font-medium">{breadcrumbs.map((b) => b.name).join(' / ')}</span>
+              Files will be copied into: <span className="font-medium">
+                {appliedFolderName
+                  ? [...breadcrumbs.map((b) => b.name), appliedFolderName].join(' / ')
+                  : breadcrumbs.map((b) => b.name).join(' / ')}
+              </span>
             </p>
           </div>
 

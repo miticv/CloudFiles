@@ -139,7 +139,7 @@ export function GcsFolderPicker({ bucket, enabled, onChange }: GcsFolderPickerPr
       {!showCreateFolder ? (
         <button
           onClick={() => { setShowCreateFolder(true); setAppliedFolderName(''); }}
-          className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 mt-2 text-xs text-indigo-600 hover:text-indigo-800 transition-colors"
         >
           <FolderPlus className="h-3.5 w-3.5" />
           Create Folder

@@ -499,7 +499,7 @@ namespace CloudFiles.Utilities
             var metadata = JsonConvert.SerializeObject(new
             {
                 name = filename,
-                parents = new[] { folderId }
+                parents = new[] { string.IsNullOrEmpty(folderId) ? "root" : folderId }
             });
 
             var multipartContent = new MultipartContent("related", boundary);
@@ -526,6 +526,33 @@ namespace CloudFiles.Utilities
             else
             {
                 throw new InvalidOperationException($"UploadToDriveAsync error: {result}");
+            }
+        }
+
+        public static async Task<string> CreateDriveFolderAsync(string parentFolderId, string folderName, string accessToken)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var metadata = JsonConvert.SerializeObject(new
+            {
+                name = folderName,
+                mimeType = "application/vnd.google-apps.folder",
+                parents = string.IsNullOrEmpty(parentFolderId) ? new[] { "root" } : new[] { parentFolderId }
+            });
+
+            var content = new StringContent(metadata, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://www.googleapis.com/drive/v3/files", content).ConfigureAwait(false);
+            var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var parsed = JsonConvert.DeserializeObject<dynamic>(result)!;
+                return (string)parsed.id;
+            }
+            else
+            {
+                throw new InvalidOperationException($"CreateDriveFolderAsync error: {result}");
             }
         }
 

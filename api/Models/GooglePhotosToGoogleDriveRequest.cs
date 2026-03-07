@@ -6,6 +6,7 @@ namespace CloudFiles.Models
     {
         public string AccessToken { get; set; } = default!;
         public string DestinationFolderId { get; set; } = default!;
+        public string? NewFolderName { get; set; }
         public string StartedBy { get; set; } = default!;
         public List<PickedPhotoItem> PhotoItems { get; set; } = default!;
     }

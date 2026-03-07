@@ -264,6 +264,122 @@ function parseStartedBy(serializedInput: string | null | undefined): string | nu
   }
 }
 
+// ─── Transfer description (source/dest with folders) ───
+
+// Which provider is source vs destination is determined by the orchestrator name.
+// The orchestrator name pattern is: <Source>To<Dest>Orchestrator
+// We detect source/dest provider from the name, then pick the right fields.
+
+type ProviderType = 'azure' | 'gcs' | 'dropbox' | 'drive' | 'photos' | 'pcloud' | null;
+
+const providerLabels: Record<string, string> = {
+  azure: 'Azure Storage',
+  gcs: 'Google Cloud Storage',
+  dropbox: 'Dropbox',
+  drive: 'Google Drive',
+  photos: 'Google Photos',
+  pcloud: 'pCloud',
+};
+
+function detectProviders(name: string): { src: ProviderType; dest: ProviderType } {
+  const lower = name.toLowerCase().replace(/^copy/, '');
+  // Order matters: check longer patterns first
+  const patterns: [string, ProviderType][] = [
+    ['googlephotos', 'photos'],
+    ['googledrive', 'drive'],
+    ['googlestorage', 'gcs'],
+    ['azurestorage', 'azure'],
+    ['azure', 'azure'],
+    ['gcs', 'gcs'],
+    ['dropbox', 'dropbox'],
+    ['pcloud', 'pcloud'],
+    ['drive', 'drive'],
+  ];
+  // Find "to" keyword and split
+  const toIdx = lower.indexOf('to');
+  if (toIdx < 0) return { src: null, dest: null };
+  const srcPart = lower.slice(0, toIdx);
+  const destPart = lower.slice(toIdx + 2); // skip "to"
+
+  let src: ProviderType = null;
+  let dest: ProviderType = null;
+  for (const [pat, prov] of patterns) {
+    if (!src && srcPart.includes(pat)) src = prov;
+    if (!dest && destPart.includes(pat)) dest = prov;
+  }
+  return { src, dest };
+}
+
+function parseTransferDescription(serializedInput: string | null | undefined, name: string): string {
+  const friendlyName = getFriendlyName(name);
+  if (!serializedInput) return friendlyName;
+
+  try {
+    const p = JSON.parse(serializedInput);
+    const { src, dest } = detectProviders(name);
+    if (!src || !dest) return friendlyName;
+
+    const srcLabel = providerLabels[src] ?? src;
+    const destLabel = providerLabels[dest] ?? dest;
+
+    // Build source location
+    let srcFolder = '';
+    if (src === 'azure') {
+      const acct = p.accountName ?? p.AccountName;
+      const cont = p.containerName ?? p.ContainerName;
+      if (acct && cont) srcFolder = `${acct}/${cont}`;
+      else if (cont) srcFolder = cont;
+    } else if (src === 'gcs') {
+      srcFolder = p.bucketName ?? p.BucketName ?? '';
+    } else if (src === 'photos') {
+      srcFolder = p.albumTitle ?? p.AlbumTitle ?? '';
+    }
+    // dropbox, drive, pcloud — no meaningful single source folder field
+
+    // Build destination location
+    let destFolder = '';
+    if (dest === 'azure') {
+      const acct = p.accountName ?? p.AccountName;
+      const cont = p.containerName ?? p.ContainerName;
+      const folder = p.destinationFolder ?? p.DestinationFolder;
+      // When azure is destination AND source is also azure, skip — but that doesn't happen.
+      // When azure is dest, accountName/containerName refer to the dest.
+      if (src !== 'azure') {
+        const base = acct && cont ? `${acct}/${cont}` : (cont ?? '');
+        destFolder = folder ? `${base}/${folder}`.replace(/\/+/g, '/') : base;
+      } else {
+        destFolder = folder ?? '';
+      }
+    } else if (dest === 'gcs') {
+      if (src !== 'gcs') {
+        const bucket = p.bucketName ?? p.BucketName ?? '';
+        const folder = p.destinationFolder ?? p.DestinationFolder;
+        destFolder = folder ? `${bucket}/${folder}`.replace(/\/+/g, '/') : bucket;
+      } else {
+        destFolder = p.destinationFolder ?? p.DestinationFolder ?? '';
+      }
+    } else if (dest === 'dropbox') {
+      destFolder = p.destinationFolder ?? p.DestinationFolder ?? '';
+    } else if (dest === 'drive') {
+      destFolder = p.newFolderName ?? p.NewFolderName ?? '';
+    } else if (dest === 'pcloud') {
+      destFolder = p.newFolderName ?? p.NewFolderName ?? '';
+    } else if (dest === 'photos') {
+      destFolder = p.albumTitle ?? p.AlbumTitle ?? '';
+    }
+
+    // Clean trailing slashes
+    srcFolder = srcFolder.replace(/\/+$/, '');
+    destFolder = destFolder.replace(/\/+$/, '');
+
+    const srcPart = srcFolder ? `${srcLabel} (${srcFolder})` : srcLabel;
+    const destPart = destFolder ? `${destLabel} (${destFolder})` : destLabel;
+    return `${srcPart} \u2192 ${destPart}`;
+  } catch {
+    return friendlyName;
+  }
+}
+
 function parseCustomStatus(serializedCustomStatus: string | null | undefined): string | null {
   if (!serializedCustomStatus) return null;
   try {
@@ -832,6 +948,7 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
   const cfg = statusConfig[parent.runtimeStatus] ?? statusConfig[OrchestrationRuntimeStatus.Pending];
   const StatusIcon = cfg.icon;
   const friendlyName = getFriendlyName(parent.name);
+  const transferDescription = parseTransferDescription(parent.serializedInput, parent.name);
   const startedBy = parseStartedBy(parent.serializedInput);
   const duration = formatDuration(parent.createdAt, parent.lastUpdatedAt);
 
@@ -1019,7 +1136,7 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
           <div className="px-4 py-3 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <DetailRow label="Instance ID" value={parent.instanceId} mono />
-              <DetailRow label="Name" value={friendlyName} />
+              <DetailRow label="Transfer" value={transferDescription} />
               <DetailRow label="Created" value={formatDateTime(parent.createdAt)} />
               <DetailRow label="Last Updated" value={formatDateTime(parent.lastUpdatedAt)} />
             </div>

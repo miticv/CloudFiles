@@ -17,6 +17,19 @@ namespace CloudFiles.AzureToGoogleDrive
 
             var request = context.GetInput<AzureToDriveRequest>()!;
 
+            if (!string.IsNullOrWhiteSpace(request.NewFolderName))
+            {
+                log.LogInformation($"{Constants.AzureToDriveOrchestrator}: Creating new folder '{request.NewFolderName}'...");
+                var newFolderId = await context.CallActivityAsync<string>(
+                    Constants.CreateDriveFolderActivity, new CreateDriveFolderRequest
+                    {
+                        GoogleAccessToken = request.AccessToken,
+                        ParentFolderId = request.DestinationFolderId,
+                        FolderName = request.NewFolderName
+                    });
+                request.DestinationFolderId = newFolderId;
+            }
+
             log.LogInformation($"{Constants.AzureToDriveOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<AzureToDriveItemsPrepared>(
                 Constants.AzureToDrivePrepareList, request);

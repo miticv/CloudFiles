@@ -17,6 +17,19 @@ namespace CloudFiles.GooglePhotosToGoogleDrive
 
             var request = context.GetInput<GooglePhotosToGoogleDriveRequest>()!;
 
+            if (!string.IsNullOrWhiteSpace(request.NewFolderName))
+            {
+                log.LogInformation($"{Constants.GooglePhotosToGoogleDriveOrchestrator}: Creating new folder '{request.NewFolderName}'...");
+                var newFolderId = await context.CallActivityAsync<string>(
+                    Constants.CreateDriveFolderActivity, new CreateDriveFolderRequest
+                    {
+                        GoogleAccessToken = request.AccessToken,
+                        ParentFolderId = request.DestinationFolderId,
+                        FolderName = request.NewFolderName
+                    });
+                request.DestinationFolderId = newFolderId;
+            }
+
             log.LogInformation($"{Constants.GooglePhotosToGoogleDriveOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<PhotoToDriveItemsPrepared>(
                 Constants.GooglePhotosToGoogleDrivePrepareList, request);

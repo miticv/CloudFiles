@@ -17,6 +17,19 @@ namespace CloudFiles.DropboxToGoogleDrive
 
             var request = context.GetInput<DropboxToDriveRequest>()!;
 
+            if (!string.IsNullOrWhiteSpace(request.NewFolderName))
+            {
+                log.LogInformation($"{Constants.DropboxToDriveOrchestrator}: Creating new folder '{request.NewFolderName}'...");
+                var newFolderId = await context.CallActivityAsync<string>(
+                    Constants.CreateDriveFolderActivity, new CreateDriveFolderRequest
+                    {
+                        GoogleAccessToken = request.GoogleAccessToken,
+                        ParentFolderId = request.DestinationFolderId,
+                        FolderName = request.NewFolderName
+                    });
+                request.DestinationFolderId = newFolderId;
+            }
+
             log.LogInformation($"{Constants.DropboxToDriveOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<DropboxToDriveItemsPrepared>(
                 Constants.DropboxToDrivePrepareList, request);

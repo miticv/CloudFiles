@@ -263,6 +263,9 @@
         public const string CopyGooglePhotosToGoogleDriveOrchestrator = "copyGooglePhotosToGoogleDriveOrchestrator";
         public const string CopyGooglePhotoToDriveFile = "copyGooglePhotoToDriveFile";
 
+        // shared Google Drive folder creation
+        public const string CreateDriveFolderActivity = "createDriveFolderActivity";
+
         // Google OAuth
         public const string GoogleOAuthToken = "googleOAuthToken";
 

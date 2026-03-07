@@ -8,6 +8,7 @@ namespace CloudFiles.Models
         public string PCloudHostname { get; set; } = default!;
         public string GoogleAccessToken { get; set; } = default!;
         public string DestinationFolderId { get; set; } = default!;
+        public string? NewFolderName { get; set; }
         public string StartedBy { get; set; } = default!;
         public List<PCloudFileItem> Items { get; set; } = default!;
     }

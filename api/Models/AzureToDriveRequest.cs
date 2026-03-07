@@ -9,6 +9,7 @@ namespace CloudFiles.Models
         public string AccountName { get; set; } = default!;
         public string ContainerName { get; set; } = default!;
         public string DestinationFolderId { get; set; } = default!;
+        public string? NewFolderName { get; set; }
         public string StartedBy { get; set; } = default!;
         public List<AzureSelectedItem> SelectedItems { get; set; } = default!;
     }

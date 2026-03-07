@@ -35,6 +35,12 @@ namespace CloudFiles.AzureToGoogleDrive
             var preparedRequest = await context.CallActivityAsync<AzureToDriveItemsPrepared>(
                 Constants.AzureToDrivePrepareList, request);
 
+            // Log filenames to verify full paths are preserved
+            foreach (var item in preparedRequest.ListItemsPrepared)
+            {
+                log.LogInformation($"{Constants.AzureToDriveOrchestrator}: [DIAG] PreparedItem Filename='{item.Filename}' DestFolderId='{item.DestinationFolderId}'");
+            }
+
             // Create Google Drive folder tree to preserve hierarchy
             var folderPaths = preparedRequest.ListItemsPrepared
                 .Select(i => i.Filename)
@@ -42,6 +48,8 @@ namespace CloudFiles.AzureToGoogleDrive
                 .Select(f => f.Substring(0, f.LastIndexOf('/')))
                 .Distinct()
                 .ToList();
+
+            log.LogInformation($"{Constants.AzureToDriveOrchestrator}: [DIAG] folderPaths.Count={folderPaths.Count}, paths=[{string.Join(", ", folderPaths)}]");
 
             if (folderPaths.Count > 0)
             {
@@ -54,6 +62,8 @@ namespace CloudFiles.AzureToGoogleDrive
                         FolderPaths = folderPaths
                     });
 
+                log.LogInformation($"{Constants.AzureToDriveOrchestrator}: [DIAG] folderMap entries={folderMap.Count}: [{string.Join(", ", folderMap.Select(kv => $"{kv.Key}={kv.Value}"))}]");
+
                 foreach (var item in preparedRequest.ListItemsPrepared)
                 {
                     var lastSlash = item.Filename.LastIndexOf('/');
@@ -65,6 +75,12 @@ namespace CloudFiles.AzureToGoogleDrive
                         item.Filename = item.Filename.Substring(lastSlash + 1);
                     }
                 }
+            }
+
+            // Log final state before fan-out
+            foreach (var item in preparedRequest.ListItemsPrepared)
+            {
+                log.LogInformation($"{Constants.AzureToDriveOrchestrator}: [DIAG] FINAL Filename='{item.Filename}' DestFolderId='{item.DestinationFolderId}'");
             }
 
             log.LogInformation($"{Constants.AzureToDriveOrchestrator}: FanOut request to {Constants.CopyAzureToDriveOrchestrator} ...");

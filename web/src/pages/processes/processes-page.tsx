@@ -1002,6 +1002,8 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
     parent.runtimeStatus === OrchestrationRuntimeStatus.Running ||
     parent.runtimeStatus === OrchestrationRuntimeStatus.Pending;
 
+  const canDelete = !canTerminate;
+
   const [terminateConfirmOpen, setTerminateConfirmOpen] = useState(false);
   const [restartError, setRestartError] = useState<string | null>(null);
   const [restartMode, setRestartMode] = useState<'all' | 'failed' | null>(null);
@@ -1294,6 +1296,7 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
                   </>
                 )
               )}
+              {canDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={purgingId !== null}>
@@ -1322,6 +1325,7 @@ function ProcessGroupCard({ group, isExpanded, onToggle, onDelete, purgingId, se
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              )}
             </div>
           </div>
 

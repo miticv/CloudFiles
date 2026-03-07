@@ -35,13 +35,12 @@ namespace CloudFiles.GoogleStorageToGoogleDrive
             {
                 if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
 
-                var filename = item.ItemPath.Split('/').Last();
                 preparedList.Add(new GcsToDriveItemPrepared
                 {
                     GoogleAccessToken = request.AccessToken,
                     MediaLink = item.MedialLink,
                     ContentType = item.ContentType,
-                    Filename = filename,
+                    Filename = item.ItemPath,
                     DestinationFolderId = request.DestinationFolderId
                 });
             }

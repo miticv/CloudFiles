@@ -36,7 +36,6 @@ namespace CloudFiles.AzureToGoogleDrive
             {
                 if (item.ItemPath.EndsWith("/")) continue; // skip folder markers
 
-                var filename = item.ItemPath.Split('/').Last();
                 preparedList.Add(new AzureToDriveItemPrepared
                 {
                     GoogleAccessToken = request.AccessToken,
@@ -45,7 +44,7 @@ namespace CloudFiles.AzureToGoogleDrive
                     ContainerName = request.ContainerName,
                     BlobPath = item.ItemPath,
                     DestinationFolderId = request.DestinationFolderId,
-                    Filename = filename
+                    Filename = item.ItemPath
                 });
             }
 

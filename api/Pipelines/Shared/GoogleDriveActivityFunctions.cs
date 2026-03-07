@@ -2,6 +2,7 @@ using CloudFiles.Models;
 using CloudFiles.Utilities;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CloudFiles.Shared
@@ -21,6 +22,21 @@ namespace CloudFiles.Shared
 
             log.LogInformation($"{Constants.CreateDriveFolderActivity}: Created folder with ID '{folderId}'.");
             return folderId;
+        }
+
+        [Function(Constants.CreateDriveFolderTree)]
+        public static async Task<Dictionary<string, string>> CreateDriveFolderTree(
+            [ActivityTrigger] CreateDriveFolderTreeRequest request,
+            FunctionContext executionContext)
+        {
+            ILogger log = executionContext.GetLogger(nameof(GoogleDriveActivityFunctions));
+            log.LogInformation($"{Constants.CreateDriveFolderTree}: Creating {request.FolderPaths.Count} folder path(s) in Google Drive...");
+
+            var folderMap = await GoogleUtility.CreateDriveFolderTreeAsync(
+                request.RootFolderId, request.FolderPaths, request.GoogleAccessToken).ConfigureAwait(false);
+
+            log.LogInformation($"{Constants.CreateDriveFolderTree}: Created/resolved {folderMap.Count} folder(s).");
+            return folderMap;
         }
     }
 }

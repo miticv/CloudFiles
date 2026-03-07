@@ -265,6 +265,7 @@
 
         // shared Google Drive folder creation
         public const string CreateDriveFolderActivity = "createDriveFolderActivity";
+        public const string CreateDriveFolderTree = "createDriveFolderTree";
 
         // Google OAuth
         public const string GoogleOAuthToken = "googleOAuthToken";

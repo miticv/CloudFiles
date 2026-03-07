@@ -556,6 +556,43 @@ namespace CloudFiles.Utilities
             }
         }
 
+        public static async Task<Dictionary<string, string>> CreateDriveFolderTreeAsync(
+            string rootFolderId, List<string> folderPaths, string accessToken)
+        {
+            var folderMap = new Dictionary<string, string>();
+
+            // Sort by depth so parents are created before children
+            var sorted = folderPaths
+                .Distinct()
+                .OrderBy(p => p.Count(c => c == '/'))
+                .ThenBy(p => p)
+                .ToList();
+
+            foreach (var folderPath in sorted)
+            {
+                var parts = folderPath.Split('/');
+                var currentParentId = rootFolderId;
+                var currentPath = "";
+
+                foreach (var part in parts)
+                {
+                    currentPath = string.IsNullOrEmpty(currentPath) ? part : $"{currentPath}/{part}";
+
+                    if (folderMap.TryGetValue(currentPath, out var existingId))
+                    {
+                        currentParentId = existingId;
+                        continue;
+                    }
+
+                    var folderId = await CreateDriveFolderAsync(currentParentId, part, accessToken).ConfigureAwait(false);
+                    folderMap[currentPath] = folderId;
+                    currentParentId = folderId;
+                }
+            }
+
+            return folderMap;
+        }
+
         public static async Task<byte[]> GetImageFromUrlAsync(string mediaUrl, string accessToken)
         {
             using var httpClient = new HttpClient();

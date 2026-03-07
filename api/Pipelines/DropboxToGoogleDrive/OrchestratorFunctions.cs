@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CloudFiles.Models;
 using Microsoft.Azure.Functions.Worker;
@@ -33,6 +34,38 @@ namespace CloudFiles.DropboxToGoogleDrive
             log.LogInformation($"{Constants.DropboxToDriveOrchestrator}: Preparing request...");
             var preparedRequest = await context.CallActivityAsync<DropboxToDriveItemsPrepared>(
                 Constants.DropboxToDrivePrepareList, request);
+
+            // Create Google Drive folder tree to preserve hierarchy
+            var folderPaths = preparedRequest.ListItemsPrepared
+                .Select(i => i.Filename)
+                .Where(f => f.Contains('/'))
+                .Select(f => f.Substring(0, f.LastIndexOf('/')))
+                .Distinct()
+                .ToList();
+
+            if (folderPaths.Count > 0)
+            {
+                log.LogInformation($"{Constants.DropboxToDriveOrchestrator}: Creating {folderPaths.Count} folder path(s) in Google Drive...");
+                var folderMap = await context.CallActivityAsync<Dictionary<string, string>>(
+                    Constants.CreateDriveFolderTree, new CreateDriveFolderTreeRequest
+                    {
+                        GoogleAccessToken = request.GoogleAccessToken,
+                        RootFolderId = request.DestinationFolderId,
+                        FolderPaths = folderPaths
+                    });
+
+                foreach (var item in preparedRequest.ListItemsPrepared)
+                {
+                    var lastSlash = item.Filename.LastIndexOf('/');
+                    if (lastSlash >= 0)
+                    {
+                        var folderPath = item.Filename.Substring(0, lastSlash);
+                        if (folderMap.TryGetValue(folderPath, out var folderId))
+                            item.DestinationFolderId = folderId;
+                        item.Filename = item.Filename.Substring(lastSlash + 1);
+                    }
+                }
+            }
 
             log.LogInformation($"{Constants.DropboxToDriveOrchestrator}: FanOut request to {Constants.CopyDropboxToDriveOrchestrator} ...");
             var results = await context.CallSubOrchestratorAsync<BlobCopyResultRoot>(

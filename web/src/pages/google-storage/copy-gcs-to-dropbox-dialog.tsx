@@ -9,12 +9,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { DropboxFolderPicker } from '@/components/dropbox-folder-picker';
-import type { FileItem } from '@/api/types';
-
 interface CopyGcsToDropboxDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   bucketName: string;
   onSuccess: () => void;
 }

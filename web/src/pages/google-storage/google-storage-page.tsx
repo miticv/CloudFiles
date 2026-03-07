@@ -259,10 +259,10 @@ function BrowseView({
 
   const selectedFileObjects = useMemo(
     () => [
-      ...files.filter((f) => selectedFiles.has(f.itemPath)),
-      ...folders.filter((f) => selectedFolders.has(f.itemPath)),
+      ...Array.from(selectedFiles).map((p) => ({ itemPath: p, isFolder: false })),
+      ...Array.from(selectedFolders).map((p) => ({ itemPath: p, isFolder: true })),
     ],
-    [files, folders, selectedFiles, selectedFolders],
+    [selectedFiles, selectedFolders],
   );
 
   function navigateToFolder(path: string) {

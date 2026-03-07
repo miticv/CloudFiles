@@ -10,12 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { DropboxFolderPicker } from '@/components/dropbox-folder-picker';
-import type { FileItem } from '@/api/types';
-
 interface CopyToDropboxDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   accountName: string;
   containerName: string;
   onSuccess: () => void;

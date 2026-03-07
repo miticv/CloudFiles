@@ -192,11 +192,11 @@ export function Component() {
   const providerLabel = context.provider === 'azure' ? 'Azure Blob' : 'Google Cloud';
 
   const selectedFileObjects = useMemo(
-    () =>
-      (items ?? []).filter(
-        (i) => selectedFiles.has(i.itemPath) || selectedFolders.has(i.itemPath),
-      ),
-    [items, selectedFiles, selectedFolders],
+    () => [
+      ...Array.from(selectedFiles).map((p) => ({ itemPath: p, isFolder: false })),
+      ...Array.from(selectedFolders).map((p) => ({ itemPath: p, isFolder: true })),
+    ],
+    [selectedFiles, selectedFolders],
   );
 
   const handleCopySuccess = useCallback(() => {

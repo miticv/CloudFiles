@@ -10,12 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import type { FileItem } from '@/api/types';
-
 interface CopyGcsToGooglePhotosDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   bucketName: string;
   onSuccess: () => void;
 }

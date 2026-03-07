@@ -9,12 +9,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { AzureHierarchyPicker, type AzureDestination } from '@/components/azure-hierarchy-picker';
-import type { FileItem } from '@/api/types';
-
 interface CopyGcsToAzureDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   bucketName: string;
   onSuccess: () => void;
 }

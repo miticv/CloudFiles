@@ -12,8 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { FolderOpen, ChevronRight, ArrowLeft, Home } from 'lucide-react';
-import type { FileItem } from '@/api/types';
-
 interface BreadcrumbEntry {
   folderId: number;
   name: string;
@@ -22,7 +20,7 @@ interface BreadcrumbEntry {
 interface CopyGcsToPCloudDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   bucketName: string;
   onSuccess: () => void;
 }

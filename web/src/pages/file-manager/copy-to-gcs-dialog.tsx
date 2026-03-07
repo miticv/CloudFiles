@@ -10,12 +10,10 @@ import { Button } from '@/components/ui/button';
 import { GcsBucketInput } from '@/components/gcs-bucket-input';
 import { GcsFolderPicker } from '@/components/gcs-folder-picker';
 import { Spinner } from '@/components/ui/spinner';
-import type { FileItem } from '@/api/types';
-
 interface CopyToGcsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   accountName: string;
   containerName: string;
   onSuccess: () => void;

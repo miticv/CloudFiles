@@ -8,12 +8,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { GoogleDriveFolderPicker } from '@/components/google-drive-folder-picker';
-import type { FileItem } from '@/api/types';
-
 interface CopyGcsToDriveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   bucketName: string;
   onSuccess: () => void;
 }

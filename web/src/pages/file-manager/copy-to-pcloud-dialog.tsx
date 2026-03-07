@@ -14,8 +14,6 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { validateFolderName } from '@/lib/folder-validation';
 import { FolderOpen, FolderPlus, ChevronRight, ArrowLeft, Home, X } from 'lucide-react';
-import type { FileItem } from '@/api/types';
-
 interface BreadcrumbEntry {
   folderId: number;
   name: string;
@@ -24,7 +22,7 @@ interface BreadcrumbEntry {
 interface CopyToPcloudDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFiles: FileItem[];
+  selectedFiles: { itemPath: string; isFolder: boolean }[];
   accountName: string;
   containerName: string;
   onSuccess: () => void;

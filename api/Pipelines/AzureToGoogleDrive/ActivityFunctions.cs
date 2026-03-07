@@ -76,7 +76,7 @@ namespace CloudFiles.AzureToGoogleDrive
                 return new BlobCopyResult
                 {
                     Filename = item.Filename,
-                    BlobPath = fileId,
+                    BlobPath = item.BlobPath,
                     ContentLength = size,
                     Success = true
                 };

@@ -56,7 +56,7 @@ namespace CloudFiles.PCloudToGoogleDrive
                 return new BlobCopyResult
                 {
                     Filename = item.Filename,
-                    BlobPath = fileId,
+                    BlobPath = item.Filename,
                     ContentLength = size,
                     Success = true
                 };

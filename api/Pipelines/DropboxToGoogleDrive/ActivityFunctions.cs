@@ -55,7 +55,7 @@ namespace CloudFiles.DropboxToGoogleDrive
                 return new BlobCopyResult
                 {
                     Filename = item.Filename,
-                    BlobPath = fileId,
+                    BlobPath = item.DropboxPath,
                     ContentLength = size,
                     Success = true
                 };

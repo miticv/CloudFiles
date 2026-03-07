@@ -55,7 +55,7 @@ namespace CloudFiles.GooglePhotosToGoogleDrive
                 return new BlobCopyResult
                 {
                     Filename = item.Filename,
-                    BlobPath = fileId,
+                    BlobPath = item.Filename,
                     ContentLength = size,
                     Success = true
                 };

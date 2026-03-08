@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using CloudFiles.Utilities;
 using CloudFiles.Models;
 using Newtonsoft.Json;
@@ -47,20 +48,28 @@ namespace CloudFiles
 
                 return new OkObjectResult(tokenResponse);
             }
+            catch (SecurityTokenException ex)
+            {
+                log.LogError(ex, $"JWT validation failed in {Constants.DropboxOAuthCallback}");
+                return new ObjectResult(new { error = "Authentication failed: invalid or expired session token." })
+                    { StatusCode = StatusCodes.Status401Unauthorized };
+            }
             catch (UnauthorizedAccessException ex)
             {
                 log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+                return new ObjectResult(new { error = ex.Message })
+                    { StatusCode = StatusCodes.Status401Unauthorized };
             }
             catch (InvalidOperationException ex)
             {
                 log.LogError(ex, $"Configuration error in {Constants.DropboxOAuthCallback}");
-                return new BadRequestObjectResult(ex.Message);
+                return new BadRequestObjectResult(new { error = ex.Message });
             }
             catch (Exception ex)
             {
                 log.LogError(ex, $"Error in {Constants.DropboxOAuthCallback}");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new ObjectResult(new { error = ex.Message })
+                    { StatusCode = StatusCodes.Status500InternalServerError };
             }
         }
 
@@ -90,20 +99,28 @@ namespace CloudFiles
 
                 return new OkObjectResult(tokenResponse);
             }
+            catch (SecurityTokenException ex)
+            {
+                log.LogError(ex, $"JWT validation failed in {Constants.DropboxOAuthRefresh}");
+                return new ObjectResult(new { error = "Authentication failed: invalid or expired session token." })
+                    { StatusCode = StatusCodes.Status401Unauthorized };
+            }
             catch (UnauthorizedAccessException ex)
             {
                 log.LogError(ex.Message);
-                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+                return new ObjectResult(new { error = ex.Message })
+                    { StatusCode = StatusCodes.Status401Unauthorized };
             }
             catch (InvalidOperationException ex)
             {
                 log.LogError(ex, $"Configuration error in {Constants.DropboxOAuthRefresh}");
-                return new BadRequestObjectResult(ex.Message);
+                return new BadRequestObjectResult(new { error = ex.Message });
             }
             catch (Exception ex)
             {
                 log.LogError(ex, $"Error in {Constants.DropboxOAuthRefresh}");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new ObjectResult(new { error = ex.Message })
+                    { StatusCode = StatusCodes.Status500InternalServerError };
             }
         }
 

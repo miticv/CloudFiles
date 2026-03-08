@@ -9,7 +9,7 @@ import { usePageTitle } from '@/hooks/use-page-title';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { Chrome, Building2, CloudCog, Droplets, Check, X, Cloud } from 'lucide-react';
+import { Chrome, Building2, CloudCog, Droplets, Check, X, Cloud, AlertCircle } from 'lucide-react';
 
 const OIDC_PROVIDERS = [
   {
@@ -59,6 +59,7 @@ export function Component() {
   const dropboxProcessedRef = useRef(false);
   const [pcloudLoading, setPcloudLoading] = useState(false);
   const [dropboxLoading, setDropboxLoading] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
   const exchangeCode = useExchangePCloudCode();
   const exchangeDropboxCode = useExchangeDropboxCode();
 
@@ -116,6 +117,8 @@ export function Component() {
       })
       .catch((err) => {
         console.error('[Connections] pCloud OAuth exchange failed:', err);
+        const detail = err?.response?.data?.error || err?.message || 'Unknown error';
+        setOauthError(`pCloud connection failed: ${detail}`);
       })
       .finally(() => {
         setPcloudLoading(false);
@@ -154,6 +157,8 @@ export function Component() {
       })
       .catch((err) => {
         console.error('[Connections] Dropbox OAuth exchange failed:', err);
+        const detail = err?.response?.data?.error || err?.message || 'Unknown error';
+        setOauthError(`Dropbox connection failed: ${detail}`);
       })
       .finally(() => {
         setDropboxLoading(false);
@@ -227,6 +232,17 @@ export function Component() {
             Sign in with one or more providers to browse your cloud storage
           </p>
         </div>
+
+        {/* Error banner */}
+        {oauthError && (
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <div className="flex-1">{oauthError}</div>
+            <button onClick={() => setOauthError(null)} className="flex-shrink-0 text-red-500 hover:text-red-700">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Provider cards */}
         <div className="space-y-4 mb-8">

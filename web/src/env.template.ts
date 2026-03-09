@@ -7,5 +7,6 @@ export const env = {
   adminEmail: '__ADMIN_EMAIL__',
   pCloudClientId: '__PCLOUD_CLIENT_ID__',
   dropboxClientId: '__DROPBOX_CLIENT_ID__',
+  appInsightsConnectionString: '__APPINSIGHTS_CONNECTION_STRING__',
   featureAppleDrive: false,
 };

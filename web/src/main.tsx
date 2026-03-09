@@ -11,6 +11,9 @@ import '@/styles/globals.css';
 // Initialize axios interceptor (side-effect import)
 import '@/auth/axios-client';
 
+// Initialize Application Insights telemetry (side-effect import)
+import '@/app-insights';
+
 // Auto-reload when a deployment makes old chunks unavailable
 window.addEventListener('vite:preloadError', () => {
   const lastReload = sessionStorage.getItem('chunk_reload');

@@ -35,6 +35,7 @@ jobs:
               -e "s|__ADMIN_EMAIL__|${{ secrets.ADMIN_EMAIL }}|g" \
               -e "s|__PCLOUD_CLIENT_ID__|${{ secrets.PCLOUD_CLIENT_ID }}|g" \
               -e "s|__DROPBOX_CLIENT_ID__|${{ secrets.DROPBOX_CLIENT_ID }}|g" \
+              -e "s|__APPINSIGHTS_CONNECTION_STRING__|${{ secrets.APPINSIGHTS_CONNECTION_STRING }}|g" \
               env.template.ts > env.ts
       - name: Install dependencies
         working-directory: web

@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/auth/axios-client';
 import type { GoogleAlbum, AlbumListResponse } from './types';
 
-export function useAlbums() {
+export function useAlbums(enabled = true) {
   return useQuery({
     queryKey: ['albums'],
     queryFn: () => apiClient.get<AlbumListResponse>('google/album/list').then(r => r.data.albums || []) as Promise<GoogleAlbum[]>,
+    enabled,
   });
 }
 

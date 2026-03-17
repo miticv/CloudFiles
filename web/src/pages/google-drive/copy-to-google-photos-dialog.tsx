@@ -76,7 +76,7 @@ export function CopyToGooglePhotosDialog({
   const navigate = useNavigate();
   const auth = useAuth();
   const startCopy = useStartDriveToGooglePhotos();
-  const { data: albums, isLoading: loadingAlbums } = useAlbums();
+  const { data: albums, isLoading: loadingAlbums } = useAlbums(open);
   const createAlbum = useCreateAlbum();
 
   const [albumMode, setAlbumMode] = useState<'existing' | 'new'>('existing');

@@ -45,6 +45,9 @@ export function Component() {
       setError('Your confirmation link has expired or is invalid.');
       setBlockedCode('email_not_confirmed');
       setSearchParams({}, { replace: true });
+    } else if (oauthError === 'callback_failed') {
+      setError('Google sign-in failed. Please try again. If the problem persists, check the browser console for details.');
+      setSearchParams({}, { replace: true });
     } else if (oauthError === 'pending_approval') {
       setInfo('Your account is pending admin activation. Please check back later.');
       setSearchParams({}, { replace: true });

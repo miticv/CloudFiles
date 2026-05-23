@@ -69,12 +69,14 @@ export function OidcProvider({ children }: { children: ReactNode }) {
       // Step 1: Process OIDC callback if we captured one
       if (capturedCallbackUrl) {
         let callbackHandled = false;
+        let callbackError: unknown = null;
         for (const manager of [googleManager, azureManager, azureStorageManager]) {
           try {
             await manager.signinRedirectCallback(capturedCallbackUrl);
             callbackHandled = true;
             break;
-          } catch {
+          } catch (err) {
+            callbackError = err;
             // Not for this manager, try next
           }
         }
@@ -82,9 +84,17 @@ export function OidcProvider({ children }: { children: ReactNode }) {
         // Clean URL (remove code/state params)
         window.history.replaceState({}, '', window.location.pathname);
 
+        if (!callbackHandled) {
+          console.error('[Auth] OIDC callback failed for all managers:', callbackError);
+          auth.clearOAuthPending();
+          window.history.replaceState({}, '', '/sessions/login?oauthError=callback_failed');
+          setProcessingCallback(false);
+          return;
+        }
+
         // Step 2: If this was an OAuth login flow, exchange OIDC token for CloudFiles JWT
         const pendingProvider = localStorage.getItem('cf_oauth_pending');
-        if (callbackHandled && pendingProvider) {
+        if (pendingProvider) {
           try {
             const configId = pendingProvider as OidcConfigId;
             const user = await getManager(configId).getUser();

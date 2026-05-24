@@ -43,7 +43,9 @@ jobs:
     - name: Deploy to Azure Function App
       shell: pwsh
       run: |
-        az functionapp deployment source config-zip `
+        az webapp deploy `
           --resource-group "${{ env.RESOURCE_GROUP }}" `
           --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" `
-          --src ".\deploy.zip"
+          --src-path ".\deploy.zip" `
+          --type zip `
+          --async true

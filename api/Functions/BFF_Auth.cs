@@ -17,6 +17,7 @@ namespace CloudFiles
 {
     public static class BFF_Auth
     {
+        private static readonly HttpClient _googleTokenClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
         [Function(Constants.AuthOAuthLogin)]
         public static async Task<IActionResult> OAuthLogin(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "auth/oauth/login")] HttpRequest req,
@@ -262,14 +263,13 @@ namespace CloudFiles
                 // Add client_secret and forward to Google
                 formParams["client_secret"] = clientSecret;
 
-                using var client = new HttpClient();
                 var content = new FormUrlEncodedContent(
                     formParams.AllKeys
                         .Where(k => k != null)
                         .Select(k => new KeyValuePair<string, string>(k!, formParams[k!] ?? ""))
                 );
 
-                var response = await client.PostAsync("https://oauth2.googleapis.com/token", content).ConfigureAwait(false);
+                var response = await _googleTokenClient.PostAsync("https://oauth2.googleapis.com/token", content).ConfigureAwait(false);
                 var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 return new ContentResult

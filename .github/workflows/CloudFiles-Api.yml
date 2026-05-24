@@ -10,11 +10,12 @@ permissions:
 
 env:
   AZURE_FUNCTIONAPP_NAME: cloud-files-api
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: ./published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
   WORKING_DIRECTORY: ./api
   RESOURCE_GROUP: resource_cloud-files
+  STORAGE_ACCOUNT: cloudfilesstorage1
+  DEPLOY_CONTAINER: deployments
 
 jobs:
   build-and-deploy:
@@ -30,22 +31,46 @@ jobs:
     - name: Build
       run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
     - name: Publish
-      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output ./published
     - name: Zip package
       shell: pwsh
-      run: Compress-Archive -Path "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}\*" -DestinationPath ".\deploy.zip" -Force
+      run: Compress-Archive -Path ".\published\*" -DestinationPath ".\deploy.zip" -Force
     - name: Login to Azure
       uses: azure/login@v2
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    - name: Deploy to Azure Function App
+    - name: Upload package to blob storage
       shell: pwsh
       run: |
-        az webapp deploy `
+        $key = az storage account keys list `
+          --account-name "${{ env.STORAGE_ACCOUNT }}" `
           --resource-group "${{ env.RESOURCE_GROUP }}" `
+          --query "[0].value" -o tsv
+        az storage blob upload `
+          --account-name "${{ env.STORAGE_ACCOUNT }}" `
+          --account-key $key `
+          --container-name "${{ env.DEPLOY_CONTAINER }}" `
+          --name "latest.zip" `
+          --file ".\deploy.zip" `
+          --overwrite true
+        $expiry = (Get-Date).AddYears(1).ToString("yyyy-MM-ddTHH:mm:ssZ")
+        $sas = az storage blob generate-sas `
+          --account-name "${{ env.STORAGE_ACCOUNT }}" `
+          --account-key $key `
+          --container-name "${{ env.DEPLOY_CONTAINER }}" `
+          --name "latest.zip" `
+          --permissions r `
+          --expiry $expiry `
+          --output tsv
+        $blobUrl = "https://${{ env.STORAGE_ACCOUNT }}.blob.core.windows.net/${{ env.DEPLOY_CONTAINER }}/latest.zip?$sas"
+        az functionapp config appsettings set `
           --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" `
-          --src-path ".\deploy.zip" `
-          --type zip `
-          --async true
+          --resource-group "${{ env.RESOURCE_GROUP }}" `
+          --settings "WEBSITE_RUN_FROM_PACKAGE=$blobUrl"
+    - name: Restart Function App
+      run: |
+        az functionapp restart `
+          --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" `
+          --resource-group "${{ env.RESOURCE_GROUP }}"

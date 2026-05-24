@@ -292,10 +292,22 @@ Durable Functions orchestration history persists indefinitely (until explicitly 
 
 ## Deployment
 
-CI/CD via GitHub Actions:
+### Manual Backend Deploy
+
+Run the deploy script from the project root (requires `az login`):
+
+```powershell
+.\deploy-api.ps1
+```
+
+The script builds the .NET project, zips the output, uploads to Azure Blob Storage, updates the `WEBSITE_RUN_FROM_PACKAGE` app setting, and restarts the Function App. Temp files are written to `.deploy-tmp/` and cleaned up automatically.
+
+**Prerequisites**: Azure CLI installed and logged in (`az login`).
+
+### CI/CD via GitHub Actions
 
 - **`CloudFiles-WebUI.yml`** — Builds React SPA, runs lint, deploys to Azure Static Web Apps
-- **`CloudFiles-Api.yml`** — Builds .NET backend, deploys to Azure Functions
+- **`CloudFiles-Api.yml`** — Builds .NET backend, uploads to blob storage, deploys to Azure Functions (no Kudu/SCM required)
 
 ## Project Structure
 

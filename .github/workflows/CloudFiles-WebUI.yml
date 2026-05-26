@@ -31,7 +31,7 @@ jobs:
           sed -e "s|__PRODUCTION_API_URL__|${{ secrets.PRODUCTION_API_URL }}|g" \
               -e "s|__GOOGLE_CLIENT_ID__|${{ secrets.GOOGLE_CLIENT_ID }}|g" \
               -e "s|__AZURE_TENANT_ID__|${{ secrets.AZURE_TENANT_ID }}|g" \
-              -e "s|__AZURE_CLIENT_ID__|${{ secrets.AZURE_CLIENT_ID }}|g" \
+              -e "s|__AZURE_CLIENT_ID__|${{ secrets.AZURE_APP_CLIENT_ID }}|g" \
               -e "s|__ADMIN_EMAIL__|${{ secrets.ADMIN_EMAIL }}|g" \
               -e "s|__PCLOUD_CLIENT_ID__|${{ secrets.PCLOUD_CLIENT_ID }}|g" \
               -e "s|__DROPBOX_CLIENT_ID__|${{ secrets.DROPBOX_CLIENT_ID }}|g" \

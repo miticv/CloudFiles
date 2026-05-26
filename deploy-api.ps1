@@ -48,11 +48,21 @@ $sas = az storage blob generate-sas `
 $blobUrl = "https://$StorageAccount.blob.core.windows.net/$Container/$BlobName`?$sas"
 
 Write-Host "==> Updating WEBSITE_RUN_FROM_PACKAGE..." -ForegroundColor Cyan
-az functionapp config appsettings set `
-    --name $FunctionAppName `
-    --resource-group $ResourceGroup `
-    --settings "WEBSITE_RUN_FROM_PACKAGE=$blobUrl"
-if ($LASTEXITCODE -ne 0) { exit 1 }
+# Use ARM REST API directly — az CLI splits on & in the URL, corrupting the SAS token
+$sub = az account show --query id -o tsv
+$token = az account get-access-token --resource https://management.azure.com --query accessToken -o tsv
+$baseUrl = "https://management.azure.com/subscriptions/$sub/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$FunctionAppName"
+$headers = @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" }
+
+$current = Invoke-RestMethod -Uri "$baseUrl/config/appsettings/list?api-version=2023-12-01" -Method POST -Headers $headers
+$props = @{}
+$current.properties.PSObject.Properties | ForEach-Object { $props[$_.Name] = $_.Value }
+$props["WEBSITE_RUN_FROM_PACKAGE"] = $blobUrl
+
+$bodyFile = Join-Path $env:TEMP "deploy-appsettings.json"
+@{ properties = $props } | ConvertTo-Json -Depth 5 | Out-File $bodyFile -Encoding utf8
+Invoke-RestMethod -Uri "$baseUrl/config/appsettings?api-version=2023-12-01" -Method PUT -Headers $headers -Body (Get-Content $bodyFile -Raw) | Out-Null
+Remove-Item $bodyFile
 
 Write-Host "==> Restarting Function App..." -ForegroundColor Cyan
 az functionapp restart --name $FunctionAppName --resource-group $ResourceGroup

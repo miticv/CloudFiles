@@ -300,9 +300,19 @@ Run the deploy script from the project root (requires `az login`):
 .\deploy-api.ps1
 ```
 
-The script builds the .NET project, zips the output, uploads to Azure Blob Storage, updates the `WEBSITE_RUN_FROM_PACKAGE` app setting, and restarts the Function App. Temp files are written to `.deploy-tmp/` and cleaned up automatically.
+Builds the .NET project, zips the output, uploads to Azure Blob Storage, updates the `WEBSITE_RUN_FROM_PACKAGE` app setting, and restarts the Function App. Temp files are written to `.deploy-tmp/` and cleaned up automatically.
 
-**Prerequisites**: Azure CLI installed and logged in (`az login`).
+### Manual Frontend Deploy
+
+Run the deploy script from the project root (requires `az login`):
+
+```powershell
+.\deploy-web.ps1
+```
+
+Reads values from your local `web/src/env.ts`, generates a production build (with `production: true` and the live API URL), fetches the Azure Static Web Apps deployment token, and deploys via the SWA CLI. Your local `env.ts` is restored automatically after the build, even if deployment fails.
+
+**Prerequisites for both scripts**: Azure CLI installed and logged in (`az login`).
 
 ### CI/CD via GitHub Actions
 

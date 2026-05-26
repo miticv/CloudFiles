@@ -74,5 +74,5 @@ Remove-Item (Join-Path $WorkDir ".deploy-tmp") -Recurse -Force
 Write-Host ""
 Write-Host "Deployed successfully. Verifying..." -ForegroundColor Green
 Start-Sleep -Seconds 10
-$response = curl -s -w "`n%{http_code}" --max-time 20 "https://api.cloud-files.link/api/ping" 2>$null
-Write-Host $response
+$code = (Invoke-WebRequest -Uri "https://api.cloud-files.link/api/ping" -UseBasicParsing -TimeoutSec 20 -ErrorAction SilentlyContinue).StatusCode
+Write-Host "Status: $code"

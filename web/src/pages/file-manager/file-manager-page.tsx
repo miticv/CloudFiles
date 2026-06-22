@@ -20,6 +20,10 @@ import {
   AlertCircle,
   FolderOpen,
   Link as LinkIcon,
+  LayoutGrid,
+  List,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import type { FileItem, StorageContext } from '@/api/types';
 import { CopyToBar } from '@/components/copy-to-bar';
@@ -31,6 +35,23 @@ import { CopyToGooglePhotosDialog } from './copy-to-google-photos-dialog';
 import { CopyToPcloudDialog } from './copy-to-pcloud-dialog';
 
 // ─── Helpers ───
+
+type SortBy = 'name' | 'modified';
+type SortDir = 'asc' | 'desc';
+
+function sortItems(items: FileItem[], by: SortBy, dir: SortDir): FileItem[] {
+  return [...items].sort((a, b) => {
+    const cmp = by === 'name'
+      ? a.itemName.localeCompare(b.itemName, undefined, { numeric: true, sensitivity: 'base' })
+      : (new Date(a.lastModified ?? 0).getTime()) - (new Date(b.lastModified ?? 0).getTime());
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
+function fmtDate(iso?: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 function readContext(): StorageContext {
   try {
@@ -71,6 +92,13 @@ export function Component() {
 
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // View / sort state
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(
+    () => (localStorage.getItem('fm_view') ?? 'grid') as 'grid' | 'list',
+  );
+  const [sortBy, setSortBy] = useState<SortBy>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   // Store state
   const {
@@ -183,10 +211,32 @@ export function Component() {
     setDetailPath(null);
   }, [closeDetail]);
 
+  const handleToggleView = useCallback((mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('fm_view', mode);
+  }, []);
+
+  const handleSortClick = useCallback((field: SortBy) => {
+    setSortBy((prev) => {
+      if (prev === field) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setSortDir('asc');
+      return field;
+    });
+  }, []);
+
   // ─── Derived state ───
 
-  const folders = items?.filter((i) => i.isFolder) ?? [];
-  const files = items?.filter((i) => !i.isFolder) ?? [];
+  const folders = useMemo(
+    () => sortItems(items?.filter((i) => i.isFolder) ?? [], sortBy, sortDir),
+    [items, sortBy, sortDir],
+  );
+  const files = useMemo(
+    () => sortItems(items?.filter((i) => !i.isFolder) ?? [], sortBy, sortDir),
+    [items, sortBy, sortDir],
+  );
   const breadcrumbs = buildBreadcrumbs(context, currentPath);
   const totalSelected = selectedFiles.size + selectedFolders.size;
   const providerLabel = context.provider === 'azure' ? 'Azure Blob' : 'Google Cloud';
@@ -203,6 +253,181 @@ export function Component() {
     clearSelection();
   }, [clearSelection]);
 
+  // ─── Sub-renders ───
+
+  function renderFolderTile(folder: FileItem) {
+    const isSelected = selectedFolders.has(folder.itemPath);
+    return (
+      <Tooltip key={folder.itemPath}>
+        <TooltipTrigger asChild>
+          <button
+            className={cn(
+              'group relative flex h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer',
+              isSelected && 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-400/30',
+            )}
+            onClick={() => {
+              if (selectionMode) {
+                toggleFolderSelection(folder.itemPath);
+              } else {
+                handleNavigateToFolder(folder.itemPath);
+              }
+            }}
+          >
+            {selectionMode && (
+              <div className="absolute left-2 top-2">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleFolderSelection(folder.itemPath)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+            <Folder className="h-10 w-10 text-amber-500" />
+            <span className="w-full truncate text-center text-xs font-medium text-foreground">
+              {folder.itemName}
+            </span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{folder.itemName}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  function renderFileTile(file: FileItem) {
+    const ext = getFileExtension(file.itemName);
+    const badgeColor = getFileTypeBadgeColor(ext);
+    const isSelected = selectedFiles.has(file.itemPath);
+    return (
+      <Tooltip key={file.itemPath}>
+        <TooltipTrigger asChild>
+          <button
+            className={cn(
+              'group relative flex h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer',
+              isSelected && 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-400/30',
+            )}
+            onClick={() => {
+              if (selectionMode) {
+                toggleFileSelection(file.itemPath);
+              } else {
+                handleFileClick(file);
+              }
+            }}
+          >
+            {selectionMode && (
+              <div className="absolute left-2 top-2">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleFileSelection(file.itemPath)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+            <div className="relative">
+              <FileText className="h-10 w-10 text-slate-400" />
+              {ext && (
+                <span
+                  className={cn(
+                    'absolute -bottom-1 -right-2 rounded px-1 py-0.5 text-[10px] font-bold uppercase leading-none',
+                    badgeColor,
+                  )}
+                >
+                  {ext}
+                </span>
+              )}
+            </div>
+            <span className="w-full truncate text-center text-xs font-medium text-foreground">
+              {file.itemName}
+            </span>
+            {file.contentLength != null && (
+              <span className="text-[10px] text-muted-foreground">
+                {formatFileSize(file.contentLength)}
+              </span>
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{file.itemName}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  function renderFolderRow(folder: FileItem) {
+    const isSelected = selectedFolders.has(folder.itemPath);
+    return (
+      <button
+        key={folder.itemPath}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-md border bg-card px-3 py-2 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer',
+          isSelected && 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-400/30',
+        )}
+        onClick={() => {
+          if (selectionMode) {
+            toggleFolderSelection(folder.itemPath);
+          } else {
+            handleNavigateToFolder(folder.itemPath);
+          }
+        }}
+      >
+        {selectionMode && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => toggleFolderSelection(folder.itemPath)}
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0"
+          />
+        )}
+        <Folder className="h-5 w-5 shrink-0 text-amber-500" />
+        <span className="flex-1 text-left text-sm font-medium text-foreground">{folder.itemName}</span>
+        <span className="w-20 text-right text-xs text-muted-foreground" />
+        <span className="w-36 text-right text-xs text-muted-foreground">{fmtDate(folder.lastModified)}</span>
+        <span className="w-12" />
+      </button>
+    );
+  }
+
+  function renderFileRow(file: FileItem) {
+    const ext = getFileExtension(file.itemName);
+    const badgeColor = getFileTypeBadgeColor(ext);
+    const isSelected = selectedFiles.has(file.itemPath);
+    return (
+      <button
+        key={file.itemPath}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-md border bg-card px-3 py-2 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer',
+          isSelected && 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-400/30',
+        )}
+        onClick={() => {
+          if (selectionMode) {
+            toggleFileSelection(file.itemPath);
+          } else {
+            handleFileClick(file);
+          }
+        }}
+      >
+        {selectionMode && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => toggleFileSelection(file.itemPath)}
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0"
+          />
+        )}
+        <FileText className="h-5 w-5 shrink-0 text-slate-400" />
+        <span className="flex-1 text-left text-sm font-medium text-foreground">{file.itemName}</span>
+        <span className="w-20 text-right text-xs text-muted-foreground">
+          {file.contentLength != null ? formatFileSize(file.contentLength) : ''}
+        </span>
+        <span className="w-36 text-right text-xs text-muted-foreground">{fmtDate(file.lastModified)}</span>
+        <span className="w-12 text-right">
+          {ext && (
+            <span className={cn('rounded px-1 py-0.5 text-[10px] font-bold uppercase leading-none', badgeColor)}>
+              {ext}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  }
+
   // ─── Render ───
 
   return (
@@ -218,6 +443,52 @@ export function Component() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Sort buttons */}
+            <Button
+              variant={sortBy === 'name' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleSortClick('name')}
+              className="gap-1.5"
+            >
+              Name
+              {sortBy === 'name' && (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+            </Button>
+            <Button
+              variant={sortBy === 'modified' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleSortClick('modified')}
+              className="gap-1.5"
+            >
+              Modified
+              {sortBy === 'modified' && (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+            </Button>
+
+            {/* Divider */}
+            <div className="h-5 w-px bg-border mx-1" />
+
+            {/* View toggle */}
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleToggleView('grid')}
+              className="px-2"
+              title="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleToggleView('list')}
+              className="px-2"
+              title="List view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+
+            {/* Divider */}
+            <div className="h-5 w-px bg-border mx-1" />
+
             <Button
               variant={selectionMode ? 'default' : 'outline'}
               size="sm"
@@ -319,122 +590,70 @@ export function Component() {
           </div>
         )}
 
-        {/* Files and Folders grid */}
+        {/* Files and Folders */}
         {!isLoading && !error && items && items.length > 0 && (
           <div className="space-y-6">
-            {/* Folders */}
-            {folders.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Folders ({folders.length})
-                </h2>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-                  {folders.map((folder) => {
-                    const isSelected = selectedFolders.has(folder.itemPath);
-                    return (
-                      <Tooltip key={folder.itemPath}>
-                        <TooltipTrigger asChild>
-                          <button
-                            className={cn(
-                              'group relative flex h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer',
-                              isSelected && 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-400/30',
-                            )}
-                            onClick={() => {
-                              if (selectionMode) {
-                                toggleFolderSelection(folder.itemPath);
-                              } else {
-                                handleNavigateToFolder(folder.itemPath);
-                              }
-                            }}
-                          >
-                            {selectionMode && (
-                              <div className="absolute left-2 top-2">
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleFolderSelection(folder.itemPath)}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              </div>
-                            )}
-                            <Folder className="h-10 w-10 text-amber-500" />
-                            <span className="w-full truncate text-center text-xs font-medium text-foreground">
-                              {folder.itemName}
-                            </span>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>{folder.itemName}</TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
+            {viewMode === 'grid' ? (
+              <>
+                {/* Grid — Folders */}
+                {folders.length > 0 && (
+                  <div>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Folders ({folders.length})
+                    </h2>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+                      {folders.map(renderFolderTile)}
+                    </div>
+                  </div>
+                )}
+                {/* Grid — Files */}
+                {files.length > 0 && (
+                  <div>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Files ({files.length})
+                    </h2>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+                      {files.map(renderFileTile)}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* List — column header */}
+                <div className="flex items-center gap-3 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {selectionMode && <span className="w-4 shrink-0" />}
+                  <span className="w-5 shrink-0" />
+                  <span className="flex-1">Name</span>
+                  <span className="w-20 text-right">Size</span>
+                  <span className="w-36 text-right">Modified</span>
+                  <span className="w-12 text-right">Type</span>
                 </div>
-              </div>
-            )}
 
-            {/* Files */}
-            {files.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Files ({files.length})
-                </h2>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-                  {files.map((file) => {
-                    const ext = getFileExtension(file.itemName);
-                    const badgeColor = getFileTypeBadgeColor(ext);
-                    const isSelected = selectedFiles.has(file.itemPath);
-                    return (
-                      <Tooltip key={file.itemPath}>
-                        <TooltipTrigger asChild>
-                          <button
-                            className={cn(
-                              'group relative flex h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer',
-                              isSelected && 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-400/30',
-                            )}
-                            onClick={() => {
-                              if (selectionMode) {
-                                toggleFileSelection(file.itemPath);
-                              } else {
-                                handleFileClick(file);
-                              }
-                            }}
-                          >
-                            {selectionMode && (
-                              <div className="absolute left-2 top-2">
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleFileSelection(file.itemPath)}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              </div>
-                            )}
-                            <div className="relative">
-                              <FileText className="h-10 w-10 text-slate-400" />
-                              {ext && (
-                                <span
-                                  className={cn(
-                                    'absolute -bottom-1 -right-2 rounded px-1 py-0.5 text-[10px] font-bold uppercase leading-none',
-                                    badgeColor,
-                                  )}
-                                >
-                                  {ext}
-                                </span>
-                              )}
-                            </div>
-                            <span className="w-full truncate text-center text-xs font-medium text-foreground">
-                              {file.itemName}
-                            </span>
-                            {file.contentLength != null && (
-                              <span className="text-[10px] text-muted-foreground">
-                                {formatFileSize(file.contentLength)}
-                              </span>
-                            )}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>{file.itemName}</TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-              </div>
+                {/* List — Folders */}
+                {folders.length > 0 && (
+                  <div>
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Folders ({folders.length})
+                    </h2>
+                    <div className="space-y-1">
+                      {folders.map(renderFolderRow)}
+                    </div>
+                  </div>
+                )}
+
+                {/* List — Files */}
+                {files.length > 0 && (
+                  <div>
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Files ({files.length})
+                    </h2>
+                    <div className="space-y-1">
+                      {files.map(renderFileRow)}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

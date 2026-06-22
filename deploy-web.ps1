@@ -23,7 +23,7 @@ export const env = {
   api: 'https://api.cloud-files.link/api/',
   googleClientId: '$(Get-EnvValue $local "googleClientId")',
   azureTenantId: '$(Get-EnvValue $local "azureTenantId")',
-  azureClientId: 'b0d156f7-f1b5-431d-81c6-c169d6e01405',
+  azureClientId: '$(Get-EnvValue $local "azureClientId")',
   adminEmail: '$(Get-EnvValue $local "adminEmail")',
   pCloudClientId: '$(Get-EnvValue $local "pCloudClientId")',
   dropboxClientId: '$(Get-EnvValue $local "dropboxClientId")',

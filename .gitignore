@@ -294,3 +294,7 @@ web/.screenshots/**
 web/screenshot-*.cjs
 egret-angular-4-material-design-template.zip
 egret-angular-4-material-design-template/**
+
+# ignore localScript exports
+localScript/facebook/facebookExports
+localScript/facebook/extracted
